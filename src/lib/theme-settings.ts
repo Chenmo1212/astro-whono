@@ -625,7 +625,8 @@ const asHttpsUrl = (value: unknown, allowedHosts?: readonly string[]): string | 
       );
       if (!isAllowed) return undefined;
     }
-    return parsed.toString();
+    // Return the original string to preserve user's formatting (e.g., trailing slash preference)
+    return next;
   } catch {
     return undefined;
   }
