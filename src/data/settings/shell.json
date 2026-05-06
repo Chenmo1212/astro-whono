@@ -14,14 +14,14 @@
       "label": "絮语",
       "ornament": "·",
       "order": 2,
-      "visible": true
+      "visible": false
     },
     {
       "id": "memo",
       "label": "小记",
       "ornament": "·",
       "order": 3,
-      "visible": true
+      "visible": false
     },
     {
       "id": "archive",
