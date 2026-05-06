@@ -11,16 +11,34 @@ const getText = (node) => {
   return '';
 };
 
+const restoreDirectiveText = (parent, index, node) => {
+  if (!parent || typeof index !== 'number' || !node) return;
+  parent.children.splice(index, 1, {
+    type: 'text',
+    value: `:${node.name || ''}`
+  });
+};
+
 export default function remarkCallout() {
   return (tree) => {
-    visit(tree, 'containerDirective', (node) => {
-      const type = CALLOUT_TYPES.has(node.name) ? node.name : 'note';
+    visit(tree, (node) => {
+      return node.type === 'textDirective' || node.type === 'leafDirective' || node.type === 'containerDirective';
+    }, (node, index, parent) => {
+      if (node.type !== 'containerDirective') {
+        restoreDirectiveText(parent, index, node);
+        return;
+      }
+
+      if (!CALLOUT_TYPES.has(node.name)) {
+        restoreDirectiveText(parent, index, node);
+        return;
+      }
 
       if (!node.data) node.data = {};
       node.data.hName = 'div';
       node.data.hProperties = {
         ...(node.data.hProperties || {}),
-        className: ['callout', type]
+        className: ['callout', node.name]
       };
 
       if (!Array.isArray(node.children) || node.children.length === 0) return;

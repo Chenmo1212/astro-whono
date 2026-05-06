@@ -6,8 +6,14 @@
  * contract is defined in exactly one place.
  */
 
-/** A valid public slug must be lowercase kebab-case. */
-export const ESSAY_PUBLIC_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/**
+ * A valid public slug must be lowercase kebab-case or contain Unicode characters (e.g., Chinese).
+ * Supports:
+ * - Lowercase ASCII letters and numbers with hyphens (e.g., "my-post-123")
+ * - Unicode characters including Chinese, Japanese, Korean, etc. (e.g., "在夏天，认真做一个融化的雪人")
+ * - Mixed format with Unicode and ASCII (e.g., "中文-post-2024")
+ */
+export const ESSAY_PUBLIC_SLUG_RE = /^[\p{L}\p{N}\p{M}\p{Pc}\p{Pd}\p{Po}]+$/u;
 
 /**
  * Slug values that collide with sibling static routes under `/archive/` or

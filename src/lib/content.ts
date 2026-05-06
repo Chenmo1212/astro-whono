@@ -109,8 +109,8 @@ const assertUniqueEssaySlugs = (entries: readonly EssayEntry[]) => {
           `  Entry:       ${entry.id}`,
           `  Public slug: ${slug}`,
           `  Source:      ${slugSource}`,
-          '  Reason:      final public slug must be lowercase kebab-case.',
-          '  How to fix:  provide a valid frontmatter.slug, or rename files/folders to kebab-case.'
+          '  Reason:      final public slug must be lowercase kebab-case or contain valid Unicode characters.',
+          '  How to fix:  provide a valid frontmatter.slug, or rename files/folders to kebab-case or use Unicode characters (e.g., Chinese).'
         ].join('\n')
       );
     }

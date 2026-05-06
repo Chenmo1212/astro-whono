@@ -7,7 +7,7 @@ import { parseEssayDateInput, parseEssayPublishedAtInput } from './utils/date-on
 
 const slugRule = z
   .string()
-  .regex(ESSAY_PUBLIC_SLUG_RE, 'slug must be lowercase kebab-case');
+  .regex(ESSAY_PUBLIC_SLUG_RE, 'slug must be lowercase kebab-case or contain valid Unicode characters (e.g., Chinese)');
 
 const essayBaseFields = {
   title: z.string(),
