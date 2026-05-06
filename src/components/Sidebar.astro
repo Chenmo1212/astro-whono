@@ -36,13 +36,7 @@ const showAdminEntry = settings.ui.sidebarActions.showAdminEntry && settings.sit
 <aside class="sidebar">
   <a class="sidebar__title" href={homeHref} aria-label={`${siteTitle} 首页`}>{siteTitle}</a>
 
-  <div class="sidebar__quote">
-    {quote.split('\n').map((line) => (
-      <>
-        {line}<br />
-      </>
-    ))}
-  </div>
+  <div class="sidebar__quote" set:html={quote.replace(/\n/g, '<br />')}></div>
 
   <ul class="nav">
     {nav.map((item) => {
