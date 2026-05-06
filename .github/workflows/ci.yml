@@ -12,6 +12,7 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    environment: Blog
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,4 +57,4 @@ jobs:
           SOURCE: "dist/"
           REMOTE_HOST: ${{ vars.REMOTE_HOST }}
           REMOTE_USER: 'root'
-          TARGET: ${{ vars.TARGET }}
+          TARGET: ${{ secrets.TARGET }}
