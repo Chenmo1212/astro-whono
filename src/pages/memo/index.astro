@@ -11,12 +11,15 @@ const prod = import.meta.env.PROD;
 const DEFAULT_MEMO_TITLE = '生活小记';
 const DEFAULT_MEMO_SUBTITLE = '整理一些值得留存的片刻与回忆。';
 
+// Check if memo should be rendered
 const entry = await getEntry('memo', 'index');
 if (!entry) {
   throw new Error('Missing memo page entry: src/content/memo/index.md');
 }
+
+// In production, skip rendering if draft is true
 if (prod && entry.data.draft) {
-  throw new Error('Memo entry is marked draft...');
+  return new Response(null, { status: 404 });
 }
 
 const {
