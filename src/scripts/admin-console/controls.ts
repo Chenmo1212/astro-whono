@@ -46,7 +46,7 @@ export type AdminThemeControls = RequiredElements<{
   inputSiteDefaultLocale: HTMLInputElement | null;
   inputSiteFooterStartYear: HTMLInputElement | null;
   inputSiteFooterShowCurrentYear: HTMLInputElement | null;
-  inputSiteFooterCopyright: HTMLInputElement | null;
+  inputSiteFooterCopyright: HTMLTextAreaElement | null;
   inputSiteAdminOverviewPublicVisible: HTMLInputElement | null;
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement | null;
   inputSiteSocialGithubOrder: HTMLInputElement | null;
@@ -128,7 +128,7 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputSiteDefaultLocale: byId<HTMLInputElement>('site-default-locale'),
     inputSiteFooterStartYear: byId<HTMLInputElement>('site-footer-start-year'),
     inputSiteFooterShowCurrentYear: byId<HTMLInputElement>('site-footer-show-current-year'),
-    inputSiteFooterCopyright: byId<HTMLInputElement>('site-footer-copyright'),
+    inputSiteFooterCopyright: byId<HTMLTextAreaElement>('site-footer-copyright'),
     inputSiteAdminOverviewPublicVisible: byId<HTMLInputElement>('site-admin-overview-public-visible'),
     inputSiteAdminOverviewHiddenMessage: byId<HTMLInputElement>('site-admin-overview-hidden-message'),
     inputSiteSocialGithubOrder: byId<HTMLInputElement>('site-social-github-order'),

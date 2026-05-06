@@ -22,7 +22,7 @@ type ValidationContext = {
   inputSiteDefaultLocale: HTMLInputElement;
   inputSiteFooterStartYear: HTMLInputElement;
   inputSiteFooterShowCurrentYear: HTMLInputElement;
-  inputSiteFooterCopyright: HTMLInputElement;
+  inputSiteFooterCopyright: HTMLTextAreaElement;
   inputSiteAdminOverviewPublicVisible: HTMLInputElement;
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement;
   inputSiteSocialGithub: HTMLInputElement;

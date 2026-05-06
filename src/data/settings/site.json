@@ -1,25 +1,34 @@
 {
-  "title": "Astro Themes by Whono",
-  "description": "一个 Astro 主题的展示站：轻量、可维护、可复用。",
+  "title": "ChenMo's blog",
+  "description": "一个 基于Astro的个人博客，采用极简设计风格，记录日常心情随笔，以及留学日常。",
   "defaultLocale": "zh-CN",
   "footer": {
-    "startYear": 2025,
+    "startYear": 2018,
     "showCurrentYear": true,
-    "copyright": "Whono · Theme Demo · by cxro"
+    "copyright": "Astro · Theme Astro-Whono · Modified by <a href=\"https://chenmo1212.cn?f=blog\">ChenMo1212</a>"
   },
   "adminOverview": {
     "publicVisible": true,
     "hiddenMessage": "作者暂未公开此页面。"
   },
   "socialLinks": {
-    "github": "https://github.com/cxro/astro-whono",
-    "x": "https://twitter.com/yourname",
-    "email": "Whono@linux.do",
+    "github": "https://github.com/Chenmo1212",
+    "x": null,
+    "email": "chenmo991212@gmail.com",
     "presetOrder": {
       "github": 1,
-      "x": 2,
-      "email": 3
+      "x": 4,
+      "email": 2
     },
-    "custom": []
+    "custom": [
+      {
+        "id": "custom-instagram",
+        "label": "Instagram",
+        "href": "https://www.instagram.com/chenmo.1212/",
+        "iconKey": "instagram",
+        "visible": true,
+        "order": 3
+      }
+    ]
   }
 }

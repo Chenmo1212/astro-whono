@@ -51,7 +51,7 @@ type FormCodecContext = {
   inputSiteDefaultLocale: HTMLInputElement;
   inputSiteFooterStartYear: HTMLInputElement;
   inputSiteFooterShowCurrentYear: HTMLInputElement;
-  inputSiteFooterCopyright: HTMLInputElement;
+  inputSiteFooterCopyright: HTMLTextAreaElement;
   inputSiteAdminOverviewPublicVisible: HTMLInputElement;
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement;
   inputSiteSocialGithubOrder: HTMLInputElement;
@@ -370,7 +370,7 @@ export const createFormCodec = ({
   };
 
   const refreshFooterPreview = (): void => {
-    footerPreviewValueEl.textContent = getFooterPreviewText().replace(/^页脚预览：/, '').trim();
+    footerPreviewValueEl.innerHTML = getFooterPreviewText().replace(/^页脚预览：/, '').trim();
   };
 
   const syncFooterYearControls = (): void => {

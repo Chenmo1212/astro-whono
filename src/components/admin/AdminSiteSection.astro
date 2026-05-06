@@ -78,8 +78,9 @@ const { footerStartYearMin, footerStartYearMax, socialCustomLimit } = Astro.prop
     <label class="admin-field">
       <span class="admin-label">
         <span class="admin-label__main">页脚版权文案</span>
+        <span class="admin-label__hint">（支持 HTML 标签）</span>
       </span>
-      <input class="admin-field__control" id="site-footer-copyright" type="text" autocomplete="off" aria-describedby="site-footer-preview" />
+      <textarea class="admin-field__control admin-field__control--singleline-textarea" id="site-footer-copyright" rows="1" autocomplete="off" aria-describedby="site-footer-preview"></textarea>
     </label>
     <div class="admin-field admin-field--full">
       <p id="site-footer-preview" class="admin-help">
