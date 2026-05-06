@@ -1,41 +1,41 @@
 {
-  "brandTitle": "Whono",
-  "quote": "A minimal Astro theme\nfor essays, notes, and docs.\nDesigned for reading,\nopen-source.",
+  "brandTitle": "ChenMo1212",
+  "quote": "An Astro-based minimalist personal blog capturing <b>daily reflections</b>,<b> thoughtful musings</b>, and <b>life in Ireland</b>.",
   "nav": [
     {
       "id": "essay",
       "label": "随笔",
       "ornament": "·",
-      "visible": true,
-      "order": 1
+      "order": 1,
+      "visible": true
     },
     {
       "id": "bits",
       "label": "絮语",
       "ornament": "·",
-      "visible": true,
-      "order": 2
+      "order": 2,
+      "visible": true
     },
     {
       "id": "memo",
       "label": "小记",
       "ornament": "·",
-      "visible": true,
-      "order": 3
+      "order": 3,
+      "visible": true
     },
     {
       "id": "archive",
       "label": "归档",
       "ornament": "·",
-      "visible": true,
-      "order": 4
+      "order": 4,
+      "visible": true
     },
     {
       "id": "about",
       "label": "关于",
       "ornament": "·",
-      "visible": true,
-      "order": 5
+      "order": 5,
+      "visible": true
     }
   ]
 }

@@ -3,12 +3,12 @@
     "showLineNumbers": true
   },
   "readingMode": {
-    "showEntry": true
+    "showEntry": false
   },
   "sidebarActions": {
     "showRssLink": true,
     "showThemeToggle": true,
-    "showAdminEntry": false
+    "showAdminEntry": true
   },
   "articleMeta": {
     "showDate": true,
@@ -18,6 +18,6 @@
     "showReadingTime": true
   },
   "layout": {
-    "sidebarDivider": "default"
+    "sidebarDivider": "subtle"
   }
 }

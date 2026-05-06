@@ -1,5 +1,5 @@
 {
-  "introLead": "这是一个开源写作主题与示例内容库:包含 随笔/essay、小记/memo、归档/archive 与 絮语/bits，使用与配置请见 README 。",
+  "introLead": "基于 Astro 构建的极简风格个人博客，记录日常思考、随想与在爱尔兰的生活点滴：包含随笔（essay）、小记（memo）、归档（archive）与絮语（bits）。",
   "introMore": "更多文章请访问",
   "introMoreLinks": [
     "archive",
@@ -8,6 +8,6 @@
   "showIntroLead": true,
   "showIntroMore": true,
   "heroPresetId": "default",
-  "heroImageSrc": null,
-  "heroImageAlt": "Whono theme preview"
+  "heroImageSrc": "https://cdn.chenmo1212.cn/img/homepage_cover.jpeg?imageView2/0/w/800/q/100",
+  "heroImageAlt": "Blog Cover"
 }

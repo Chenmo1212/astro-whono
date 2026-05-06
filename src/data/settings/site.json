@@ -1,6 +1,6 @@
 {
   "title": "ChenMo's blog",
-  "description": "一个 基于Astro的个人博客，采用极简设计风格，记录日常心情随笔，以及留学日常。",
+  "description": "一个基于Astro的个人博客，采用极简设计风格，记录日常心情随笔，以及留学日常。",
   "defaultLocale": "zh-CN",
   "footer": {
     "startYear": 2018,
@@ -22,10 +22,10 @@
     },
     "custom": [
       {
-        "id": "custom-instagram",
-        "label": "Instagram",
-        "href": "https://www.instagram.com/chenmo.1212/",
-        "iconKey": "instagram",
+        "id": "custom-website",
+        "label": "Homepage",
+        "href": "https://chenmo1212.cn",
+        "iconKey": "website",
         "visible": true,
         "order": 3
       }
