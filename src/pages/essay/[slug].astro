@@ -14,7 +14,7 @@ export async function getStaticPaths() {
 }
 
 return Astro.redirect(
-  `${(import.meta.env.BASE_URL ?? '/').replace(/\/?$/, '/')}archive/${Astro.params.slug}/`,
+  `${(import.meta.env.BASE_URL ?? '/').replace(/\/?$/, '/')}archive/${encodeURIComponent(Astro.params.slug)}/`,
   301
 );
 ---
