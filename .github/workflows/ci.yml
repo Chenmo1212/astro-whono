@@ -44,3 +44,16 @@ jobs:
 
       - name: Run CI gate
         run: npm run ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to Server
+        uses: easingthemes/ssh-deploy@v2.2.11
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          ARGS: "-rltgoDzvO"
+          SOURCE: "dist/"
+          REMOTE_HOST: ${{ vars.REMOTE_HOST }}
+          REMOTE_USER: 'root'
+          TARGET: ${{ vars.TARGET }}
