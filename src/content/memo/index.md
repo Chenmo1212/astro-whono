@@ -2,7 +2,7 @@
 title: "生活小记"
 subtitle: "不曾虚度的光"
 date: 2026-01-10
-draft: false
+draft: true
 ---
 
 ## 2025年记
