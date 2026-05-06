@@ -131,7 +131,7 @@ describe('admin-console/shared', () => {
         href: 'https://example.com',
         iconKey: 'globe',
         visible: 1,
-        order: '4'
+        order: '5'
       }
     ];
     delete raw.page.about.subtitle;
@@ -148,7 +148,7 @@ describe('admin-console/shared', () => {
       iconKey: 'website',
       label: 'website',
       visible: true,
-      order: 4
+      order: 5
     });
     expect(validateAdminThemeSettings(canonical, { footerStartYearMax: 2030 })).toEqual([]);
     expect(
