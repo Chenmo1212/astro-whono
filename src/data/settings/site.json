@@ -5,7 +5,7 @@
   "footer": {
     "startYear": 2018,
     "showCurrentYear": true,
-    "copyright": "Astro · Theme Astro-Whono · Modified by <a href=\"https://chenmo1212.cn?f=blog\">ChenMo1212</a>"
+    "copyright": "Astro · Modified by <a href=\"https://chenmo1212.cn?f=blog\">ChenMo1212</a>"
   },
   "adminOverview": {
     "publicVisible": true,

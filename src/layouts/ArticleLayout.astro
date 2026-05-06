@@ -2,11 +2,14 @@
 import BaseLayout from './BaseLayout.astro';
 import UiIcon from '../components/UiIcon.astro';
 import Lightbox from '../components/Lightbox.astro';
+import TableOfContents from '../components/TableOfContents.astro';
 import '../styles/article.css';
+import '../styles/components/table-of-contents.css';
 import { getEssayDerivedText, type EssayEntry } from '../lib/content';
 import type { ArticleMetaSettings, SidebarNavId } from '../lib/theme-settings';
 import { formatISODateUtc } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
+import type { TocItem } from '../components/TableOfContents.astro';
 
 type ArticleNeighborLink = {
   href: string;
@@ -18,13 +21,15 @@ const {
   prev,
   next,
   articleMetaSettings,
-  visibleTags = []
+  visibleTags = [],
+  toc = []
 } = Astro.props as {
   entry: EssayEntry;
   prev: ArticleNeighborLink | null;
   next: ArticleNeighborLink | null;
   articleMetaSettings: ArticleMetaSettings;
   visibleTags?: string[];
+  toc?: TocItem[];
 };
 
 const entryTags: string[] = entry?.data?.tags ?? [];
@@ -106,6 +111,8 @@ const shouldShowMetaLine = articleMetaSettings.showDate
       </div>
     ) : null}
   </div>
+
+  <TableOfContents toc={toc} />
 
   <div class="prose">
     <slot />

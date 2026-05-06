@@ -6,6 +6,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkCallout from './src/plugins/remark-callout.mjs';
 import remarkRelativeImages from './src/plugins/remark-relative-images.mjs';
+import remarkToc from './src/plugins/remark-toc.mjs';
 import shikiToolbar from './src/plugins/shiki-toolbar.mjs';
 import { site, hasSiteUrl } from './site.config.mjs';
 
@@ -150,7 +151,7 @@ export default defineConfig({
     }
   },
   markdown: {
-    remarkPlugins: [remarkDirective, remarkCallout, remarkRelativeImages],
+    remarkPlugins: [remarkDirective, remarkCallout, remarkRelativeImages, remarkToc],
     rehypePlugins: [rehypeRaw, [rehypeSanitize, sanitizeSchema]],
     shikiConfig: {
       themes: {

@@ -1,0 +1,33 @@
+---
+export interface TocItem {
+  depth: number;
+  text: string;
+  slug: string;
+}
+
+interface Props {
+  toc: TocItem[];
+}
+
+const { toc } = Astro.props;
+
+// Only show TOC if there are at least 2 headings
+const shouldShowToc = toc && toc.length >= 2;
+---
+
+{shouldShowToc && (
+  <nav class="table-of-contents" aria-label="目录">
+    <div class="toc-header">
+      <h2 class="toc-title">目录</h2>
+    </div>
+    <ul class="toc-list">
+      {toc.map((item) => (
+        <li class={`toc-item toc-item--depth-${item.depth}`}>
+          <a href={`#${item.slug}`} class="toc-link">
+            {item.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
