@@ -19,7 +19,17 @@ const essayBaseFields = {
   publishedAt: z.unknown().optional(),
   // Optional custom permalink. If present, it overrides the default public slug
   // derived from the entry id / path.
-  slug: slugRule.optional()
+  slug: slugRule.optional(),
+  // Encryption support
+  encrypted: z.boolean().default(false),
+  encryptedContent: z.object({
+    encrypted: z.string(),
+    salt: z.string(),
+    iv: z.string(),
+    authTag: z.string(),
+    algorithm: z.string().optional(),
+    iterations: z.number().optional(),
+  }).optional()
 };
 
 const essayShape = {

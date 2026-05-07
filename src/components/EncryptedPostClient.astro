@@ -1,0 +1,445 @@
+---
+// EncryptedPostClient component - Client-side decryption with password verification
+interface Props {
+	postId: string;
+	encryptedContent: {
+		encrypted: string;
+		salt: string;
+		iv: string;
+		authTag: string;
+		algorithm?: string;
+		iterations?: number;
+	};
+}
+
+const { postId, encryptedContent } = Astro.props;
+
+// Get API base URL from environment variable (for separate API server)
+const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
+---
+
+<div id="encrypted-content" class="encrypted-wrapper" data-encrypted-content={JSON.stringify(encryptedContent)}>
+	<div class="password-prompt">
+		<div class="password-prompt__header">
+			<span class="password-prompt__icon" aria-hidden="true">🔒</span>
+			<div class="password-prompt__copy">
+				<h2 class="password-prompt__title">加密内容</h2>
+				<p class="password-prompt__hint">此文章受密码保护</p>
+			</div>
+		</div>
+		<form id="password-form" class="password-form">
+			<label class="password-field">
+				<span class="password-field__label">
+					<span class="password-field__label-main">密码</span>
+					<span class="password-field__label-hint">（请输入密码以查看内容）</span>
+				</span>
+				<input
+					type="password"
+					id="password-input"
+					class="password-field__input"
+					placeholder="输入密码"
+					autocomplete="off"
+					required
+					aria-describedby="error-message"
+				/>
+			</label>
+			<button type="submit" class="password-form__submit">解锁</button>
+		</form>
+		<div id="error-message" class="password-message password-message--error" style="display: none;" role="alert">
+			密码错误，请重试
+		</div>
+		<div id="loading-message" class="password-message password-message--loading" style="display: none;" aria-live="polite">
+			验证并解密中...
+		</div>
+	</div>
+	<div id="post-content" class="post-content" style="display: none;"></div>
+</div>
+
+<style>
+	.encrypted-wrapper {
+		min-height: 300px;
+	}
+
+	.password-prompt {
+		max-width: 420px;
+		margin: 2rem auto;
+		padding: 1.5rem;
+		border: 1px solid var(--border);
+		background: transparent;
+	}
+
+	.password-prompt__header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 1.25rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px dashed var(--border);
+	}
+
+	.password-prompt__icon {
+		font-size: 1.25rem;
+		opacity: 0.6;
+		flex-shrink: 0;
+	}
+
+	.password-prompt__copy {
+		min-width: 0;
+	}
+
+	.password-prompt__title {
+		margin: 0 0 0.25rem 0;
+		font-family: "Noto Serif SC", ui-serif, Georgia, serif;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--text);
+		line-height: 1.4;
+	}
+
+	.password-prompt__hint {
+		margin: 0;
+		font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+		font-size: 0.8125rem;
+		color: var(--muted);
+		line-height: 1.4;
+	}
+
+	.password-form {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.password-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+	}
+
+	.password-field__label {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 4px;
+		font-size: 0.8125rem;
+		line-height: 1.4;
+	}
+
+	.password-field__label-main {
+		color: var(--text);
+		font-weight: 500;
+	}
+
+	.password-field__label-hint {
+		color: var(--muted);
+		font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+	}
+
+	.password-field__input {
+		padding: 0.5rem 0.75rem;
+		border: 1px solid var(--border);
+		border-radius: 0;
+		font-size: 0.875rem;
+		font-family: "Noto Serif SC", ui-serif, Georgia, serif;
+		transition: border-color 0.15s ease;
+		background: var(--bg);
+		color: var(--text);
+		line-height: 1.5;
+	}
+
+	.password-field__input::placeholder {
+		color: var(--faint);
+		font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+	}
+
+	.password-field__input:focus {
+		outline: none;
+		border-color: var(--accent);
+	}
+
+	.password-form__submit {
+		padding: 0.5rem 1rem;
+		background: transparent;
+		color: var(--text);
+		border: 1px solid var(--border);
+		border-radius: 0;
+		font-size: 0.875rem;
+		font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		align-self: flex-start;
+	}
+
+	.password-form__submit:hover {
+		border-color: var(--text);
+		background: var(--text);
+		color: var(--bg);
+	}
+
+	.password-form__submit:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		border-color: var(--border);
+		background: transparent;
+		color: var(--text);
+	}
+
+	.password-message {
+		margin-top: 0.75rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0;
+		font-size: 0.8125rem;
+		font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+		border-left: 3px solid;
+		line-height: 1.5;
+	}
+
+	.password-message--error {
+		background: transparent;
+		color: var(--accent);
+		border-color: var(--accent);
+	}
+
+	.password-message--loading {
+		background: transparent;
+		color: var(--muted);
+		border-color: var(--border);
+	}
+
+	.post-content {
+		animation: fadeIn 0.3s ease-out;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.password-prompt {
+			margin: 1.5rem 1rem;
+			padding: 1rem;
+		}
+
+		.password-prompt__header {
+			margin-bottom: 1rem;
+			padding-bottom: 0.75rem;
+		}
+	}
+</style>
+
+<script define:vars={{ postId, apiBaseUrl }}>
+	const form = document.getElementById('password-form');
+	const input = document.getElementById('password-input');
+	const submitButton = form.querySelector('button[type="submit"]');
+	const errorMessage = document.getElementById('error-message');
+	const loadingMessage = document.getElementById('loading-message');
+	const promptDiv = document.querySelector('.password-prompt');
+	const contentDiv = document.getElementById('post-content');
+
+	// Check if already unlocked in session
+	const sessionKey = `post-unlocked-${postId}`;
+	const cachedContent = sessionStorage.getItem(sessionKey);
+	
+	if (cachedContent) {
+		promptDiv.style.display = 'none';
+		contentDiv.innerHTML = cachedContent;
+		contentDiv.style.display = 'block';
+	}
+
+	/**
+	 * Derive encryption key from password using PBKDF2
+	 */
+	async function deriveKey(password, salt, iterations) {
+		const encoder = new TextEncoder();
+		const passwordBuffer = encoder.encode(password);
+		const saltBuffer = base64ToBuffer(salt);
+
+		// Import password as key material
+		const keyMaterial = await crypto.subtle.importKey(
+			'raw',
+			passwordBuffer,
+			{ name: 'PBKDF2' },
+			false,
+			['deriveBits', 'deriveKey']
+		);
+
+		// Derive key using PBKDF2
+		const key = await crypto.subtle.deriveKey(
+			{
+				name: 'PBKDF2',
+				salt: saltBuffer,
+				iterations: iterations,
+				hash: 'SHA-256'
+			},
+			keyMaterial,
+			{ name: 'AES-GCM', length: 256 },
+			false,
+			['decrypt']
+		);
+
+		return key;
+	}
+
+	/**
+	 * Decrypt content using AES-GCM
+	 */
+	async function decryptContent(encryptedData, password) {
+		try {
+			const key = await deriveKey(
+				password,
+				encryptedData.salt,
+				encryptedData.iterations || 100000
+			);
+
+			const encryptedBuffer = base64ToBuffer(encryptedData.encrypted);
+			const ivBuffer = base64ToBuffer(encryptedData.iv);
+			const authTagBuffer = base64ToBuffer(encryptedData.authTag);
+
+			// Combine encrypted data and auth tag for GCM
+			const ciphertext = new Uint8Array(encryptedBuffer.byteLength + authTagBuffer.byteLength);
+			ciphertext.set(new Uint8Array(encryptedBuffer), 0);
+			ciphertext.set(new Uint8Array(authTagBuffer), encryptedBuffer.byteLength);
+
+			// Decrypt
+			const decryptedBuffer = await crypto.subtle.decrypt(
+				{
+					name: 'AES-GCM',
+					iv: ivBuffer,
+					tagLength: 128
+				},
+				key,
+				ciphertext
+			);
+
+			const decoder = new TextDecoder();
+			return decoder.decode(decryptedBuffer);
+		} catch (error) {
+			console.error('Decryption error:', error);
+			throw new Error('Failed to decrypt content');
+		}
+	}
+
+	/**
+	 * Convert base64 string to ArrayBuffer
+	 */
+	function base64ToBuffer(base64) {
+		const binaryString = atob(base64);
+		const bytes = new Uint8Array(binaryString.length);
+		for (let i = 0; i < binaryString.length; i++) {
+			bytes[i] = binaryString.charCodeAt(i);
+		}
+		return bytes.buffer;
+	}
+
+	/**
+	 * Simple markdown to HTML converter
+	 */
+	function markdownToHtml(markdown) {
+		let html = markdown;
+		
+		// Headers
+		html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+		html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+		html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+		
+		// Bold
+		html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+		
+		// Italic
+		html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+		
+		// Links
+		html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+		
+		// Line breaks
+		html = html.replace(/\n\n/g, '</p><p>');
+		html = html.replace(/\n/g, '<br>');
+		
+		// Wrap in paragraphs
+		html = '<p>' + html + '</p>';
+		
+		return html;
+	}
+
+	form?.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const password = input.value;
+
+		// Show loading
+		errorMessage.style.display = 'none';
+		loadingMessage.style.display = 'block';
+		submitButton.disabled = true;
+
+		try {
+			// Call server API to verify password
+			// Use apiBaseUrl if configured, otherwise use relative URL
+			const apiUrl = apiBaseUrl ? `${apiBaseUrl}/api/decrypt` : '/api/decrypt';
+			const response = await fetch(apiUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ postId, password }),
+			});
+
+			const data = await response.json();
+
+			if (data.success) {
+				// Password verified! Now get encrypted data from page and decrypt on client side
+				try {
+					// Get encrypted data from the wrapper element
+					const wrapper = document.getElementById('encrypted-content');
+					if (!wrapper) {
+						throw new Error('Encrypted content wrapper not found');
+					}
+					
+					const encryptedDataStr = wrapper.getAttribute('data-encrypted-content');
+					if (!encryptedDataStr) {
+						throw new Error('Encrypted content data not found');
+					}
+					
+					const encryptedData = JSON.parse(encryptedDataStr);
+					const decryptedContent = await decryptContent(encryptedData, password);
+					
+					// Success! Render the content
+					loadingMessage.style.display = 'none';
+					promptDiv.style.display = 'none';
+					
+					// Convert markdown to HTML
+					const htmlContent = markdownToHtml(decryptedContent);
+					contentDiv.innerHTML = `<div class="markdown-content">${htmlContent}</div>`;
+					contentDiv.style.display = 'block';
+					
+					// Store in session
+					sessionStorage.setItem(sessionKey, contentDiv.innerHTML);
+				} catch (decryptError) {
+					console.error('Decryption error:', decryptError);
+					showError('解密失败，请重试');
+				}
+			} else {
+				// Wrong password
+				showError(data.error || '密码错误，请重试');
+			}
+		} catch (error) {
+			console.error('API error:', error);
+			showError('验证失败，请重试');
+		} finally {
+			loadingMessage.style.display = 'none';
+			submitButton.disabled = false;
+		}
+	});
+
+	function showError(message) {
+		errorMessage.textContent = message;
+		errorMessage.style.display = 'block';
+		input.value = '';
+		input.focus();
+	}
+</script>

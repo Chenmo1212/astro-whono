@@ -17,6 +17,7 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "node scripts/auto-encrypt.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
@@ -37,11 +38,13 @@
     "@astrojs/sitemap": "^3.7.2",
     "@lucide/astro": "^1.8.0",
     "astro": "^6.1.7",
+    "dotenv": "^16.4.5",
     "github-slugger": "^2.0.0",
     "mdast-util-to-string": "^4.0.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
+    "@astrojs/node": "^10.0.6",
     "@iconify-json/logos": "^1.2.0",
     "@iconify-json/simple-icons": "^1.2.0",
     "@types/node": "^22.0.0",

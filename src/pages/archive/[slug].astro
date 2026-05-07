@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import { getEssaySlug, getVisibleEssayRouteEntries, type EssayEntry } from '../../lib/content';
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import EncryptedPostClient from '../../components/EncryptedPostClient.astro';
 import { createWithBase } from '../../utils/format';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../../lib/theme-settings';
 
@@ -41,6 +42,7 @@ const { Content, remarkPluginFrontmatter } = await render(entry);
 const toc = remarkPluginFrontmatter?.toc || [];
 const articleMetaSettings = getThemeSettings().settings.ui.articleMeta;
 const visibleTags = getVisibleArticleMetaTags(entry.data.tags, 'detail');
+const isEncrypted = entry.data.encrypted === true;
 ---
 
 <ArticleLayout
@@ -51,5 +53,12 @@ const visibleTags = getVisibleArticleMetaTags(entry.data.tags, 'detail');
   visibleTags={visibleTags}
   toc={toc}
 >
-  <Content />
+  {isEncrypted && entry.data.encryptedContent ? (
+    <EncryptedPostClient
+      postId={entry.id}
+      encryptedContent={entry.data.encryptedContent}
+    />
+  ) : (
+    <Content />
+  )}
 </ArticleLayout>
