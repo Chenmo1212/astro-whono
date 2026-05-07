@@ -160,4 +160,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
 export { encryptContent, decryptContent, deriveKey };
 
-// Made with Bob
+
