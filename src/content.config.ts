@@ -27,8 +27,8 @@ const essayBaseFields = {
     salt: z.string(),
     iv: z.string(),
     authTag: z.string(),
-    algorithm: z.string().optional(),
-    iterations: z.number().optional(),
+    algorithm: z.string().default('aes-256-gcm'),
+    iterations: z.number().default(100000),
   }).optional()
 };
 
