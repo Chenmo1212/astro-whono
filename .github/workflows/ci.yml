@@ -46,13 +46,13 @@ jobs:
       - name: Run CI gate
         env:
           SITE_URL: ${{ vars.SITE_URL }}
-          ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
+          ENCRYPTION_PASSWORD: ${{ vars.ENCRYPTION_PASSWORD }}
         run: npm run ci
 
       - name: Build project
         env:
           SITE_URL: ${{ vars.SITE_URL }}
-          ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
+          ENCRYPTION_PASSWORD: ${{ vars.ENCRYPTION_PASSWORD }}
         run: npm run build
 
       - name: Deploy to Server
@@ -63,4 +63,4 @@ jobs:
           SOURCE: "dist/"
           REMOTE_HOST: ${{ vars.REMOTE_HOST }}
           REMOTE_USER: 'root'
-          TARGET: ${{ secrets.TARGET }}
+          TARGET: ${{ vars.TARGET }}
