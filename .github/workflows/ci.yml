@@ -49,12 +49,6 @@ jobs:
           ENCRYPTION_PASSWORD: ${{ vars.ENCRYPTION_PASSWORD }}
         run: npm run ci
 
-      - name: Build project
-        env:
-          SITE_URL: ${{ vars.SITE_URL }}
-          ENCRYPTION_PASSWORD: ${{ vars.ENCRYPTION_PASSWORD }}
-        run: npm run build
-
       - name: Deploy to Server
         uses: easingthemes/ssh-deploy@v2.2.11
         env:
