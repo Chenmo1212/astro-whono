@@ -54,7 +54,7 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           ARGS: "-rltgoDzvO"
-          SOURCE: "dist/"
+          SOURCE: "dist/client/"
           REMOTE_HOST: ${{ vars.REMOTE_HOST }}
           REMOTE_USER: 'root'
           TARGET: ${{ vars.TARGET }}
