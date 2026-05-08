@@ -46,11 +46,13 @@ jobs:
       - name: Run CI gate
         env:
           SITE_URL: ${{ vars.SITE_URL }}
+          ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
         run: npm run ci
 
       - name: Build project
         env:
           SITE_URL: ${{ vars.SITE_URL }}
+          ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
         run: npm run build
 
       - name: Deploy to Server
