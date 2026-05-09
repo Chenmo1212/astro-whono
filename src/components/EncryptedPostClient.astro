@@ -504,7 +504,7 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 		try {
 			// Call server API to verify password
 			// Use apiBaseUrl if configured, otherwise use relative URL
-			const apiUrl = apiBaseUrl ? `${apiBaseUrl}/api/decrypt` : '/api/decrypt';
+			const apiUrl = apiBaseUrl ? `${apiBaseUrl}/api/v1/blog/verify` : '/api/v1/blog/verify';
 			const response = await fetch(apiUrl, {
 				method: 'POST',
 				headers: {

@@ -186,7 +186,7 @@ const authTag = cipher.getAuthTag();
 ```javascript
 // 1. Verify password (backend API)
 // User's input password is compared with environment variable password
-POST /api/decrypt
+POST /api/v1/blog/verify
 { password }
 → { success: true }
 
