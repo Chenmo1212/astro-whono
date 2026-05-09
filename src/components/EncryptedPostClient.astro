@@ -466,20 +466,47 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 	 * Simple markdown to HTML converter
 	 */
 	function markdownToHtml(markdown) {
-		let html = markdown;
+		// Split into lines for processing
+		const lines = markdown.split('\n');
+		const processed = [];
+		let inBlockquote = false;
+		let blockquoteContent = [];
 		
-		// Horizontal rules (must come before other processing)
+		for (let i = 0; i < lines.length; i++) {
+			let line = lines[i];
+			
+			// Check if line is a blockquote
+			if (line.startsWith('> ')) {
+				if (!inBlockquote) {
+					inBlockquote = true;
+					blockquoteContent = [];
+				}
+				blockquoteContent.push(line.substring(2));
+			} else {
+				// If we were in a blockquote, close it
+				if (inBlockquote) {
+					processed.push('<blockquote>' + blockquoteContent.join('<br>') + '</blockquote>');
+					inBlockquote = false;
+					blockquoteContent = [];
+				}
+				processed.push(line);
+			}
+		}
+		
+		// Close any remaining blockquote
+		if (inBlockquote) {
+			processed.push('<blockquote>' + blockquoteContent.join('<br>') + '</blockquote>');
+		}
+		
+		let html = processed.join('\n');
+		
+		// Horizontal rules
 		html = html.replace(/^---+$/gim, '<hr>');
 		
 		// Headers
 		html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
 		html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
 		html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-		
-		// Blockquotes (handle multi-line blockquotes)
-		html = html.replace(/^> (.+)$/gim, '<blockquote>$1</blockquote>');
-		// Merge consecutive blockquotes
-		html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
 		
 		// Bold
 		html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -493,20 +520,19 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 		// Links
 		html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 		
-		// Line breaks
-		html = html.replace(/\n\n/g, '</p><p>');
-		html = html.replace(/\n/g, '<br>');
+		// Paragraphs - split by double newlines
+		const blocks = html.split('\n\n');
+		const htmlBlocks = blocks.map(block => {
+			// Don't wrap headers, blockquotes, or hrs in paragraphs
+			if (block.match(/^<h[1-6]>/) || block.match(/^<blockquote>/) || block.match(/^<hr>/)) {
+				return block;
+			}
+			// Replace single newlines with <br> within paragraphs
+			const content = block.replace(/\n/g, '<br>');
+			return content.trim() ? '<p>' + content + '</p>' : '';
+		});
 		
-		// Wrap in paragraphs
-		html = '<p>' + html + '</p>';
-		
-		// Clean up empty paragraphs and fix blockquote/hr wrapping
-		html = html.replace(/<p><\/p>/g, '');
-		html = html.replace(/<p>(<h[1-6]>)/g, '$1');
-		html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
-		html = html.replace(/<p>(<blockquote>)/g, '$1');
-		html = html.replace(/(<\/blockquote>)<\/p>/g, '$1');
-		html = html.replace(/<p>(<hr>)<\/p>/g, '$1');
+		html = htmlBlocks.filter(b => b).join('\n');
 		
 		return html;
 	}
