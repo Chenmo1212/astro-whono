@@ -48,7 +48,14 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
           ENCRYPTION_PASSWORD: ${{ vars.ENCRYPTION_PASSWORD }}
           PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
-        run: npm run ci
+        run: ｜
+          echo "===================== PUBLIC_API_BASE_URL is: $PUBLIC_API_BASE_URL"
+          npm run ci
+      
+      - name: Verify build output
+        run: |
+          echo "===================== Checking if PUBLIC_API_BASE_URL was injected..."
+          grep -r "api.chenmo1212.cn" dist/client/ || echo "API URL not found in build output"
 
       - name: Deploy to Server
         uses: easingthemes/ssh-deploy@v2.2.11
