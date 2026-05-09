@@ -468,16 +468,27 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 	function markdownToHtml(markdown) {
 		let html = markdown;
 		
+		// Horizontal rules (must come before other processing)
+		html = html.replace(/^---+$/gim, '<hr>');
+		
 		// Headers
 		html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
 		html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
 		html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+		
+		// Blockquotes (handle multi-line blockquotes)
+		html = html.replace(/^> (.+)$/gim, '<blockquote>$1</blockquote>');
+		// Merge consecutive blockquotes
+		html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
 		
 		// Bold
 		html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 		
 		// Italic
 		html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+		
+		// Images (must come before links!)
+		html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
 		
 		// Links
 		html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
@@ -488,6 +499,14 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 		
 		// Wrap in paragraphs
 		html = '<p>' + html + '</p>';
+		
+		// Clean up empty paragraphs and fix blockquote/hr wrapping
+		html = html.replace(/<p><\/p>/g, '');
+		html = html.replace(/<p>(<h[1-6]>)/g, '$1');
+		html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+		html = html.replace(/<p>(<blockquote>)/g, '$1');
+		html = html.replace(/(<\/blockquote>)<\/p>/g, '$1');
+		html = html.replace(/<p>(<hr>)<\/p>/g, '$1');
 		
 		return html;
 	}
