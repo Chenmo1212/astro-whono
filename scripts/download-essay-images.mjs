@@ -79,20 +79,31 @@ function downloadImage(url, destPath) {
 }
 
 /**
- * Get file extension from URL or content-type
+ * Get filename from URL
  * @param {string} url - Image URL
- * @returns {string} - File extension
+ * @returns {string} - Original filename from URL
  */
-function getFileExtension(url) {
-    const urlPath = new URL(url).pathname;
-    const ext = path.extname(urlPath);
+function getFilenameFromUrl(url) {
+    try {
+        const urlPath = new URL(url).pathname;
+        const filename = path.basename(urlPath);
 
-    if (ext && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(ext)) {
-        return ext;
+        // If filename has a valid image extension, return it
+        if (filename && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(filename)) {
+            return filename;
+        }
+
+        // Otherwise, try to get just the extension
+        const ext = path.extname(urlPath);
+        if (ext && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(ext)) {
+            return `image${ext}`;
+        }
+    } catch (e) {
+        // If URL parsing fails, return default
     }
 
     // Default to .jpg if no extension found
-    return '.jpg';
+    return 'image.jpg';
 }
 
 /**
@@ -125,18 +136,25 @@ async function processEssayFile(filename) {
     // Download each image
     for (let i = 0; i < images.length; i++) {
         const { url, alt } = images[i];
-        const ext = getFileExtension(url);
 
-        // Use alt text as filename, or fallback to image1, image2, etc.
-        let imageName = alt || `image${i + 1}`;
-        // Sanitize filename
-        imageName = imageName.replace(/[^a-zA-Z0-9_\-]/g, '_');
-        const destFilename = `${imageName}${ext}`;
-        const destPath = path.join(essayImageDir, destFilename);
+        // Get original filename from URL
+        let destFilename = getFilenameFromUrl(url);
+
+        // If multiple images have the same filename, add index to avoid overwriting
+        const baseName = path.parse(destFilename).name;
+        const ext = path.parse(destFilename).ext;
+        let finalPath = path.join(essayImageDir, destFilename);
+        let counter = 1;
+
+        while (fs.existsSync(finalPath)) {
+            destFilename = `${baseName}_${counter}${ext}`;
+            finalPath = path.join(essayImageDir, destFilename);
+            counter++;
+        }
 
         try {
             console.log(`   ⬇️  Downloading: ${url}`);
-            await downloadImage(url, destPath);
+            await downloadImage(finalPath, finalPath);
             console.log(`   ✅ Saved to: ${destFilename}`);
         } catch (error) {
             console.error(`   ❌ Failed to download ${url}: ${error.message}`);
