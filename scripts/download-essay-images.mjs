@@ -154,7 +154,7 @@ async function processEssayFile(filename) {
 
         try {
             console.log(`   ⬇️  Downloading: ${url}`);
-            await downloadImage(finalPath, finalPath);
+            await downloadImage(url, finalPath);
             console.log(`   ✅ Saved to: ${destFilename}`);
         } catch (error) {
             console.error(`   ❌ Failed to download ${url}: ${error.message}`);
