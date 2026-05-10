@@ -67,6 +67,13 @@ const withBase = createWithBase(base);
     <link rel="icon" type="image/svg+xml" sizes="any" href={withBase('favicon.svg')} />
     <link rel="icon" type="image/png" sizes="32x32" href={withBase('favicon-32x32.png')} />
     <link rel="apple-touch-icon" sizes="180x180" href={withBase('apple-touch-icon.png')} />
+    
+    <!-- Preload critical fonts for better performance -->
+    <link rel="preload" href="/fonts/noto-serif-sc-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/noto-serif-sc-400-cjk-common.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/lxgw-wenkai-lite-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/lxgw-wenkai-lite-cjk-common.woff2" as="font" type="font/woff2" crossorigin />
+    
     <title>{fullTitle}</title>
     {metaDescription && <meta name="description" content={metaDescription} />}
     {canonical && <link rel="canonical" href={canonical} />}
