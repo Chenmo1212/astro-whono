@@ -141,7 +141,7 @@ const assertUniqueEssaySlugs = (entries: readonly EssayEntry[]) => {
 const orderByEssayDate = (a: EssayEntry, b: EssayEntry) => b.data.date.valueOf() - a.data.date.valueOf();
 const shouldMemoizeEssayQueries = import.meta.env.PROD;
 const shouldMemoizeMemoQueries = import.meta.env.PROD;
-const MAX_ESSAY_INDEX_TEXT = 600;
+const MAX_ESSAY_INDEX_TEXT = 4000;
 
 let sortedEssaysPromise: Promise<EssayEntry[]> | null = null;
 let visibleEssaysPromise: Promise<EssayEntry[]> | null = null;

@@ -2,6 +2,8 @@
    只承载 memo 页面私有规则；禁止放共享正文样式或其他页面特例。
 */
 
+@import "./animations.css";
+
 .memo-page {
   --memo-intro-mb: 32px;
   --memo-toc-mt: 18px;
@@ -10,10 +12,12 @@
 
 .memo-page .intro {
   margin-bottom: var(--memo-intro-mb);
+  animation: fadeUp 0.45s ease both 0.07s;
 }
 
 .memo-toc {
   margin: 18px 0 46px;
+  animation: fadeUp 0.45s ease both 0.12s;
 }
 
 .memo-page .memo-toc {

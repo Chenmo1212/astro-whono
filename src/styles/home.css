@@ -2,7 +2,10 @@
    只承载首页私有规则；禁止回填 about/memo 或正文相关样式。
 */
 
+@import "./animations.css";
+
 .hero {
+  animation: fadeUp 0.5s ease both;
   width: 100%;
   border-radius: 6px;
   overflow: hidden;
@@ -18,6 +21,7 @@
 
 .home .intro {
   margin-top: 16px;
+  animation: fadeUp 0.45s ease both 0.07s;
 }
 
 .home--no-hero .intro {
@@ -55,6 +59,7 @@
 .section-title--index {
   margin-left: 14px;
   margin-top: 4px;
+  animation: fadeUp 0.45s ease both 0.12s;
 }
 
 .home--no-intro .section-title--index {

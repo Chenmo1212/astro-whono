@@ -1,0 +1,617 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import UiIcon from './UiIcon.astro';
+import { getVisibleEssays, getEssaySlug } from '../lib/content.ts';
+import { getPublished } from '../lib/content.ts';
+
+const pageTitleText = '搜索';
+const pageTitle = pageTitleText;
+const pageDescription = '搜索站点内容';
+
+// Get recent posts for the initial state
+const recentEssays = (await getVisibleEssays()).slice(0, 5);
+const recentBits = (await getPublished('bits')).slice(0, 5);
+const recentMemos = (await getPublished('memo')).slice(0, 5);
+
+// Combine and sort by date
+const allRecent = [
+  ...recentEssays.map(e => ({ 
+    type: 'essay' as const, 
+    title: e.data.title, 
+    slug: getEssaySlug(e),
+    date: e.data.date,
+    category: '随笔'
+  })),
+  ...recentBits.map(b => ({ 
+    type: 'bits' as const, 
+    title: b.data.title || '无标题', 
+    slug: b.id,
+    date: b.data.date,
+    category: '繁语'
+  })),
+  ...recentMemos.map(m => ({ 
+    type: 'memo' as const, 
+    title: m.data.title, 
+    slug: m.data.slug || m.id,
+    date: m.data.date || new Date(),
+    category: '小记'
+  }))
+].sort((a, b) => b.date.valueOf() - a.date.valueOf()).slice(0, 5);
+
+// Get common tags from essays
+const allEssays = await getVisibleEssays();
+const tagCounts = new Map<string, number>();
+for (const essay of allEssays) {
+  for (const tag of essay.data.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+  }
+}
+const hotTags = Array.from(tagCounts.entries())
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 8)
+  .map(([tag]) => tag);
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} activeNavId="search">
+  <div
+    class="entry-filters search-page-container"
+    data-entry-filters
+    data-index-url="/archive/index.json"
+  >
+    <div class="search-page-wrapper">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-heading">
+          <div class="page-title-row">
+            <h1 class="page-title">搜索</h1>
+          </div>
+          <span class="page-subtitle">
+            <span class="page-subtitle__text">在此处搜你想找的</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Search Box -->
+      <div class="search-box">
+        <span class="search-box__icon">
+          <UiIcon name="search" size={15} />
+        </span>
+        <div class="entry-search entry-search--standalone is-open" data-entry-search>
+          <input
+            data-entry-search-input
+            type="search"
+            class="search-box__input"
+            placeholder="输入关键词，如「时间」「阅读」「代码」…"
+            autocomplete="off"
+            aria-label="搜索内容"
+            autofocus
+          />
+          <button class="search-box__clear" id="clear-btn" aria-label="清除">×</button>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="filter-bar">
+        <div class="filter-bar__tabs">
+          <button class="filter-tab active" data-filter="all">全部</button>
+          <button class="filter-tab" data-filter="essay">随笔</button>
+          <button class="filter-tab" data-filter="bits">繁语</button>
+          <button class="filter-tab" data-filter="memo">小记</button>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="search-status" id="search-status"></div>
+
+      <!-- Results Container -->
+      <div class="search-results">
+        <div id="results-container" class="results" data-search-results-section>
+          <!-- Initial placeholder -->
+          <div class="search-results__placeholder" data-search-placeholder>
+            <svg class="search-results__icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <p class="search-results__text">输入关键词开始搜索</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Initial State (shown before search) -->
+      <div id="initial-state">
+        {hotTags.length > 0 && (
+          <div class="hot-section">
+            <p class="hot-section__label">常见词</p>
+            <div class="hot-tags" id="hot-tags">
+              {hotTags.map(tag => (
+                <button class="hot-tag" data-tag={tag}>{tag}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {allRecent.length > 0 && (
+          <div class="recent-section">
+            <p class="recent-section__label">最近更新</p>
+            <div class="recent-list" id="recent-list">
+              {allRecent.map(item => (
+                <div class="recent-item" data-slug={item.slug} data-title={item.title}>
+                  <span class="recent-item__title">{item.title}</span>
+                  <span class="recent-item__cat">{item.category}</span>
+                  <span class="recent-item__date">
+                    {item.date.toISOString().slice(0, 7)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <style is:global>
+    .search-page-container {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .search-page-wrapper {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      animation: fadeUp 0.5s ease both;
+      padding: 0 0 50px 0;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      margin-bottom: 44px;
+      animation: fadeUp 0.45s ease both;
+    }
+
+    /* ── Search box ── */
+    .search-box {
+      position: relative;
+      margin-bottom: 44px;
+      animation: fadeUp 0.45s ease both 0.07s;
+    }
+
+    .search-box__icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--faint);
+      z-index: 1;
+    }
+
+    .entry-search--standalone {
+      display: block;
+    }
+
+    .search-box__input {
+      width: 100%;
+      padding: 13px 44px 13px 42px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--bg);
+      font-family: "Noto Serif SC", serif;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      letter-spacing: 0.03em;
+    }
+
+    /* Hide native search input clear button */
+    .search-box__input::-webkit-search-cancel-button {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .search-box__input::-ms-clear {
+      display: none;
+    }
+
+    .search-box__input::placeholder {
+      color: var(--faint);
+      font-style: italic;
+      font-family: Georgia, serif;
+      font-size: 15px;
+    }
+
+    .search-box__input:focus {
+      border-color: var(--muted);
+      box-shadow: 0 0 0 3px rgba(87, 83, 78, 0.06);
+    }
+
+    .search-box__clear {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: none;
+      color: var(--faint);
+      transition: color 0.15s;
+      font-size: 18px;
+      line-height: 1;
+      z-index: 1;
+    }
+
+    .search-box__clear:hover {
+      color: var(--muted);
+    }
+
+    .search-box__clear.visible {
+      display: block;
+    }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 36px;
+      border-bottom: 1px solid var(--border);
+      animation: fadeUp 0.45s ease both 0.12s;
+    }
+
+    .filter-bar__label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: Georgia, serif;
+      font-style: italic;
+      padding: 0 16px 0 0;
+      border-right: 1px solid var(--border);
+      margin-right: 0;
+      line-height: 38px;
+      white-space: nowrap;
+    }
+
+    .filter-bar__tabs {
+      display: flex;
+      gap: 0;
+    }
+
+    .filter-tab {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: "Noto Serif SC", serif;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 18px;
+      height: 38px;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .filter-tab:hover {
+      color: var(--text);
+    }
+
+    .filter-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--text);
+    }
+
+    /* ── Status line ── */
+    .search-status {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: Georgia, serif;
+      font-style: italic;
+      margin-bottom: 24px;
+      min-height: 20px;
+      animation: fadeUp 0.45s ease both 0.15s;
+      letter-spacing: 0.03em;
+    }
+
+    .entry-search-feedback {
+      margin: 0;
+    }
+
+    /* ── Results ── */
+    .search-results {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .results {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-item {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeUp 0.35s ease both;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .result-item:first-child {
+      border-top: 1px solid var(--border);
+    }
+
+    .result-item:hover .result-item__title {
+      text-decoration: underline;
+      text-decoration-color: var(--faint);
+      text-underline-offset: 3px;
+    }
+
+    .result-item__meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 7px;
+    }
+
+    .result-item__category {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: "Noto Serif SC", serif;
+      letter-spacing: 0.08em;
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+    }
+
+    .result-item__date {
+      font-size: 12px;
+      color: var(--faint);
+      font-family: Georgia, serif;
+    }
+
+    .result-item__title {
+      font-family: "Noto Serif SC", serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 8px;
+      letter-spacing: 0.03em;
+      line-height: 1.5;
+    }
+
+    .result-item__excerpt {
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.75;
+      font-family: "Noto Serif SC", serif;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .result-item__excerpt mark,
+    .result-item__title mark {
+      background: #fef3c7;
+      color: var(--text);
+      padding: 0 1px;
+      border-radius: 1px;
+    }
+
+    :root[data-theme="dark"] .result-item__excerpt mark,
+    :root[data-theme="dark"] .result-item__title mark {
+      background: #78350f;
+    }
+
+    /* ── Search placeholder ── */
+    .search-results__placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 64px 0 48px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .search-results__icon {
+      margin-bottom: 20px;
+      opacity: 0.25;
+      color: var(--text);
+    }
+
+    .search-results__text {
+      font-family: "Noto Serif SC", serif;
+      font-size: 15px;
+      color: var(--muted);
+      margin: 0;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Empty / initial states ── */
+    .state-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 64px 0 48px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .state-panel__icon {
+      margin-bottom: 20px;
+      opacity: 0.25;
+      color: var(--text);
+    }
+
+    .state-panel__title {
+      font-family: "Noto Serif SC", serif;
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.03em;
+    }
+
+    .state-panel__hint {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--faint);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* ── Hot tags ── */
+    .hot-section {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      animation: fadeUp 0.45s ease both 0.2s;
+    }
+
+    .hot-section__label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: "Noto Serif SC", serif;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+    }
+
+    .hot-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hot-tag {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 5px 14px;
+      font-family: "Noto Serif SC", serif;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      letter-spacing: 0.04em;
+    }
+
+    .hot-tag:hover {
+      border-color: var(--muted);
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── Recent section ── */
+    .recent-section {
+      margin-top: 36px;
+      animation: fadeUp 0.45s ease both 0.25s;
+    }
+
+    .recent-section__label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: "Noto Serif SC", serif;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+    }
+
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .recent-item:first-child {
+      border-top: 1px solid var(--border);
+    }
+
+    .recent-item:hover {
+      opacity: 0.7;
+    }
+
+    .recent-item__title {
+      font-family: "Noto Serif SC", serif;
+      font-size: 14px;
+      color: var(--text);
+      flex: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .recent-item__date {
+      font-family: Georgia, serif;
+      font-size: 12px;
+      color: var(--faint);
+      white-space: nowrap;
+    }
+
+    .recent-item__cat {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: "Noto Serif SC", serif;
+      white-space: nowrap;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 700px) {
+      .search-page-wrapper {
+        padding: 36px 24px 60px;
+      }
+
+      .page-header {
+        margin-bottom: 32px;
+      }
+
+      .filter-bar__label {
+        padding: 0 12px 0 0;
+      }
+
+      .filter-tab {
+        padding: 0 14px;
+        font-size: 11px;
+      }
+
+      .recent-item {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .recent-item__title {
+        flex-basis: 100%;
+      }
+    }
+  </style>
+
+  <script>
+    import '../scripts/entry-search.ts';
+    import '../scripts/search-page-enhanced.ts';
+  </script>
+</BaseLayout>

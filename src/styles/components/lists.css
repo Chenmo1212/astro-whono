@@ -2,11 +2,14 @@
    负责通用列表与归档布局；禁止放页面专属卡片或页面私有间距调优。
 */
 
+@import "../animations.css";
+
 .list {
   display: flex;
   flex-direction: column;
   gap: 0;
   margin-top: 16px;
+  animation: fadeUp 0.45s ease both 0.15s;
 }
 
 .page-header.page-header--with-search {
@@ -253,6 +256,7 @@
 .archive-year {
   margin: 28px 0 6px;
   font-size: 20px;
+  animation: fadeUp 0.45s ease both;
 }
 
 .archive-list {
@@ -260,6 +264,7 @@
   flex-direction: column;
   gap: 18px;
   padding: 0 0 10px;
+  animation: fadeUp 0.45s ease both 0.07s;
 }
 
 .archive-row {

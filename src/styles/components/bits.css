@@ -2,6 +2,8 @@
    只包含 /bits/ 页面相关样式，避免干扰通用列表。
 */
 
+@import "../animations.css";
+
 /* Bits（絮语） */
 
 .bits-toolbar {
@@ -13,6 +15,7 @@
   /* border removed */
   padding-bottom: 0;
   margin: 9px 0 4px;
+  animation: fadeUp 0.5s ease both;
 }
 
 .bits-controls {

@@ -2,8 +2,11 @@
    只承载 about 页面私有规则；禁止回填共享布局或正文规则。
 */
 
+@import "./animations.css";
+
 .page-header.page-header--about {
   align-items: flex-end;
+  animation: fadeUp 0.5s ease both;
 }
 
 .page-header.page-header--about .page-actions {
@@ -22,16 +25,19 @@
 .about-intro-line {
   margin: 30px 0 0;
   font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  animation: fadeUp 0.45s ease both 0.07s;
 }
 
 .about-section-title {
   margin-top: 32px;
+  animation: fadeUp 0.45s ease both 0.12s;
 }
 
 .qa-list {
   margin-top: 12px;
   display: grid;
   gap: 18px;
+  animation: fadeUp 0.45s ease both 0.15s;
 }
 
 .qa-item {
@@ -83,6 +89,7 @@
 
 .contact-block {
   margin-top: 12px;
+  animation: fadeUp 0.45s ease both 0.2s;
 }
 
 .contact-note {
@@ -152,6 +159,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px 28px;
+  animation: fadeUp 0.45s ease both 0.15s;
 }
 
 .tech-group-title {
@@ -194,6 +202,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px 40px;
+  animation: fadeUp 0.45s ease both 0.15s;
 }
 
 .site-guide-item {

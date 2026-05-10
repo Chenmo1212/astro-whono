@@ -18,11 +18,10 @@ const {
   currentTag = null,
   dialogTitleId,
   fallbackListId,
-  headerClass = 'page-header page-header--with-search',
+  headerClass = 'page-header',
   pageTitleText,
   pickerHref,
   rssHref,
-  searchAriaLabel,
   subtitleText = null,
   tagOptions = []
 } = Astro.props as {
@@ -33,7 +32,6 @@ const {
   pageTitleText: string;
   pickerHref: string;
   rssHref: string;
-  searchAriaLabel: string;
   subtitleText?: string | null;
   tagOptions?: TagOption[];
 };
@@ -85,31 +83,6 @@ const tagTriggerText = currentTag ? '切换标签' : '#标签';
         )
       ) : null}
     </span>
-  </div>
-  <div class="page-actions">
-    <div class="entry-search" data-entry-search>
-      <div class="entry-search-panel" data-entry-search-panel aria-hidden="true">
-        <input
-          data-entry-search-input
-          type="search"
-          placeholder="搜索：标题 / 摘要 / 标签"
-          autocomplete="off"
-          aria-label={searchAriaLabel}
-        />
-        <p class="entry-search-feedback" data-entry-search-feedback aria-hidden="true" hidden></p>
-      </div>
-      <span class="entry-search-bridge" aria-hidden="true"></span>
-      <button
-        class="entry-search-toggle"
-        data-entry-search-toggle
-        type="button"
-        aria-label={searchAriaLabel}
-        aria-expanded="false"
-      >
-        <UiIcon name="search" class="icon" />
-      </button>
-      <p class="sr-only" data-entry-search-live role="status" aria-live="polite" aria-atomic="true"></p>
-    </div>
   </div>
 </div>
 

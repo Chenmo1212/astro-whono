@@ -44,7 +44,7 @@ import {
 
 export type SettingSource = 'new' | 'legacy' | 'default';
 
-export type SidebarNavId = 'essay' | 'bits' | 'memo' | 'archive' | 'about';
+export type SidebarNavId = 'essay' | 'bits' | 'memo' | 'archive' | 'about' | 'search';
 export type PageId = 'essay' | 'archive' | 'bits' | 'memo' | 'about';
 export type HeroPresetId = 'default' | 'none';
 export type SidebarDividerVariant = 'default' | 'subtle' | 'none';
@@ -392,7 +392,8 @@ const LEGACY_NAV: SidebarNavItem[] = [
   { id: 'bits', label: '絮语', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 2 },
   { id: 'memo', label: '小记', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 3 },
   { id: 'archive', label: '归档', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 4 },
-  { id: 'about', label: '关于', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 5 }
+  { id: 'about', label: '关于', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 5 },
+  { id: 'search', label: '搜索', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 6 }
 ];
 const LEGACY_NAV_ORDER = new Map<SidebarNavId, number>(LEGACY_NAV.map((item) => [item.id, item.order]));
 
@@ -534,7 +535,8 @@ const SIDEBAR_HREFS: Record<SidebarNavId, string> = {
   bits: '/bits/',
   memo: '/memo/',
   archive: '/archive/',
-  about: '/about/'
+  about: '/about/',
+  search: '/search/'
 };
 
 let cachedSettings: ThemeSettingsResolved | null = null;

@@ -24,7 +24,7 @@ export {
   normalizeAdminHeroImageSrc
 };
 
-export const ADMIN_NAV_IDS = ['essay', 'bits', 'memo', 'archive', 'about'] as const satisfies readonly SidebarNavId[];
+export const ADMIN_NAV_IDS = ['essay', 'bits', 'memo', 'archive', 'about', 'search'] as const satisfies readonly SidebarNavId[];
 export const ADMIN_PAGE_IDS = ['essay', 'archive', 'bits', 'memo', 'about'] as const satisfies readonly PageId[];
 export const ADMIN_SOCIAL_CUSTOM_LIMIT = 8;
 
