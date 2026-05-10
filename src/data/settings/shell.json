@@ -36,6 +36,13 @@
       "ornament": "·",
       "order": 5,
       "visible": true
+    },
+    {
+      "id": "search",
+      "label": "搜索",
+      "ornament": "·",
+      "order": 6,
+      "visible": true
     }
   ]
 }

@@ -25,7 +25,7 @@ export {
 };
 
 export const ADMIN_NAV_IDS = ['essay', 'bits', 'memo', 'archive', 'about', 'search'] as const satisfies readonly SidebarNavId[];
-export const ADMIN_PAGE_IDS = ['essay', 'archive', 'bits', 'memo', 'about'] as const satisfies readonly PageId[];
+export const ADMIN_PAGE_IDS = ['essay', 'archive', 'bits', 'memo', 'about', 'search'] as const satisfies readonly PageId[];
 export const ADMIN_SOCIAL_CUSTOM_LIMIT = 8;
 
 export const ADMIN_HERO_PRESETS = ['default', 'none'] as const satisfies readonly HeroPresetId[];
@@ -1186,6 +1186,55 @@ const fillAdminThemeSettingsUiCompatibilityDefaults = (
   };
 };
 
+const fillAdminThemeSettingsShellCompatibilityDefaults = (
+  rawShell: LooseRecord,
+  canonicalShell: LooseRecord
+): LooseRecord => {
+  const rawNav = rawShell.nav;
+  const canonicalNav = canonicalShell.nav;
+  
+  // If nav is not an array in either, return as-is
+  if (!Array.isArray(rawNav) || !Array.isArray(canonicalNav)) return rawShell;
+  
+  // Build a map of existing nav items by id
+  const rawNavMap = new Map<string, unknown>();
+  for (const item of rawNav) {
+    if (isRecord(item) && typeof item.id === 'string') {
+      rawNavMap.set(item.id, item);
+    }
+  }
+  
+  // Add any missing nav items from canonical (with their default values)
+  const mergedNav: unknown[] = [...rawNav];
+  for (const canonicalItem of canonicalNav) {
+    if (isRecord(canonicalItem) && typeof canonicalItem.id === 'string') {
+      if (!rawNavMap.has(canonicalItem.id)) {
+        mergedNav.push(canonicalItem);
+      }
+    }
+  }
+  
+  // Sort the merged nav items to match the canonical order for comparison
+  // This prevents false positives when the nav items are just in a different order
+  // Must match the sorting logic in sortSidebarNavItems
+  const sortedNav = mergedNav.sort((a, b) => {
+    if (!isRecord(a) || !isRecord(b)) return 0;
+    const aOrder = typeof a.order === 'number' ? a.order : 0;
+    const bOrder = typeof b.order === 'number' ? b.order : 0;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    
+    // Secondary sort by ADMIN_NAV_IDS index
+    const aId = typeof a.id === 'string' ? a.id : '';
+    const bId = typeof b.id === 'string' ? b.id : '';
+    return ADMIN_NAV_IDS.indexOf(aId as SidebarNavId) - ADMIN_NAV_IDS.indexOf(bId as SidebarNavId);
+  });
+  
+  return {
+    ...rawShell,
+    nav: sortedNav
+  };
+};
+
 export const fillAdminThemeSettingsGroupCompatibilityDefaults = (
   group: ThemeSettingsFileGroup,
   rawGroup: unknown,
@@ -1193,6 +1242,7 @@ export const fillAdminThemeSettingsGroupCompatibilityDefaults = (
 ): unknown => {
   if (!isRecord(rawGroup) || !isRecord(canonicalGroup)) return rawGroup;
   if (group === 'site') return fillAdminThemeSettingsSiteCompatibilityDefaults(rawGroup, canonicalGroup);
+  if (group === 'shell') return fillAdminThemeSettingsShellCompatibilityDefaults(rawGroup, canonicalGroup);
   if (group === 'ui') return fillAdminThemeSettingsUiCompatibilityDefaults(rawGroup, canonicalGroup);
   return rawGroup;
 };

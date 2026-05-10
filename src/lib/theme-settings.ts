@@ -45,7 +45,7 @@ import {
 export type SettingSource = 'new' | 'legacy' | 'default';
 
 export type SidebarNavId = 'essay' | 'bits' | 'memo' | 'archive' | 'about' | 'search';
-export type PageId = 'essay' | 'archive' | 'bits' | 'memo' | 'about';
+export type PageId = 'essay' | 'archive' | 'bits' | 'memo' | 'about' | 'search';
 export type HeroPresetId = 'default' | 'none';
 export type SidebarDividerVariant = 'default' | 'subtle' | 'none';
 export type HomeIntroLinkKey = 'archive' | 'essay' | 'bits' | 'memo' | 'about' | 'tag';
