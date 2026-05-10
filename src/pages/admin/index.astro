@@ -196,7 +196,7 @@ const statItems = overview && wordMetric
                       <Element class="admin-site-overview__recent-row" {...props}>
                         <span class="admin-site-overview__recent-meta">
                           <time datetime={entry.date ? entry.date.toISOString() : undefined}>
-                            {entry.shortDateLabel}
+                            {entry.dateOnly}
                           </time>
                           <span class="admin-site-overview__recent-type">{entry.collectionLabel}</span>
                         </span>
