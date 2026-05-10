@@ -91,11 +91,13 @@
 .nav a:hover {
   transform: scale(1.05);
   border-bottom-color: transparent;
+  color: var(--accent-hover);
 }
 
 .nav a[aria-current="page"] {
   text-decoration: underline;
   text-underline-offset: 5px;
+  color: var(--accent);
 }
 
 .nav .dot {

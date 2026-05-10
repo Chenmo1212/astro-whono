@@ -210,7 +210,7 @@
 }
 
 .list-item__title:hover {
-  color: #b88f8f;
+  color: var(--accent-hover);
 }
 
 .list-item__meta {

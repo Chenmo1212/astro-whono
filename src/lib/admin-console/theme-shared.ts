@@ -48,7 +48,7 @@ export const ADMIN_SIDEBAR_DIVIDER_OPTIONS = [
   { id: 'subtle', label: '弱化' },
   { id: 'none', label: '隐藏' }
 ] as const satisfies readonly {
-  id: SidebarDividerVariant;
+id: SidebarDividerVariant;
   label: string;
 }[];
 
