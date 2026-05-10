@@ -10,7 +10,7 @@
 
 .admin-images-browser__detail-layout {
   display: grid;
-  grid-template-columns: minmax(244px, 0.8fr) minmax(340px, 1.2fr);
+  grid-template-columns: minmax(244px, 0.8fr) minmax(340px, 0.8fr);
   gap: 0;
   align-items: stretch;
 }

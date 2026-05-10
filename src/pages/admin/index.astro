@@ -102,16 +102,15 @@ const statItems = overview && wordMetric
           <div class="admin-site-overview__section-head">
             <h3 id="admin-overview-structure">
               <AdminIcon name="layers" class="admin-site-overview__icon" size={14} />
-              内容结构
+              Essay 年份分布
             </h3>
           </div>
           <div class="admin-site-overview__structure-list">
             {
-              overview.collections.map((summary) => (
+              overview.yearShares.map((summary) => (
                 <div class="admin-site-overview__structure-row">
                   <div class="admin-site-overview__structure-copy">
                     <span>{summary.label}</span>
-                    <small>({summary.detail})</small>
                   </div>
                   <div
                     class="admin-site-overview__structure-bar"

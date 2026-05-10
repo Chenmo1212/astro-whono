@@ -72,6 +72,14 @@ export type AdminOverviewCollectionShare = {
   percentageLabel: string;
 };
 
+export type AdminOverviewYearShare = {
+  year: string;
+  label: string;
+  count: number;
+  percentage: number;
+  percentageLabel: string;
+};
+
 export type AdminOverviewTagSummary = {
   key: string;
   label: string;
@@ -95,6 +103,7 @@ export type AdminOverviewRecentPublication = {
   date: Date | null;
   dateLabel: string;
   shortDateLabel: string;
+  dateOnly: string;
 };
 
 export type AdminOverviewSystemStatusItemKey =
@@ -119,6 +128,7 @@ export type AdminOverviewSystemStatus = {
 export type AdminOverviewPublicSummary = {
   stats: AdminOverviewStats;
   collections: AdminOverviewCollectionShare[];
+  yearShares: AdminOverviewYearShare[];
   topTags: AdminOverviewTagSummary[];
   writingActivity: AdminOverviewActivityDay[];
   recentPublications: AdminOverviewRecentPublication[];
@@ -244,7 +254,8 @@ const getRecentEssayPublication = (entry: EssayEntry): AdminOverviewRecentPublic
     isDraft,
     date: entry.data.date,
     dateLabel: formatCompactDateUtc(entry.data.date),
-    shortDateLabel: formatShortDate(entry.data.date, true)
+    shortDateLabel: formatShortDate(entry.data.date, true),
+    dateOnly: formatISODateUtc(entry.data.date)
   };
 };
 
@@ -265,7 +276,8 @@ const getRecentBitsPublication = (
     isDraft,
     date: entry.data.date,
     dateLabel: formatDateTime(entry.data.date),
-    shortDateLabel: formatShortDate(entry.data.date)
+    shortDateLabel: formatShortDate(entry.data.date),
+    dateOnly: formatISODate(entry.data.date)
   };
 };
 
@@ -279,7 +291,8 @@ const getRecentMemoPublication = (entry: MemoEntry): AdminOverviewRecentPublicat
     isDraft,
     date: entry.data.date ?? null,
     dateLabel: entry.data.date ? formatCompactDate(entry.data.date) : '未设置日期',
-    shortDateLabel: formatShortDate(entry.data.date ?? null)
+    shortDateLabel: formatShortDate(entry.data.date ?? null),
+    dateOnly: entry.data.date ? formatISODate(entry.data.date) : '--'
   };
 };
 
@@ -329,6 +342,30 @@ const buildCollectionShares = (source: AdminOverviewPublicSource): AdminOverview
       label: COLLECTION_LABELS[key],
       detail: COLLECTION_DETAILS[key],
       count: counts[key],
+      percentage,
+      percentageLabel: `${percentage}%`
+    };
+  });
+};
+
+const buildYearShares = (essays: readonly EssayEntry[]): AdminOverviewYearShare[] => {
+  const yearCounts = new Map<string, number>();
+  
+  for (const essay of essays) {
+    const year = String(essay.data.date.getUTCFullYear());
+    yearCounts.set(year, (yearCounts.get(year) ?? 0) + 1);
+  }
+
+  const total = essays.length;
+  const years = Array.from(yearCounts.entries())
+    .sort((a, b) => b[0].localeCompare(a[0])); // Sort by year descending
+
+  return years.map(([year, count]) => {
+    const percentage = getPercentage(count, total);
+    return {
+      year,
+      label: `${year} 年`,
+      count,
       percentage,
       percentageLabel: `${percentage}%`
     };
@@ -486,6 +523,7 @@ export const buildAdminOverviewPublicSummary = (
       lastUpdate: getLatestUpdate(source)
     },
     collections: buildCollectionShares(source),
+    yearShares: buildYearShares(source.essays),
     topTags: topTags.slice(0, TOP_TAG_LIMIT).map((tag) => ({
       key: tag.key,
       label: tag.label,
