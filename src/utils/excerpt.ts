@@ -3,6 +3,7 @@ const MORE_REGEX = /<!--\s*more\s*-->/i;
 export type DerivedMarkdownText = {
   plainText: string;
   excerptText: string;
+  excerptMarkdown: string;
 };
 
 export function splitMore(md: string): string {
@@ -40,11 +41,44 @@ export function truncateText(text: string, maxChars = 120): string {
   return `${text.slice(0, Math.max(0, maxChars))}…`;
 }
 
+/**
+ * Convert simple markdown to HTML for excerpts
+ * Handles bold, italic, and basic inline formatting
+ * Note: Nested formatting (e.g., bold within italic) may not render correctly
+ */
+export function excerptMarkdownToHtml(markdown: string): string {
+  if (!markdown) return '';
+  
+  let html = markdown;
+  
+  // Bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Italic
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  
+  // Links - with URL validation to prevent XSS
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+    const trimmedUrl = url.trim();
+    // Block dangerous protocols
+    if (trimmedUrl.match(/^(javascript|data|vbscript):/i)) {
+      return text; // Return just the text without creating a link
+    }
+    return `<a href="${trimmedUrl}">${text}</a>`;
+  });
+  
+  // Code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  return html;
+}
+
 export function deriveMarkdownText(md: string): DerivedMarkdownText {
   if (!md) {
     return {
       plainText: '',
-      excerptText: ''
+      excerptText: '',
+      excerptMarkdown: ''
     };
   }
 
@@ -53,6 +87,7 @@ export function deriveMarkdownText(md: string): DerivedMarkdownText {
 
   return {
     plainText,
-    excerptText: excerptMarkdown === md ? plainText : cleanMarkdownToText(excerptMarkdown)
+    excerptText: excerptMarkdown === md ? plainText : cleanMarkdownToText(excerptMarkdown),
+    excerptMarkdown
   };
 }

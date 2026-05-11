@@ -10,6 +10,7 @@ import {
 import { getEssayDerivedText, getEssaySlug, getVisibleEssays } from '../lib/content';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../lib/theme-settings';
 import { createWithBase } from '../utils/format';
+import { truncateText } from '../utils/excerpt';
 
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
@@ -661,6 +662,10 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
       const slug = getEssaySlug(entry);
       const href = withBase(`/archive/${slug}/`);
       const visibleTags = getVisibleArticleMetaTags(entry.data.tags, 'home');
+      const derivedText = getEssayDerivedText(entry);
+      const excerptToShow = derivedText.excerptMarkdown
+        ? truncateText(derivedText.excerptMarkdown, 120)
+        : derivedText.excerpt;
       return (
         <EntryListItem
           href={href}
@@ -668,7 +673,7 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
           date={entry.data.date}
           visibleTags={visibleTags}
           articleMetaSettings={articleMeta}
-          excerpt={getEssayDerivedText(entry).excerpt}
+          excerpt={excerptToShow}
         />
       );
     })}

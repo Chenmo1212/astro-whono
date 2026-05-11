@@ -70,6 +70,7 @@ export type EssayDerivedText = {
   plainText: string;
   text: string;
   excerpt: string;
+  excerptMarkdown: string;
 };
 export type MemoDerivedText = {
   plainText: string;
@@ -164,12 +165,13 @@ const loadSortedEssays = async ({ includeDraft }: EssayQueryOptions = {}) => {
 };
 
 const buildEssayDerivedText = (entry: EssayEntry): EssayDerivedText => {
-  const { plainText, excerptText } = deriveMarkdownText(entry.body ?? '');
+  const { plainText, excerptText, excerptMarkdown } = deriveMarkdownText(entry.body ?? '');
 
   return {
     plainText,
     text: plainText.length > MAX_ESSAY_INDEX_TEXT ? plainText.slice(0, MAX_ESSAY_INDEX_TEXT) : plainText,
-    excerpt: truncateText(excerptText, 120)
+    excerpt: truncateText(excerptText, 120),
+    excerptMarkdown
   };
 };
 

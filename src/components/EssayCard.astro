@@ -1,5 +1,6 @@
 ---
 import { formatISODateUtc } from '../utils/format';
+import { excerptMarkdownToHtml } from '../utils/excerpt';
 import type { ArticleMetaSettings } from '../lib/theme-settings';
 
 const {
@@ -23,6 +24,7 @@ const {
 };
 const displayBadge = badge.trim() ? badge : '随笔';
 const shouldShowMetaLine = articleMetaSettings.showDate || (articleMetaSettings.showTags && visibleTags.length > 0);
+const excerptHtml = excerpt ? excerptMarkdownToHtml(excerpt) : null;
 ---
 
 <a
@@ -37,7 +39,7 @@ const shouldShowMetaLine = articleMetaSettings.showDate || (articleMetaSettings.
       <h2 class="list-item__title" style="margin:0;">{title}</h2>
     </div>
   </div>
-  {excerpt ? <p class="list-item__excerpt">{excerpt}</p> : null}
+  {excerptHtml ? <p class="list-item__excerpt" set:html={excerptHtml} /> : null}
   {shouldShowMetaLine ? (
     <div class="meta-line meta-line--items">
       {articleMetaSettings.showDate ? (

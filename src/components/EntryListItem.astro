@@ -1,5 +1,6 @@
 ---
 import { formatISODateUtc } from '../utils/format';
+import { excerptMarkdownToHtml } from '../utils/excerpt';
 import type { ArticleMetaSettings } from '../lib/theme-settings';
 
 const {
@@ -19,13 +20,14 @@ const {
 };
 
 const shouldShowMetaLine = articleMetaSettings.showDate || (articleMetaSettings.showTags && visibleTags.length > 0);
+const excerptHtml = excerpt ? excerptMarkdownToHtml(excerpt) : null;
 ---
 
 <a class="list-item list-item--link" href={href}>
   <div class="list-item__row">
     <h3 class="list-item__title">{title}</h3>
   </div>
-  {excerpt ? <p class="list-item__excerpt">{excerpt}</p> : null}
+  {excerptHtml ? <p class="list-item__excerpt" set:html={excerptHtml} /> : null}
   {shouldShowMetaLine ? (
     <div class="meta-line meta-line--items">
       {articleMetaSettings.showDate ? (
