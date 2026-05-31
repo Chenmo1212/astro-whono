@@ -6,6 +6,7 @@ import AdminPageSection from './AdminPageSection.astro';
 import AdminSidebarSection from './AdminSidebarSection.astro';
 import AdminSiteSection from './AdminSiteSection.astro';
 import AdminUiSection from './AdminUiSection.astro';
+import AdminImageProviderSection from './AdminImageProviderSection.astro';
 
 interface Props {
   bootstrapText: string;
@@ -34,6 +35,10 @@ const {
   settingsEndpoint,
   socialCustomLimit
 } = Astro.props;
+
+// Parse bootstrap state to get qiniu config
+const bootstrapState = JSON.parse(bootstrapText);
+const qiniuConfig = bootstrapState?.payload?.settings?.ui?.imageProvider?.qiniu;
 ---
 
 <section class="admin-theme-console" data-admin-root data-settings-endpoint={settingsEndpoint}>
@@ -70,6 +75,14 @@ const {
     />
 
     <AdminUiSection />
+
+    <AdminImageProviderSection
+      qiniuAccessKey={qiniuConfig?.accessKey || ''}
+      qiniuSecretKey={qiniuConfig?.secretKey || ''}
+      qiniuBucket={qiniuConfig?.bucket || ''}
+      qiniuDomain={qiniuConfig?.domain || ''}
+      qiniuAutoReplace={qiniuConfig?.autoReplace || false}
+    />
   </form>
 
   <div id="admin-actions-sentinel" class="admin-actions__sentinel" aria-hidden="true"></div>

@@ -26,7 +26,10 @@ const listItem: AdminImageListItem = {
   width: 1200,
   height: 800,
   size: 2048,
-  mimeType: 'image/png'
+  mimeType: 'image/png',
+  providerStatus: null,
+  providerUrl: null,
+  providerUploadedAt: null
 };
 
 const createState = (state: Partial<AdminImageState> = {}): AdminImageState => ({
@@ -99,7 +102,10 @@ describe('admin-images/data', () => {
         height: listItem.height,
         size: listItem.size,
         mimeType: listItem.mimeType,
-        previewSrc: listItem.previewSrc
+        previewSrc: listItem.previewSrc,
+        providerStatus: listItem.providerStatus,
+        providerUrl: listItem.providerUrl,
+        providerUploadedAt: listItem.providerUploadedAt
       }
     });
 

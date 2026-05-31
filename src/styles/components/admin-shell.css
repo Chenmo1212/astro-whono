@@ -82,6 +82,18 @@
   --admin-status-danger-bg: color-mix(in srgb, var(--admin-status-danger-accent) 11%, var(--panel) 89%);
   --admin-status-danger-border: color-mix(in srgb, var(--admin-status-danger-accent) 32%, var(--border) 68%);
   --admin-status-danger-text: color-mix(in srgb, var(--admin-status-danger-accent) 62%, var(--text) 38%);
+  --admin-status-badge-gray-bg: color-mix(in srgb, var(--muted) 12%, transparent 88%);
+  --admin-status-badge-gray-border: color-mix(in srgb, var(--muted) 22%, transparent 78%);
+  --admin-status-badge-gray-text: color-mix(in srgb, var(--muted) 78%, var(--text) 22%);
+  --admin-status-badge-yellow-bg: color-mix(in srgb, #fbbf24 15%, transparent 85%);
+  --admin-status-badge-yellow-border: color-mix(in srgb, #fbbf24 30%, transparent 70%);
+  --admin-status-badge-yellow-text: #f59e0b;
+  --admin-status-badge-green-bg: color-mix(in srgb, #10b981 15%, transparent 85%);
+  --admin-status-badge-green-border: color-mix(in srgb, #10b981 30%, transparent 70%);
+  --admin-status-badge-green-text: #059669;
+  --admin-status-badge-red-bg: color-mix(in srgb, #ef4444 15%, transparent 85%);
+  --admin-status-badge-red-border: color-mix(in srgb, #ef4444 30%, transparent 70%);
+  --admin-status-badge-red-text: #dc2626;
   --admin-status-loading-bg: var(--admin-status-neutral-accent);
   --admin-status-ready-bg: #2f9f62;
   --admin-status-ok-bg: var(--admin-status-success-accent);
@@ -144,6 +156,18 @@
   --admin-field-placeholder: color-mix(in srgb, var(--faint) 82%, var(--muted) 18%);
   --admin-field-invalid-bg: color-mix(in srgb, var(--admin-status-danger-bg) 42%, var(--bg) 58%);
   --admin-field-invalid-ring: color-mix(in srgb, var(--admin-status-danger-accent) 34%, transparent);
+  --admin-status-badge-gray-bg: color-mix(in srgb, var(--muted) 18%, transparent 82%);
+  --admin-status-badge-gray-border: color-mix(in srgb, var(--muted) 25%, transparent 75%);
+  --admin-status-badge-gray-text: color-mix(in srgb, var(--muted) 85%, var(--text) 15%);
+  --admin-status-badge-yellow-bg: color-mix(in srgb, #fbbf24 20%, transparent 80%);
+  --admin-status-badge-yellow-border: color-mix(in srgb, #fbbf24 35%, transparent 65%);
+  --admin-status-badge-yellow-text: #fbbf24;
+  --admin-status-badge-green-bg: color-mix(in srgb, #10b981 20%, transparent 80%);
+  --admin-status-badge-green-border: color-mix(in srgb, #10b981 35%, transparent 65%);
+  --admin-status-badge-green-text: #34d399;
+  --admin-status-badge-red-bg: color-mix(in srgb, #ef4444 20%, transparent 80%);
+  --admin-status-badge-red-border: color-mix(in srgb, #ef4444 35%, transparent 65%);
+  --admin-status-badge-red-text: #f87171;
 }
 
 .admin-console {

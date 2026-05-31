@@ -58,7 +58,7 @@ export function excerptMarkdownToHtml(markdown: string): string {
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
   
   // Links - with URL validation to prevent XSS
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
     const trimmedUrl = url.trim();
     // Block dangerous protocols
     if (trimmedUrl.match(/^(javascript|data|vbscript):/i)) {

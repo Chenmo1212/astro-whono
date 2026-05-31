@@ -1,0 +1,107 @@
+---
+import AdminIcon from './AdminIcon.astro';
+
+interface Props {
+  qiniuAccessKey: string;
+  qiniuSecretKey: string;
+  qiniuBucket: string;
+  qiniuDomain: string;
+  qiniuAutoReplace: boolean;
+}
+
+const { qiniuAccessKey, qiniuSecretKey, qiniuBucket, qiniuDomain, qiniuAutoReplace } = Astro.props;
+---
+
+<fieldset class="admin-group">
+  <legend class="admin-group__legend">
+    <AdminIcon name="images" class="admin-group__legend-icon" size={14} />
+    <span class="admin-group__legend-copy">
+      <span class="admin-group__legend-zh">图片服务商配置</span>
+      <span class="admin-group__legend-en">Image Provider</span>
+    </span>
+  </legend>
+  <div class="admin-grid">
+    <div class="admin-field admin-field--full">
+      <p class="admin-label">
+        <span class="admin-label__main">七牛云 CDN 配置</span>
+        <span class="admin-label__hint">（用于图片上传和 CDN 加速）</span>
+      </p>
+    </div>
+    <label class="admin-field">
+      <span class="admin-label">
+        <span class="admin-label__main">Access Key</span>
+        <span class="admin-label__hint">（七牛云访问密钥）</span>
+      </span>
+      <input
+        class="admin-field__control"
+        id="qiniu-access-key"
+        type="text"
+        autocomplete="off"
+        value={qiniuAccessKey}
+        placeholder="请输入 Access Key"
+        readonly
+      />
+    </label>
+    <label class="admin-field">
+      <span class="admin-label">
+        <span class="admin-label__main">Secret Key</span>
+        <span class="admin-label__hint">（七牛云私钥）</span>
+      </span>
+      <input
+        class="admin-field__control"
+        id="qiniu-secret-key"
+        type="password"
+        autocomplete="off"
+        value={qiniuSecretKey}
+        placeholder="请输入 Secret Key"
+        readonly
+      />
+    </label>
+    <label class="admin-field">
+      <span class="admin-label">
+        <span class="admin-label__main">存储空间名称</span>
+        <span class="admin-label__hint">（Bucket Name）</span>
+      </span>
+      <input
+        class="admin-field__control"
+        id="qiniu-bucket"
+        type="text"
+        autocomplete="off"
+        value={qiniuBucket}
+        placeholder="请输入 Bucket 名称"
+        readonly
+      />
+    </label>
+    <label class="admin-field">
+      <span class="admin-label">
+        <span class="admin-label__main">CDN 域名</span>
+        <span class="admin-label__hint">（用于访问图片的域名）</span>
+      </span>
+      <input
+        class="admin-field__control"
+        id="qiniu-domain"
+        type="url"
+        autocomplete="off"
+        value={qiniuDomain}
+        placeholder="https://cdn.example.com"
+        readonly
+      />
+    </label>
+    <label class="admin-field admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">自动替换图片链接</span>
+        <span class="admin-label__hint">（启用后自动将本地图片链接替换为 CDN 链接）</span>
+      </span>
+      <label class="admin-toggle">
+        <input
+          id="qiniu-auto-replace"
+          type="checkbox"
+          checked={qiniuAutoReplace}
+          disabled
+        />
+        <span class="admin-toggle__slider"></span>
+        <span class="admin-toggle__label">{qiniuAutoReplace ? '已启用' : '已禁用'}</span>
+      </label>
+    </label>
+  </div>
+</fieldset>

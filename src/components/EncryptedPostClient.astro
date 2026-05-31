@@ -358,7 +358,7 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 	}
 </style>
 
-<script define:vars={{ postId, apiBaseUrl }}>
+<script is:inline define:vars={{ postId, apiBaseUrl }}>
 	const form = document.getElementById('password-form');
 	const input = document.getElementById('password-input');
 	const submitButton = form.querySelector('button[type="submit"]');

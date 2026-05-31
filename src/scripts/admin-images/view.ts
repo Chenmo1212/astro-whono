@@ -327,6 +327,109 @@ export const syncRenderedCardMeta = ({
   thumb.append(nextOverlay);
 };
 
+const renderProviderStatusSection = (
+  item: AdminImageBrowseItem,
+  detailMeta: AdminImageClientMeta | null,
+  uploadIcon: string,
+  copyIcon: string,
+  statusIcons: { circle: string; circleCheck: string; circleX: string; loaderCircle: string }
+): string => {
+  // Get Provider status from detailMeta (cache) instead of item
+  // This ensures we show the latest status after upload
+  const providerStatus = detailMeta?.providerStatus ?? null;
+  const providerUrl = detailMeta?.providerUrl ?? null;
+  const providerUploadedAt = detailMeta?.providerUploadedAt ?? null;
+
+  // Determine status display
+  let statusBadgeClass = 'admin-images-browser__badge admin-images-browser__status-badge';
+  let statusIcon = '';
+  let statusText = '';
+  let showUploadButton = false;
+  let buttonDisabled = false;
+  let buttonText = '上传至CDN';
+
+  if (providerStatus === null || providerStatus === undefined || providerStatus === 'not_uploaded') {
+    statusBadgeClass += ' admin-images-browser__status-badge--gray';
+    statusIcon = statusIcons.circle;
+    statusText = '未上传至CDN';
+    showUploadButton = true;
+  } else if (providerStatus === 'uploading') {
+    statusBadgeClass += ' admin-images-browser__status-badge--yellow';
+    statusIcon = statusIcons.loaderCircle;
+    statusText = '正在上传...';
+    showUploadButton = true;
+    buttonDisabled = true;
+  } else if (providerStatus === 'uploaded') {
+    statusBadgeClass += ' admin-images-browser__status-badge--green';
+    statusIcon = statusIcons.circleCheck;
+    statusText = '已上传至CDN';
+    showUploadButton = false;
+  } else if (providerStatus === 'failed') {
+    statusBadgeClass += ' admin-images-browser__status-badge--red';
+    statusText = '上传失败';
+    statusIcon = statusIcons.circleX;
+    showUploadButton = true;
+    buttonText = '重试上传';
+  }
+
+  // Format upload time if available
+  let uploadTimeText = '';
+  if (providerStatus === 'uploaded' && providerUploadedAt) {
+    const uploadDate = new Date(providerUploadedAt);
+    uploadTimeText = uploadDate.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
+  return `
+    <div class="admin-images-browser__detail-field admin-images-browser__provider-section">
+      <h4 class="admin-images-browser__detail-label">
+        Provider CDN状态
+        ${statusIcon ? `<span class="${statusBadgeClass}" title="${statusText}">${statusIcon}</span>` : ''}
+        ${uploadTimeText
+            ? `<span class="admin-images-browser__provider-upload-time">
+                <small>${escapeHtml(uploadTimeText)}</small>
+              </span>`
+            : ''}
+      </h4>
+      <div class="admin-images-browser__provider-status">
+        ${showUploadButton
+          ? `<button
+              class="admin-btn admin-btn--secondary admin-btn--compact"
+              type="button"
+              data-action="upload-to-provider"
+              data-path="${escapeHtml(item.path)}"
+              ${buttonDisabled ? 'disabled' : ''}
+            >
+              ${uploadIcon}
+              ${escapeHtml(buttonText)}
+            </button>`
+          : ''}
+      </div>
+      ${providerStatus === 'uploaded' && providerUrl
+        ? `<div class="admin-images-browser__code-wrapper">
+            <code class="admin-images-browser__detail-code">${escapeHtml(providerUrl)}</code>
+            <button
+              class="admin-btn admin-btn--tool admin-btn--compact admin-btn--icon admin-images-copy-btn"
+              type="button"
+              data-copy-value="${escapeHtml(providerUrl)}"
+              data-copy-label="Provider URL"
+              data-inline-feedback="true"
+              title="点击复制"
+              aria-label="复制Provider URL"
+            >${copyIcon}</button>
+          </div>
+          `
+        : ''}
+    </div>
+  `;
+};
+
 export const renderDetail = ({
   detailEl,
   item,
@@ -336,6 +439,8 @@ export const renderDetail = ({
   copyIcon,
   linkIcon,
   eyeIcon,
+  uploadIcon,
+  statusIcons,
   largeFileThreshold
 }: {
   detailEl: HTMLElement;
@@ -346,6 +451,13 @@ export const renderDetail = ({
   copyIcon: string;
   linkIcon: string;
   eyeIcon: string;
+  uploadIcon: string;
+  statusIcons: {
+    circle: string;
+    circleCheck: string;
+    circleX: string;
+    loaderCircle: string;
+  };
   largeFileThreshold: number;
 }) => {
   if (!item) {
@@ -421,6 +533,8 @@ export const renderDetail = ({
             >${copyIcon}</button>
           </div>
         </div>
+
+        ${renderProviderStatusSection(item, detailMeta, uploadIcon, copyIcon, statusIcons)}
 
         <div class="admin-images-browser__detail-field">
           <h4 class="admin-images-browser__detail-label admin-images-browser__detail-label--disabled">Markdown 引用（待开发）</h4>

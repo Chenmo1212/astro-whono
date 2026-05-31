@@ -23,11 +23,15 @@ export type AdminImageListItem = AdminImageBrowseItem & {
   height: number | null;
   size: number | null;
   mimeType: string | null;
+  providerStatus: 'not_uploaded' | 'uploading' | 'uploaded' | 'failed' | null;
+  providerUrl?: string | null;
+  providerUploadedAt?: number | null;
 };
 
 export type AdminImageBootstrap = {
   listEndpoint: string;
   metaEndpoint: string;
+  getTokenEndpoint: string;
   initialState: {
     scope: AdminImageScope;
     group: string;

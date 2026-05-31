@@ -25,6 +25,9 @@ export type AdminImageClientMeta = {
   size: number | null;
   mimeType: string | null;
   previewSrc: string | null;
+  providerStatus: 'not_uploaded' | 'uploading' | 'uploaded' | 'failed' | null;
+  providerUrl?: string | null;
+  providerUploadedAt?: number | null;
 };
 
 export type AdminImageListPage<TItem> = {
@@ -110,7 +113,10 @@ export const isAdminImageClientMeta = (meta: unknown): meta is AdminImageClientM
   && isNullableNumber(meta.height)
   && isNullableNumber(meta.size)
   && isNullableString(meta.mimeType)
-  && isNullableString(meta.previewSrc);
+  && isNullableString(meta.previewSrc)
+  && (meta.providerStatus === null || meta.providerStatus === 'not_uploaded' || meta.providerStatus === 'uploading' || meta.providerStatus === 'uploaded' || meta.providerStatus === 'failed')
+  && isNullableString(meta.providerUrl)
+  && isNullableNumber(meta.providerUploadedAt);
 
 export const parseAdminImageListResponse = (payload: unknown): AdminImageListPage<AdminImageClientItem> => {
   if (!isRecord(payload) || payload.ok !== true || !isRecord(payload.result) || !Array.isArray(payload.result.items)) {

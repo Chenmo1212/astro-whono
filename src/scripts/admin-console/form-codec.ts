@@ -511,6 +511,15 @@ export const createFormCodec = ({
         },
         layout: {
           sidebarDivider: getSelectedSidebarDividerVariant()
+        },
+        imageProvider: {
+          qiniu: {
+            accessKey: "",
+            secretKey: "",
+            bucket: "",
+            domain: "",
+            autoReplace: false
+          }
         }
       }
     };

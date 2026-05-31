@@ -6,6 +6,7 @@ import AdminShell from '../../../components/admin/AdminShell.astro';
 import {
   ADMIN_IMAGE_LIST_API_PATH,
   ADMIN_IMAGE_META_API_PATH,
+  ADMIN_IMAGE_GET_TOKEN_API_PATH,
   invalidateAdminImageCaches,
   listAdminImageBrowseIndex,
   type AdminImageBrowseIndexItem
@@ -63,6 +64,7 @@ const bootstrapText = imagesDevState
   ? JSON.stringify({
       listEndpoint: withBase(ADMIN_IMAGE_LIST_API_PATH),
       metaEndpoint: withBase(ADMIN_IMAGE_META_API_PATH),
+      getTokenEndpoint: withBase(ADMIN_IMAGE_GET_TOKEN_API_PATH),
       initialState: {
         scope: selectedScope,
         group: selectedGroup,
@@ -261,6 +263,11 @@ const bootstrapText = imagesDevState
             <span data-icon="copy"><AdminIcon name="copy" size={15} /></span>
             <span data-icon="link"><AdminIcon name="link" size={15} /></span>
             <span data-icon="eye"><AdminIcon name="eye" size={15} /></span>
+            <span data-icon="upload"><AdminIcon name="upload" size={15} /></span>
+            <span data-icon="circle"><AdminIcon name="circle" size={12} /></span>
+            <span data-icon="circle-check"><AdminIcon name="circle-check" size={12} /></span>
+            <span data-icon="circle-x"><AdminIcon name="circle-x" size={12} /></span>
+            <span data-icon="loader-circle"><AdminIcon name="loader-circle" size={12} /></span>
           </div>
 
           <div id="admin-images-bootstrap" hidden>{bootstrapText}</div>

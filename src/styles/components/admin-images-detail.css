@@ -18,7 +18,6 @@
 .admin-images-browser__detail-media {
   display: grid;
   place-items: center;
-  max-height: 440px;
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent 30%);
   border-block-start: 0;
@@ -98,6 +97,79 @@
   border-color: var(--admin-images-origin-content-border);
   color: var(--admin-images-origin-content-text);
 }
+/* Status badge variants */
+.admin-images-browser__status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 18px;
+  padding: 2px 6px;
+  margin-left: 8px;
+  border-radius: 4px;
+  font-size: 0;
+  line-height: 1;
+}
+
+.admin-images-browser__status-badge svg {
+  flex-shrink: 0;
+}
+
+.admin-images-browser__status-badge--yellow svg {
+  animation: admin-status-spin 1s linear infinite;
+}
+
+@keyframes admin-status-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-images-browser__status-badge--yellow svg {
+    animation: none;
+  }
+}
+
+.admin-images-browser__status-badge--gray {
+  background: color-mix(in srgb, var(--muted) 12%, transparent 88%);
+  border-color: color-mix(in srgb, var(--muted) 20%, transparent 80%);
+  color: color-mix(in srgb, var(--muted) 70%, var(--text) 30%);
+}
+
+.admin-images-browser__status-badge--gray {
+  background: var(--admin-status-badge-gray-bg);
+  border-color: var(--admin-status-badge-gray-border);
+  color: var(--admin-status-badge-gray-text);
+}
+
+.admin-images-browser__status-badge--yellow {
+  background: var(--admin-status-badge-yellow-bg);
+  border-color: var(--admin-status-badge-yellow-border);
+  color: var(--admin-status-badge-yellow-text);
+}
+
+.admin-images-browser__status-badge--green {
+  background: var(--admin-status-badge-green-bg);
+  border-color: var(--admin-status-badge-green-border);
+  color: var(--admin-status-badge-green-text);
+}
+
+.admin-images-browser__status-badge--red {
+  background: var(--admin-status-badge-red-bg);
+  border-color: var(--admin-status-badge-red-border);
+  color: var(--admin-status-badge-red-text);
+}
+
+.admin-images-browser__provider-upload-time {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
 
 /* Semantic DL meta data list */
 .admin-images-browser__detail-meta-list {

@@ -101,6 +101,9 @@ export type AdminImageListItem = {
   size: number | null;
   mimeType: string | null;
   previewSrc: string | null;
+  providerStatus: 'not_uploaded' | 'uploading' | 'uploaded' | 'failed' | null;
+  providerUrl?: string | null;
+  providerUploadedAt?: number | null;
 };
 
 export type AdminImageListResult = {
@@ -130,6 +133,9 @@ export type AdminImageMetaResult = {
   size: number | null;
   mimeType: string | null;
   previewSrc: string | null;
+  providerStatus: string | 'not_uploaded' | 'uploading' | 'uploaded' | 'failed' | null;
+  providerUrl?: string | null;
+  providerUploadedAt?: string | null;
 };
 
 type AdminImageAssetRecord = {
@@ -179,6 +185,7 @@ type AdminImageShortCacheEntry<T> = {
 
 export const ADMIN_IMAGE_LIST_API_PATH = '/api/admin/images/list/' as const;
 export const ADMIN_IMAGE_META_API_PATH = '/api/admin/images/meta/' as const;
+export const ADMIN_IMAGE_GET_TOKEN_API_PATH = '/api/admin/images/get-token/' as const;
 
 const IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
 const MARKDOWN_EXT_RE = /\.(?:md|mdx)$/i;
@@ -786,7 +793,10 @@ const toAdminImageListItem = async (
     height: meta.height,
     size: meta.size,
     mimeType: meta.mimeType,
-    previewSrc: getPreviewSrcFromPath(item.path)
+    previewSrc: getPreviewSrcFromPath(item.path),
+    providerStatus: 'not_uploaded',
+    providerUrl: null,
+    providerUploadedAt: null
   } satisfies AdminImageListItem;
 };
 const readSvgSize = (buffer: Buffer): { width: number | null; height: number | null } => {
@@ -956,7 +966,10 @@ const readLocalImageMeta = async (target: LocalImageTarget): Promise<AdminImageM
     height: inspectionMeta.height,
     size: inspectionMeta.size,
     mimeType: inspectionMeta.mimeType,
-    previewSrc: target.previewSrc
+    previewSrc: target.previewSrc,
+    providerStatus: 'not_uploaded',
+    providerUrl: null,
+    providerUploadedAt: null
   };
 };
 
@@ -1099,7 +1112,10 @@ export const getAdminImageMeta = async (input: AdminImageMetaInput): Promise<Adm
       height: null,
       size: null,
       mimeType: null,
-      previewSrc: fieldTarget.url
+      previewSrc: fieldTarget.url,
+      providerStatus: "not-uploaded",
+      providerUrl: null,
+      providerUploadedAt: null
     };
   }
 

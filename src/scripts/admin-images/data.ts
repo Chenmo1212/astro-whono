@@ -1,5 +1,6 @@
 import {
   fetchAdminImageJson,
+  getAdminImageResponseErrors,
   isNullableNumber,
   isNullableString,
   isRecord,
@@ -58,7 +59,10 @@ export const toCachedMeta = (item: AdminImageListItem): AdminImageClientMeta => 
   height: item.height,
   size: item.size,
   mimeType: item.mimeType,
-  previewSrc: item.previewSrc
+  previewSrc: item.previewSrc,
+  providerStatus: item.providerStatus,
+  ...(item.providerUrl !== undefined && { providerUrl: item.providerUrl }),
+  ...(item.providerUploadedAt !== undefined && { providerUploadedAt: item.providerUploadedAt })
 });
 
 const LIST_RESPONSE_FORMAT_ERROR = '图片列表响应格式无效';
@@ -180,6 +184,7 @@ export const parseBootstrap = (text: string): AdminImageBootstrap | null => {
       !isRecord(payload)
       || typeof payload.listEndpoint !== 'string'
       || typeof payload.metaEndpoint !== 'string'
+      || typeof payload.getTokenEndpoint !== 'string'
       || !isRecord(payload.initialState)
     ) {
       return null;
@@ -200,6 +205,7 @@ export const parseBootstrap = (text: string): AdminImageBootstrap | null => {
     return {
       listEndpoint: payload.listEndpoint,
       metaEndpoint: payload.metaEndpoint,
+      getTokenEndpoint: payload.getTokenEndpoint,
       initialState: {
         scope: initialScope,
         group: isAdminImageBrowseGroup(normalizedGroup) ? normalizedGroup : DEFAULT_GROUP,
@@ -255,7 +261,20 @@ export const fetchMetaByPath = async (endpoint: string, assetPath: string): Prom
     `${endpoint}?${new URLSearchParams({ path: assetPath }).toString()}`,
     '图片元数据请求失败'
   );
-  return parseAdminImageMetaResponse(payload);
+  const meta = parseAdminImageMetaResponse(payload);
+  
+  // Merge with localStorage Provider status
+  const providerStatus = getProviderStatus(assetPath);
+  if (providerStatus) {
+    return {
+      ...meta,
+      providerStatus: providerStatus.providerStatus,
+      providerUrl: providerStatus.providerUrl,
+      providerUploadedAt: providerStatus.providerUploadedAt
+    };
+  }
+  
+  return meta;
 };
 
 export const updateUrl = (state: AdminImageState) => {
@@ -331,4 +350,104 @@ export const copyText = async (value: string) => {
   if (!copied) {
     throw new Error('浏览器阻止了复制动作');
   }
+};
+
+// LocalStorage key for Provider upload status
+const PROVIDER_STATUS_STORAGE_KEY = 'admin-images-provider-status';
+
+// Type for stored Provider status
+type ProviderStatusRecord = {
+  providerStatus: 'uploaded' | 'failed';
+  providerUrl: string | null;
+  providerUploadedAt: number | null;
+};
+
+// Load Provider status from localStorage
+const loadProviderStatusFromStorage = (): Map<string, ProviderStatusRecord> => {
+  try {
+    const stored = localStorage.getItem(PROVIDER_STATUS_STORAGE_KEY);
+    if (!stored) return new Map();
+    
+    const parsed = JSON.parse(stored) as Record<string, ProviderStatusRecord>;
+    return new Map(Object.entries(parsed));
+  } catch {
+    return new Map();
+  }
+};
+
+// Save Provider status to localStorage
+const saveProviderStatusToStorage = (statusMap: Map<string, ProviderStatusRecord>): void => {
+  try {
+    const obj = Object.fromEntries(statusMap);
+    localStorage.setItem(PROVIDER_STATUS_STORAGE_KEY, JSON.stringify(obj));
+  } catch {
+    // Silently fail if localStorage is not available
+  }
+};
+
+// Save single image Provider status
+export const saveProviderStatus = (
+  imagePath: string,
+  status: 'uploaded' | 'failed',
+  providerUrl: string | null = null,
+  providerUploadedAt: number | null = null
+): void => {
+  const statusMap = loadProviderStatusFromStorage();
+  statusMap.set(imagePath, { providerStatus: status, providerUrl, providerUploadedAt });
+  saveProviderStatusToStorage(statusMap);
+};
+
+// Get Provider status for an image
+export const getProviderStatus = (imagePath: string): ProviderStatusRecord | null => {
+  const statusMap = loadProviderStatusFromStorage();
+  return statusMap.get(imagePath) || null;
+};
+
+export const uploadImageToProvider = async (
+  uploadEndpoint: string,
+  imagePath: string,
+  file: File
+): Promise<{ providerUrl: string; uploadedAt: number }> => {
+  // Dynamically import qiniu-js
+  const qiniu = await import('qiniu-js');
+  const fileName = imagePath.split('/').pop() || file.name;
+  const tokenResponse = await fetch(uploadEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: JSON.stringify({ fileName }),
+    cache: 'no-store'
+  });
+
+  const tokenPayload = await tokenResponse.json().catch(() => null);
+  if (!tokenResponse.ok || !isRecord(tokenPayload) || tokenPayload.ok !== true || !isRecord(tokenPayload.result)) {
+    const errors = getAdminImageResponseErrors(tokenPayload);
+    throw new Error(errors[0] ?? `Failed to get upload credentials (HTTP ${tokenResponse.status})`);
+  }
+
+  const { uploadToken, domain, key } = tokenPayload.result as { uploadToken: string; domain: string; key: string };
+
+  // 使用 qiniu-js 直接上传到七牛云
+  return new Promise((resolve, reject) => {
+    const observable = qiniu.upload(file, key, uploadToken, {}, {});
+    
+    observable.subscribe({
+      error: (err: unknown) => {
+        const message = err && typeof err === 'object' && 'message' in err
+          ? String(err.message)
+          : '上传失败';
+        reject(new Error(`上传失败: ${message}`));
+      },
+      complete: () => {
+        // domain already includes protocol (https://) from config
+        const providerUrl = domain.startsWith('http://') || domain.startsWith('https://')
+          ? `${domain}/${key}`
+          : `https://${domain}/${key}`;
+        const uploadedAt = Date.now();
+        resolve({ providerUrl, uploadedAt });
+      }
+    });
+  });
 };

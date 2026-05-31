@@ -557,6 +557,15 @@ export const canonicalizeAdminThemeSettings = (
         sidebarDivider: isAdminSidebarDividerVariant(rawSidebarDivider)
           ? rawSidebarDivider
           : ADMIN_SIDEBAR_DIVIDER_DEFAULT
+      },
+      imageProvider: {
+        qiniu: {
+          accessKey: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.accessKey ?? '' : ''),
+          secretKey: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.secretKey ?? '' : ''),
+          bucket: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.bucket ?? '' : ''),
+          domain: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.domain ?? '' : ''),
+          autoReplace: Boolean(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.autoReplace : false)
+        }
       }
     }
   };
@@ -612,7 +621,10 @@ export const createAdminWritableThemeSettingsGroups = (
     readingMode: { ...settings.ui.readingMode },
     sidebarActions: { ...settings.ui.sidebarActions },
     articleMeta: { ...settings.ui.articleMeta },
-    layout: { ...settings.ui.layout }
+    layout: { ...settings.ui.layout },
+    imageProvider: {
+      qiniu: { ...settings.ui.imageProvider.qiniu }
+    }
   }
 });
 

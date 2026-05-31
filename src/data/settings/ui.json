@@ -19,5 +19,14 @@
   },
   "layout": {
     "sidebarDivider": "subtle"
+  },
+  "imageProvider": {
+    "qiniu": {
+      "accessKey": "etrJFSGU1dDGTTCZzblkek42moOZ27MUcNn2tgVT",
+      "secretKey": "UsNpdu2dv1MmbUdMwRai6nM-DKv0yO6kq8ZJWziH",
+      "bucket": "chenmo-images",
+      "domain": "https://cdn.chenmo1212.cn",
+      "autoReplace": true
+    }
   }
 }

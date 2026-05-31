@@ -3,6 +3,9 @@ import type { AstroComponent } from '@lucide/astro';
 import Activity from '@lucide/astro/icons/activity';
 import Check from '@lucide/astro/icons/check';
 import ChevronDown from '@lucide/astro/icons/chevron-down';
+import Circle from '@lucide/astro/icons/circle';
+import CircleCheck from '@lucide/astro/icons/circle-check';
+import CircleX from '@lucide/astro/icons/circle-x';
 import CodeXml from '@lucide/astro/icons/code-xml';
 import Copy from '@lucide/astro/icons/copy';
 import Download from '@lucide/astro/icons/download';
@@ -17,6 +20,7 @@ import Layers from '@lucide/astro/icons/layers';
 import LayoutGrid from '@lucide/astro/icons/layout-grid';
 import Link from '@lucide/astro/icons/link';
 import List from '@lucide/astro/icons/list';
+import LoaderCircle from '@lucide/astro/icons/loader-circle';
 import Monitor from '@lucide/astro/icons/monitor';
 import PanelLeft from '@lucide/astro/icons/panel-left';
 import RefreshCw from '@lucide/astro/icons/refresh-cw';
@@ -39,6 +43,9 @@ type AdminIconName =
   | 'branch-nodes'
   | 'check'
   | 'chevron-down'
+  | 'circle'
+  | 'circle-check'
+  | 'circle-x'
   | 'copy'
   | 'download'
   | 'eye'
@@ -48,6 +55,7 @@ type AdminIconName =
   | 'layers'
   | 'link'
   | 'list'
+  | 'loader-circle'
   | 'monitor'
   | 'refresh'
   | 'scan'
@@ -85,6 +93,9 @@ const adminIconComponents = {
   'branch-nodes': GitBranch,
   check: Check,
   'chevron-down': ChevronDown,
+  circle: Circle,
+  'circle-check': CircleCheck,
+  'circle-x': CircleX,
   copy: Copy,
   download: Download,
   eye: Eye,
@@ -94,6 +105,7 @@ const adminIconComponents = {
   layers: Layers,
   link: Link,
   list: List,
+  'loader-circle': LoaderCircle,
   monitor: Monitor,
   refresh: RefreshCw,
   scan: Scan,

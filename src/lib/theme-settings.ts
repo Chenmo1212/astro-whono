@@ -184,6 +184,18 @@ export interface SidebarActionsSettings {
   showAdminEntry: boolean;
 }
 
+export interface ImageProviderQiniuSettings {
+  accessKey: string;
+  secretKey: string;
+  bucket: string;
+  domain: string;
+  autoReplace: boolean;
+}
+
+export interface ImageProviderSettings {
+  qiniu: ImageProviderQiniuSettings;
+}
+
 export interface UiSettings {
   codeBlock: {
     showLineNumbers: boolean;
@@ -196,6 +208,7 @@ export interface UiSettings {
   layout: {
     sidebarDivider: SidebarDividerVariant;
   };
+  imageProvider: ImageProviderSettings;
 }
 
 export interface ThemeSettings {
@@ -512,6 +525,15 @@ const DEFAULT_UI: UiSettings = {
   },
   layout: {
     sidebarDivider: ADMIN_SIDEBAR_DIVIDER_DEFAULT
+  },
+  imageProvider: {
+    qiniu: {
+      accessKey: '',
+      secretKey: '',
+      bucket: '',
+      domain: '',
+      autoReplace: false
+    }
   }
 };
 
@@ -1313,6 +1335,8 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const uiSidebarActions = isRecord(uiJson?.sidebarActions) ? uiJson.sidebarActions : undefined;
   const uiArticleMeta = isRecord(uiJson?.articleMeta) ? uiJson.articleMeta : undefined;
   const uiLayout = isRecord(uiJson?.layout) ? uiJson.layout : undefined;
+  const uiImageProvider = isRecord(uiJson?.imageProvider) ? uiJson.imageProvider : undefined;
+  const uiImageProviderQiniu = isRecord(uiImageProvider?.qiniu) ? uiImageProvider.qiniu : undefined;
 
   const showLineNumbers = resolveValue(
     asBoolean(uiCodeBlock?.showLineNumbers),
@@ -1368,6 +1392,32 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     asSidebarDividerVariant(uiLayout?.sidebarDivider),
     undefined,
     DEFAULT_UI.layout.sidebarDivider
+  );
+
+  const qiniuAccessKey = resolveValue(
+    asString(uiImageProviderQiniu?.accessKey),
+    DEFAULT_UI.imageProvider.qiniu.accessKey,
+    DEFAULT_UI.imageProvider.qiniu.accessKey
+  );
+  const qiniuSecretKey = resolveValue(
+    asString(uiImageProviderQiniu?.secretKey),
+    DEFAULT_UI.imageProvider.qiniu.secretKey,
+    DEFAULT_UI.imageProvider.qiniu.secretKey
+  );
+  const qiniuBucket = resolveValue(
+    asString(uiImageProviderQiniu?.bucket),
+    DEFAULT_UI.imageProvider.qiniu.bucket,
+    DEFAULT_UI.imageProvider.qiniu.bucket
+  );
+  const qiniuDomain = resolveValue(
+    asString(uiImageProviderQiniu?.domain),
+    DEFAULT_UI.imageProvider.qiniu.domain,
+    DEFAULT_UI.imageProvider.qiniu.domain
+  );
+  const qiniuAutoReplace = resolveValue(
+    asBoolean(uiImageProviderQiniu?.autoReplace),
+    DEFAULT_UI.imageProvider.qiniu.autoReplace,
+    DEFAULT_UI.imageProvider.qiniu.autoReplace
   );
 
   const normalizedNav = normalizeSidebarNavItems(nav.value);
@@ -1477,6 +1527,15 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         },
         layout: {
           sidebarDivider: sidebarDivider.value
+        },
+        imageProvider: {
+          qiniu: {
+            accessKey: qiniuAccessKey.value,
+            secretKey: qiniuSecretKey.value,
+            bucket: qiniuBucket.value,
+            domain: qiniuDomain.value,
+            autoReplace: qiniuAutoReplace.value
+          }
         }
       }
     },
@@ -1618,7 +1677,10 @@ const buildEditableThemeSettingsSnapshot = (
       readingMode: { ...resolved.settings.ui.readingMode },
       sidebarActions: { ...resolved.settings.ui.sidebarActions },
       articleMeta: { ...resolved.settings.ui.articleMeta },
-      layout: { ...resolved.settings.ui.layout }
+      layout: { ...resolved.settings.ui.layout },
+      imageProvider: {
+        qiniu: { ...resolved.settings.ui.imageProvider.qiniu }
+      }
     }
   });
 

@@ -16,9 +16,11 @@ import {
   fetchMetaByPath,
   navigateToRefresh,
   parseBootstrap,
+  saveProviderStatus,
   toBrowseItem,
   toCachedMeta,
-  updateUrl
+  updateUrl,
+  uploadImageToProvider
 } from './data';
 import {
   renderDetail,
@@ -185,7 +187,12 @@ export const initAdminImagesConsole = () => {
   const icons = {
     copy: getIconMarkup('copy'),
     link: getIconMarkup('link'),
-    eye: getIconMarkup('eye')
+    eye: getIconMarkup('eye'),
+    upload: getIconMarkup('upload'),
+    circle: getIconMarkup('circle'),
+    circleCheck: getIconMarkup('circle-check'),
+    circleX: getIconMarkup('circle-x'),
+    loaderCircle: getIconMarkup('loader-circle')
   };
 
   const getCurrentPageSize = (): number =>
@@ -258,6 +265,13 @@ export const initAdminImagesConsole = () => {
       copyIcon: icons.copy,
       linkIcon: icons.link,
       eyeIcon: icons.eye,
+      uploadIcon: icons.upload,
+      statusIcons: {
+        circle: icons.circle,
+        circleCheck: icons.circleCheck,
+        circleX: icons.circleX,
+        loaderCircle: icons.loaderCircle
+      },
       largeFileThreshold: LARGE_FILE_THRESHOLD
     });
   };
@@ -831,9 +845,140 @@ export const initAdminImagesConsole = () => {
   });
 
   detailEl.addEventListener('click', async (event) => {
-    const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-copy-value]') : null;
+    const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-copy-value], [data-action]') : null;
     if (!(target instanceof HTMLButtonElement)) return;
 
+    // Handle upload to Provider
+    if (target.dataset.action === 'upload-to-provider') {
+      const imagePath = target.dataset.path ?? '';
+      if (!imagePath) {
+        setStatus('error', '图片路径无效');
+        return;
+      }
+
+      const item = currentItems.find((entry) => entry.path === imagePath);
+      if (!item) {
+        setStatus('error', '未找到图片信息');
+        return;
+      }
+
+      // Ensure metadata is loaded before uploading
+      if (!detailMetaCache.has(imagePath)) {
+        console.log('Cache miss for:', imagePath, 'Cache size:', detailMetaCache.size);
+        await loadDetailMeta(imagePath);
+        console.log('After loadDetailMeta - Cache has path:', detailMetaCache.has(imagePath));
+        console.log('After loadDetailMeta - Cache size:', detailMetaCache.size);
+        console.log('Error for path:', detailMetaErrors.get(imagePath));
+      }
+
+      // Check if metadata load failed
+      if (!detailMetaCache.has(imagePath)) {
+        const errorMessage = detailMetaErrors.get(imagePath) || '无法加载图片元数据';
+        setStatus('error', errorMessage);
+        return;
+      }
+
+      // Update status to uploading
+      const cachedMeta = detailMetaCache.get(imagePath);
+      if (cachedMeta) {
+        detailMetaCache.set(imagePath, {
+          ...cachedMeta,
+          providerStatus: 'uploading'
+        });
+      }
+      renderCurrentDetail();
+      setStatus('loading', '正在上传到七牛云...', false);
+
+      try {
+        // 获取图片的预览 URL
+        const meta = detailMetaCache.get(imagePath);
+        if (!meta || !meta.previewSrc) {
+          throw new Error('无法获取图片预览地址');
+        }
+
+        // 从预览 URL 获取文件
+        const response = await fetch(meta.previewSrc);
+        if (!response.ok) {
+          throw new Error('无法加载图片文件');
+        }
+        
+        const blob = await response.blob();
+        const fileName = imagePath.split('/').pop() || 'image';
+        const file = new File([blob], fileName, { type: meta.mimeType || 'image/jpeg' });
+
+        const result = await uploadImageToProvider(bootstrap.getTokenEndpoint, imagePath, file);
+        
+        // Save to localStorage for persistence
+        saveProviderStatus(imagePath, 'uploaded', result.providerUrl, result.uploadedAt);
+        
+        // Update status to uploaded in cache
+        if (cachedMeta) {
+          detailMetaCache.set(imagePath, {
+            ...cachedMeta,
+            providerStatus: 'uploaded',
+            providerUrl: result.providerUrl,
+            providerUploadedAt: result.uploadedAt
+          });
+        }
+        
+        // Re-render detail to show updated status
+        renderCurrentDetail();
+        
+        // Automatically replaces the URL if the image belongs to a Markdown file
+        if (item.owner) {
+          setStatus('loading', '正在更新 Markdown 文件...', false);
+          try {
+            const replaceResponse = await fetch('/api/admin/images/replace-url/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json'
+              },
+              body: JSON.stringify({
+                markdownPath: item.owner,
+                imagePath: imagePath,
+                providerUrl: result.providerUrl
+              }),
+              cache: 'no-store'
+            });
+
+            const replacePayload = await replaceResponse.json().catch(() => null);
+            
+            if (replaceResponse.ok && replacePayload?.ok === true) {
+              if (replacePayload.result?.replaced) {
+                setStatus('ok', '上传成功，已更新 Markdown 文件');
+              } else {
+                setStatus('ok', '上传成功');
+              }
+            } else {
+              setStatus('warn', '上传成功，但更新 Markdown 文件失败');
+            }
+          } catch (error) {
+            setStatus('warn', '上传成功，但更新 Markdown 文件时出错');
+          }
+        } else {
+          setStatus('ok', '上传成功');
+        }
+      } catch (error) {
+        // Save failed status to localStorage
+        saveProviderStatus(imagePath, 'failed');
+        
+        // Update status to failed in cache
+        if (cachedMeta) {
+          detailMetaCache.set(imagePath, {
+            ...cachedMeta,
+            providerStatus: 'failed'
+          });
+        }
+        
+        // Re-render detail to show failed status
+        renderCurrentDetail();
+        setStatus('error', error instanceof Error ? error.message : '上传失败');
+      }
+      return;
+    }
+
+    // Handle copy actions
     const copyValue = target.dataset.copyValue ?? '';
     const copyLabel = target.dataset.copyLabel?.trim() ?? '内容';
     if (!copyValue) {

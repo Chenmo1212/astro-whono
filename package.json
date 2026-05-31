@@ -40,7 +40,9 @@
     "astro": "^6.1.7",
     "dotenv": "^16.4.5",
     "github-slugger": "^2.0.0",
-    "mdast-util-to-string": "^4.0.0"
+    "mdast-util-to-string": "^4.0.0",
+    "qiniu": "^7.15.2",
+    "qiniu-js": "^3.4.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
