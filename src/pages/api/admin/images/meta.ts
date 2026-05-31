@@ -5,6 +5,8 @@ import {
 } from '../../../../lib/admin-console/image-params';
 import { getAdminImageMeta } from '../../../../lib/admin-console/image-shared';
 
+export const prerender = false;
+
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
   'cache-control': 'no-store'
