@@ -50,8 +50,13 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // Construct the full key with path prefix
+    // Remove leading slash from path if present, and ensure no double slashes
+    const pathPrefix = config.path.replace(/^\/+/, '').replace(/\/+$/, '');
+    const key = pathPrefix ? `${pathPrefix}/${fileName}` : fileName;
+
     const mac = new qiniu.auth.digest.Mac(config.accessKey, config.secretKey);
-    const putPolicy = new qiniu.rs.PutPolicy({ 
+    const putPolicy = new qiniu.rs.PutPolicy({
       scope: config.bucket,
       expires: 3600 // 1 hour
     });
@@ -63,7 +68,7 @@ export const POST: APIRoute = async ({ request }) => {
         result: {
           uploadToken,
           domain: config.domain,
-          key: fileName
+          key
         }
       }),
       {

@@ -564,6 +564,7 @@ export const canonicalizeAdminThemeSettings = (
           secretKey: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.secretKey ?? '' : ''),
           bucket: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.bucket ?? '' : ''),
           domain: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.domain ?? '' : ''),
+          path: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.path ?? '' : ''),
           autoReplace: Boolean(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.autoReplace : false)
         }
       }

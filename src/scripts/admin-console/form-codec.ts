@@ -98,6 +98,12 @@ type FormCodecContext = {
   inputSidebarDividerDefault: HTMLInputElement;
   inputSidebarDividerSubtle: HTMLInputElement;
   inputSidebarDividerNone: HTMLInputElement;
+  inputQiniuAccessKey: HTMLInputElement;
+  inputQiniuSecretKey: HTMLInputElement;
+  inputQiniuBucket: HTMLInputElement;
+  inputQiniuDomain: HTMLInputElement;
+  inputQiniuPath: HTMLInputElement;
+  inputQiniuAutoReplace: HTMLInputElement;
 };
 
 const normalizeMultiline = (value: string): string => value.replace(/\r\n/g, '\n');
@@ -204,7 +210,13 @@ export const createFormCodec = ({
   sidebarAdminEntryRowEl,
   inputSidebarDividerDefault,
   inputSidebarDividerSubtle,
-  inputSidebarDividerNone
+  inputSidebarDividerNone,
+  inputQiniuAccessKey,
+  inputQiniuSecretKey,
+  inputQiniuBucket,
+  inputQiniuDomain,
+  inputQiniuPath,
+  inputQiniuAutoReplace
 }: FormCodecContext) => {
   const defaultHomeIntroLinks = [...ADMIN_HOME_INTRO_LINK_DEFAULT] as HomeIntroLinkKey[];
   const defaultPrimaryHomeIntroLink: HomeIntroLinkKey = ADMIN_HOME_INTRO_LINK_DEFAULT[0];
@@ -514,11 +526,12 @@ export const createFormCodec = ({
         },
         imageProvider: {
           qiniu: {
-            accessKey: "",
-            secretKey: "",
-            bucket: "",
-            domain: "",
-            autoReplace: false
+            accessKey: normalizeTrimmed(inputQiniuAccessKey.value),
+            secretKey: normalizeTrimmed(inputQiniuSecretKey.value),
+            bucket: normalizeTrimmed(inputQiniuBucket.value),
+            domain: normalizeTrimmed(inputQiniuDomain.value),
+            path: normalizeTrimmed(inputQiniuPath.value),
+            autoReplace: Boolean(inputQiniuAutoReplace.checked)
           }
         }
       }
@@ -593,6 +606,12 @@ export const createFormCodec = ({
     inputArticleMetaShowWordCount.checked = settings.ui?.articleMeta?.showWordCount !== false;
     inputArticleMetaShowReadingTime.checked = settings.ui?.articleMeta?.showReadingTime !== false;
     applySidebarDividerVariant(settings.ui?.layout?.sidebarDivider || ADMIN_SIDEBAR_DIVIDER_DEFAULT);
+    inputQiniuAccessKey.value = settings.ui?.imageProvider?.qiniu?.accessKey || '';
+    inputQiniuSecretKey.value = settings.ui?.imageProvider?.qiniu?.secretKey || '';
+    inputQiniuBucket.value = settings.ui?.imageProvider?.qiniu?.bucket || '';
+    inputQiniuDomain.value = settings.ui?.imageProvider?.qiniu?.domain || '';
+    inputQiniuPath.value = settings.ui?.imageProvider?.qiniu?.path || '';
+    inputQiniuAutoReplace.checked = Boolean(settings.ui?.imageProvider?.qiniu?.autoReplace);
     refreshFooterPreview();
     refreshArticleMetaPreview();
 

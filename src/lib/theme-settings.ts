@@ -189,6 +189,7 @@ export interface ImageProviderQiniuSettings {
   secretKey: string;
   bucket: string;
   domain: string;
+  path: string;
   autoReplace: boolean;
 }
 
@@ -532,6 +533,7 @@ const DEFAULT_UI: UiSettings = {
       secretKey: '',
       bucket: '',
       domain: '',
+      path: '',
       autoReplace: false
     }
   }
@@ -1414,6 +1416,11 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     DEFAULT_UI.imageProvider.qiniu.domain,
     DEFAULT_UI.imageProvider.qiniu.domain
   );
+  const qiniuPath = resolveValue(
+    asString(uiImageProviderQiniu?.path),
+    DEFAULT_UI.imageProvider.qiniu.path,
+    DEFAULT_UI.imageProvider.qiniu.path
+  );
   const qiniuAutoReplace = resolveValue(
     asBoolean(uiImageProviderQiniu?.autoReplace),
     DEFAULT_UI.imageProvider.qiniu.autoReplace,
@@ -1534,6 +1541,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
             secretKey: qiniuSecretKey.value,
             bucket: qiniuBucket.value,
             domain: qiniuDomain.value,
+            path: qiniuPath.value,
             autoReplace: qiniuAutoReplace.value
           }
         }

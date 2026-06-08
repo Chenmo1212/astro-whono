@@ -81,6 +81,7 @@ const qiniuConfig = bootstrapState?.payload?.settings?.ui?.imageProvider?.qiniu;
       qiniuSecretKey={qiniuConfig?.secretKey || ''}
       qiniuBucket={qiniuConfig?.bucket || ''}
       qiniuDomain={qiniuConfig?.domain || ''}
+      qiniuPath={qiniuConfig?.path || ''}
       qiniuAutoReplace={qiniuConfig?.autoReplace || false}
     />
   </form>

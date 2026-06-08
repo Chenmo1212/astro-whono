@@ -115,7 +115,13 @@ if (!root) {
       sidebarAdminEntryRowEl: controls.sidebarAdminEntryRowEl,
       inputSidebarDividerDefault: controls.inputSidebarDividerDefault,
       inputSidebarDividerSubtle: controls.inputSidebarDividerSubtle,
-      inputSidebarDividerNone: controls.inputSidebarDividerNone
+      inputSidebarDividerNone: controls.inputSidebarDividerNone,
+      inputQiniuAccessKey: controls.inputQiniuAccessKey,
+      inputQiniuSecretKey: controls.inputQiniuSecretKey,
+      inputQiniuBucket: controls.inputQiniuBucket,
+      inputQiniuDomain: controls.inputQiniuDomain,
+      inputQiniuPath: controls.inputQiniuPath,
+      inputQiniuAutoReplace: controls.inputQiniuAutoReplace
     });
 
     const getNavFieldTarget = (

@@ -138,7 +138,7 @@ export default defineConfig({
   site: site.url,
   // Required adapter to support /api/decrypt endpoints for encrypted articles
   adapter: node({ mode: 'standalone' }),
-  output: 'static',
+  output: process.env.NODE_ENV === 'production' ? 'static' : 'server',
   integrations: hasSiteUrl ? [sitemap({ filter: (page) => !isExcludedSitemapEntry(page) })] : [],
   trailingSlash: 'always',
   build: {

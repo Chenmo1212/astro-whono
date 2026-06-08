@@ -95,11 +95,21 @@ export type AdminThemeControls = RequiredElements<{
   inputSidebarDividerDefault: HTMLInputElement | null;
   inputSidebarDividerSubtle: HTMLInputElement | null;
   inputSidebarDividerNone: HTMLInputElement | null;
+  inputQiniuAccessKey: HTMLInputElement | null;
+  inputQiniuSecretKey: HTMLInputElement | null;
+  inputQiniuBucket: HTMLInputElement | null;
+  inputQiniuDomain: HTMLInputElement | null;
+  inputQiniuPath: HTMLInputElement | null;
+  inputQiniuAutoReplace: HTMLInputElement | null;
 }> & {
   statusEl: HTMLElement | null;
   statusLiveEl: HTMLElement | null;
 };
 
+/**
+ * Queries and validates all required admin theme control elements from the DOM.
+ * @returns An object containing all required control dom elements, or null if any required elements are missing.
+ */
 export const queryAdminThemeControls = (): AdminThemeControls | null => {
   const controls = ensureElements({
     form: byId<HTMLFormElement>('admin-form'),
@@ -176,7 +186,13 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     sidebarAdminEntryRowEl: byId<HTMLElement>('ui-sidebar-actions-show-admin-entry-row'),
     inputSidebarDividerDefault: byId<HTMLInputElement>('ui-layout-sidebar-divider-default'),
     inputSidebarDividerSubtle: byId<HTMLInputElement>('ui-layout-sidebar-divider-subtle'),
-    inputSidebarDividerNone: byId<HTMLInputElement>('ui-layout-sidebar-divider-none')
+    inputSidebarDividerNone: byId<HTMLInputElement>('ui-layout-sidebar-divider-none'),
+    inputQiniuAccessKey: byId<HTMLInputElement>('qiniu-access-key'),
+    inputQiniuSecretKey: byId<HTMLInputElement>('qiniu-secret-key'),
+    inputQiniuBucket: byId<HTMLInputElement>('qiniu-bucket'),
+    inputQiniuDomain: byId<HTMLInputElement>('qiniu-domain'),
+    inputQiniuPath: byId<HTMLInputElement>('qiniu-path'),
+    inputQiniuAutoReplace: byId<HTMLInputElement>('qiniu-auto-replace')
   });
 
   if (!controls) return null;
