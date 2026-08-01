@@ -3,6 +3,7 @@ import { type BitsEntry, getBitAnchorId } from '../lib/bits';
 import { buildBitsCardViewModel } from '../lib/bits-card-view-model';
 import { getThemeSettings } from '../lib/theme-settings';
 import { excerptMarkdownToHtml } from '../utils/excerpt';
+import EncryptedPostClient from './EncryptedPostClient.astro';
 
 const {
   bit,
@@ -31,7 +32,8 @@ const previewExcerptHtml = previewExcerpt ? excerptMarkdownToHtml(previewExcerpt
 const maxVisible = 4;
 const getImageLoading = (prioritize: boolean) => (prioritize ? 'eager' : 'lazy');
 const getImageFetchPriority = (prioritize: boolean) => (prioritize ? 'high' : undefined);
-const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull;
+const isEncrypted = bitEntry.data.encrypted === true;
+const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncrypted;
 ---
 
 <article
@@ -59,7 +61,12 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull;
     <div class="name">{card.authorName}</div>
   </div>
 
-  {Content ? (
+  {isEncrypted && bitEntry.data.encryptedContent ? (
+    <EncryptedPostClient
+      postId={bitEntry.id}
+      encryptedContent={bitEntry.data.encryptedContent}
+    />
+  ) : Content ? (
     shouldUseExpandableBody ? (
       <div class="bit-body" data-bit-expandable data-bit-fading="idle">
         <div class="bit-body__preview" data-bit-expandable-preview>

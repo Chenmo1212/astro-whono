@@ -160,7 +160,18 @@ const bits = defineCollection({
 
     // Optional media for card display.
     images: z.array(bitsImage).optional(),
-    author: bitsAuthor.optional()
+    author: bitsAuthor.optional(),
+
+    // Encryption support (mirrors essay)
+    encrypted: z.boolean().default(false),
+    encryptedContent: z.object({
+      encrypted: z.string(),
+      salt: z.string(),
+      iv: z.string(),
+      authTag: z.string(),
+      algorithm: z.string().default('aes-256-gcm'),
+      iterations: z.number().default(100000),
+    }).optional()
   })
 });
 

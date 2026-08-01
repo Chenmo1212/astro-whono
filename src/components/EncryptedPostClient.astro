@@ -61,7 +61,7 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 			</span>
 		</div>
 		<div class="prompt-note">
-			<span class="prompt-note__text">如已忘记密码，请联系作者</span>
+			<span class="prompt-note__text">如无密码但想阅读，请联系作者</span>
 			<span class="prompt-note__meta">AES-256 加密</span>
 		</div>
 	</div>
@@ -117,7 +117,7 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 
 	.password-prompt__title {
 		font-family: "Noto Serif SC", ui-serif, Georgia, serif;
-		font-size: 22px;
+		font-size: 18px;
 		font-weight: 500;
 		letter-spacing: 0.02em;
 		margin: 0 0 6px 0;
@@ -549,7 +549,7 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 		try {
 			// Call server API to verify password
 			// Use apiBaseUrl if configured, otherwise use relative URL
-			const apiUrl = apiBaseUrl ? `${apiBaseUrl}/api/v1/blog/verify` : '/api/v1/blog/verify';
+			const apiUrl = apiBaseUrl ? `${apiBaseUrl}/blog/verify` : '/blog/verify';
 			const response = await fetch(apiUrl, {
 				method: 'POST',
 				headers: {

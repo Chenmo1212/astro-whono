@@ -20,7 +20,10 @@ const __dirname = path.dirname(__filename);
 // Load environment variables
 config();
 
-const ESSAY_DIR = path.join(__dirname, '../src/content/essay');
+const CONTENT_DIRS = [
+  path.join(__dirname, '../src/content/essay'),
+  path.join(__dirname, '../src/content/bits'),
+];
 
 /**
  * Parse frontmatter from markdown content
@@ -104,55 +107,63 @@ function processFile(filePath) {
 }
 
 /**
- * Process all markdown files in essay directory
+ * Process all markdown files in the given directories
  */
 function processAllFiles() {
   console.log('🔐 Auto-Encryption Script\n');
-  console.log(`Scanning directory: ${ESSAY_DIR}\n`);
-  
-  if (!fs.existsSync(ESSAY_DIR)) {
-    console.log('Essay directory not found. Skipping encryption.');
-    return;
-  }
-  
-  const files = fs.readdirSync(ESSAY_DIR);
-  const markdownFiles = files.filter(f => f.endsWith('.md') || f.endsWith('.mdx'));
-  
-  if (markdownFiles.length === 0) {
-    console.log('No markdown files found. Skipping encryption.');
-    return;
-  }
-  
+
+  let totalFiles = 0;
   let processedCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
-  
-  for (const file of markdownFiles) {
-    const filePath = path.join(ESSAY_DIR, file);
-    
-    try {
-      const result = processFile(filePath);
-      
-      if (result.processed) {
-        console.log(`✓ ${file} - Encrypted`);
-        processedCount++;
-      } else {
-        console.log(`○ ${file} - Skipped (${result.reason})`);
-        skippedCount++;
-      }
-    } catch (error) {
-      console.error(`✗ ${file} - Error: ${error.message}`);
-      errorCount++;
+
+  for (const dir of CONTENT_DIRS) {
+    console.log(`Scanning directory: ${dir}\n`);
+
+    if (!fs.existsSync(dir)) {
+      console.log('Directory not found. Skipping.\n');
+      continue;
     }
+
+    const files = fs.readdirSync(dir);
+    const markdownFiles = files.filter(f => f.endsWith('.md') || f.endsWith('.mdx'));
+
+    if (markdownFiles.length === 0) {
+      console.log('No markdown files found. Skipping.\n');
+      continue;
+    }
+
+    totalFiles += markdownFiles.length;
+
+    for (const file of markdownFiles) {
+      const filePath = path.join(dir, file);
+
+      try {
+        const result = processFile(filePath);
+
+        if (result.processed) {
+          console.log(`✓ ${file} - Encrypted`);
+          processedCount++;
+        } else {
+          console.log(`○ ${file} - Skipped (${result.reason})`);
+          skippedCount++;
+        }
+      } catch (error) {
+        console.error(`✗ ${file} - Error: ${error.message}`);
+        errorCount++;
+      }
+    }
+
+    console.log('');
   }
-  
-  console.log('\n' + '='.repeat(50));
-  console.log(`Total files: ${markdownFiles.length}`);
+
+  console.log('='.repeat(50));
+  console.log(`Total files: ${totalFiles}`);
   console.log(`Encrypted: ${processedCount}`);
   console.log(`Skipped: ${skippedCount}`);
   console.log(`Errors: ${errorCount}`);
   console.log('='.repeat(50) + '\n');
-  
+
   if (errorCount > 0) {
     process.exit(1);
   }
