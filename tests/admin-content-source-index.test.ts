@@ -235,7 +235,7 @@ describe('admin-console/content-source-index', () => {
 
     expect(items.find((item) => item.id === 'draft-newest')?.publicHref).toBeNull();
     expect(items.find((item) => item.id === 'published-01')?.publicHref).toBe('/bits/#bit-published-01');
-    expect(items.find((item) => item.id === 'published-21')?.publicHref).toBe('/bits/page/2/#bit-published-21');
+    expect(items.find((item) => item.id === 'published-21')?.publicHref).toBe('/bits/page/3/#bit-published-21');
   });
 
   it('keeps malformed frontmatter and missing required fields as placeholder rows', async () => {

@@ -138,6 +138,8 @@ const buildFallbackEssayPublicSlug = (
     hashLength
   )}`;
 
+const isAsciiOnlySlug = (slug: string): boolean => !/[^\u0000-\u007F]/.test(slug);
+
 const resolveEssayCreateFrontmatterSlug = async ({
   entryId,
   publicEntryId,
@@ -150,10 +152,11 @@ const resolveEssayCreateFrontmatterSlug = async ({
   slugUsage: AdminEssayPublicSlugUsage;
 }): Promise<AdminEssayFrontmatter> => {
   if (frontmatter.slug?.trim()) return frontmatter;
-  if (await isEssayPublicSlugAvailable(publicEntryId, slugUsage)) return frontmatter;
+  const defaultPublicSlug = flattenEntryIdToSlug(publicEntryId);
+  if (isAsciiOnlySlug(defaultPublicSlug) && await isEssayPublicSlugAvailable(publicEntryId, slugUsage)) return frontmatter;
 
   const titleSlug = flattenEntryIdToSlug(contentSourceEntryIdToPublicEntryId(frontmatter.title));
-  if (titleSlug && await isEssayPublicSlugAvailable(publicEntryId, slugUsage, titleSlug)) {
+  if (titleSlug && isAsciiOnlySlug(titleSlug) && await isEssayPublicSlugAvailable(publicEntryId, slugUsage, titleSlug)) {
     return { ...frontmatter, slug: titleSlug };
   }
 
