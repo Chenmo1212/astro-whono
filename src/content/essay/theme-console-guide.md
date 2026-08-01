@@ -5,7 +5,7 @@ badge: 指南
 date: 2026-04-26
 updatedAt: 2026-07-11
 tags: [ "Theme Console", "指南"]
-draft: false
+draft: true
 ---
 
 astro-whono 提供一个本地 Theme Console，用于在开发环境中集中管理主题级配置。

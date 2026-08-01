@@ -4,7 +4,7 @@ description: 介绍 astro-whono 本地 Admin Console 的入口、各页面功能
 badge: 指南
 date: 2026-04-24
 tags: [ "Admin Console", "指南" ]
-draft: false
+draft: true
 ---
 
 Admin Console `/admin/`是本地后台入口，用于在 fork、clone 或自托管后接手站点配置与内容维护。
