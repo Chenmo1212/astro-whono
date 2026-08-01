@@ -30,3 +30,7 @@ Thumbs.db
 
 # Font sources (local only)
 tools/fonts-src/
+
+data/**/*.md
+data/**/*.jpg
+data/scripts
