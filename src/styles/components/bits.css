@@ -819,11 +819,6 @@
   word-break: break-word;
 }
 
-.bit-body__preview-text::after {
-  content: " ... ";
-  white-space: pre;
-}
-
 .bit-body__inline-toggle {
   display: inline;
   padding: 0;

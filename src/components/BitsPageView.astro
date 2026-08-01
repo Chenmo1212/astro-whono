@@ -62,14 +62,18 @@ const priorityMediaBitId = items.find((bit) => (bit.data.images?.length ?? 0) > 
 const cards = await Promise.all(
   items.map(async (bit) => {
     const derivedText = getBitsDerivedText(bit);
+    const { Content } = await render(bit);
 
-    if (derivedText.shouldRenderFull) {
-      const { Content } = await render(bit);
-      return { bit, excerpt: '', Content, hasMath: containsMarkdownMath(bit.body ?? '') };
-    }
-    return { bit, excerpt: derivedText.excerpt, Content: null, hasMath: false };
+    return {
+      bit,
+      excerpt: derivedText.shouldRenderFull ? '' : derivedText.excerpt,
+      Content,
+      shouldRenderFull: derivedText.shouldRenderFull,
+      hasMath: containsMarkdownMath(bit.body ?? '')
+    };
   })
 );
+
 const hasRenderedMath = cards.some((card) => card.hasMath);
 const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 ---

@@ -14,7 +14,7 @@
       "label": "絮语",
       "ornament": "·",
       "order": 2,
-      "visible": false
+      "visible": true
     },
     {
       "id": "memo",

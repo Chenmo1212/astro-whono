@@ -2,6 +2,7 @@
 import { type BitsEntry, getBitAnchorId } from '../lib/bits';
 import { buildBitsCardViewModel } from '../lib/bits-card-view-model';
 import { getThemeSettings } from '../lib/theme-settings';
+import { excerptMarkdownToHtml } from '../utils/excerpt';
 
 const {
   bit,
@@ -26,6 +27,7 @@ const card = buildBitsCardViewModel({
   base
 });
 const previewExcerpt = excerpt || (!Content ? card.body.excerpt : '');
+const previewExcerptHtml = previewExcerpt ? excerptMarkdownToHtml(previewExcerpt) : '';
 const maxVisible = 4;
 const getImageLoading = (prioritize: boolean) => (prioritize ? 'eager' : 'lazy');
 const getImageFetchPriority = (prioritize: boolean) => (prioritize ? 'high' : undefined);
@@ -61,7 +63,7 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull;
     shouldUseExpandableBody ? (
       <div class="bit-body" data-bit-expandable data-bit-fading="idle">
         <div class="bit-body__preview" data-bit-expandable-preview>
-          <span class="bit-body__preview-text">{excerpt}</span>
+          <span class="bit-body__preview-text" set:html={previewExcerptHtml}></span>
           <button
             type="button"
             class="bit-body__inline-toggle"
@@ -88,9 +90,9 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull;
         <Content />
       </div>
     )
-  ) : excerpt ? (
+  ) : previewExcerptHtml ? (
     <div class="bit-body">
-      <p>{previewExcerpt}</p>
+      <p set:html={previewExcerptHtml} />
     </div>
   ) : null}
 
