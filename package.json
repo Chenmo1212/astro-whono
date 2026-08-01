@@ -39,10 +39,11 @@
     "new:bit": "node ./scripts/new-bit.mjs"
   },
   "dependencies": {
-    "@astrojs/rss": "^4.0.18",
+    "@astrojs/markdown-remark": "^7.2.2",
+    "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.2",
-    "@lucide/astro": "^1.8.0",
-    "astro": "^6.3.2",
+    "@lucide/astro": "^1.28.0",
+    "astro": "^7.1.6",
     "dotenv": "^16.4.5",
     "github-slugger": "^2.0.0",
     "mdast-util-to-string": "^4.0.0",
@@ -50,9 +51,9 @@
     "qiniu-js": "^3.4.4"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.8",
-    "@astrojs/node": "^10.0.6",
-    "@astrojs/svelte": "^8.1.0",
+    "@astrojs/check": "^0.9.10",
+    "@astrojs/node": "^11.0.3",
+    "@astrojs/svelte": "^9.0.1",
     "@codemirror/commands": "^6.10.3",
     "@codemirror/lang-markdown": "^6.5.0",
     "@codemirror/language": "^6.12.3",
@@ -61,7 +62,7 @@
     "@iconify-json/logos": "^1.2.0",
     "@iconify-json/simple-icons": "^1.2.0",
     "@lezer/highlight": "^1.2.3",
-    "@lucide/svelte": "^1.8.0",
+    "@lucide/svelte": "^1.28.0",
     "@shikijs/rehype": "^4.0.2",
     "@types/node": "^22.0.0",
     "emoji-picker-element": "^1.29.1",
@@ -89,11 +90,16 @@
     "anymatch": {
       "picomatch": "2.3.2"
     },
+    "esbuild": "0.28.1",
     "fast-xml-parser": "5.7.0",
     "h3": "1.15.9",
+    "js-yaml": "4.3.1",
     "picomatch": "4.0.4",
-    "postcss": "8.5.12",
+    "postcss": "8.5.25",
     "rollup": "4.59.0",
+    "sharp": "0.35.3",
+    "svgo": "4.0.2",
+    "vite": "8.2.0",
     "volar-service-yaml": "0.0.70",
     "yaml": "2.8.3",
     "yaml-language-server": "1.20.0"
