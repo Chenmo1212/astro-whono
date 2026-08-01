@@ -9,8 +9,8 @@ import {
   rehypeRestoreMarkdownMathBoundary
 } from './rehype-markdown-math-boundary.mjs';
 import { rehypeAboutDirectives, remarkAboutDirectives } from './about-directives.mjs';
-import remarkRelativeImages from 'remark-relative-images.mjs';
-import remarkToc from 'remark-toc.mjs';
+import remarkRelativeImages from './remark-relative-images.mjs';
+import remarkToc from './remark-toc.mjs';
 import remarkCallout from './remark-callout.mjs';
 import { sanitizeSchema } from './sanitize-schema.mjs';
 import shikiToolbar from './shiki-toolbar.mjs';
