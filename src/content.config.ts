@@ -153,7 +153,7 @@ const bits = defineCollection({
     // Bits can be untitled.
     title: z.string().optional(),
     description: z.string().optional(),
-    date: z.coerce.date(),
+    date: z.preprocess((v) => new Date(v as any), z.date()),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
     slug: slugRule.optional(),
