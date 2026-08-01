@@ -7,6 +7,7 @@ const {
   bit,
   excerpt = '',
   Content = null,
+  shouldRenderFull = false,
   prioritizeLeadMedia = false
 } = Astro.props;
 
@@ -39,6 +40,7 @@ const wideIndex = totalImages > 1 && totalImages <= maxVisible && totalImages % 
 const hasTags = Boolean(placeText || normalTagItems.length);
 const getImageLoading = (prioritize: boolean) => (prioritize ? 'eager' : 'lazy');
 const getImageFetchPriority = (prioritize: boolean) => (prioritize ? 'high' : undefined);
+const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull;
 ---
 
 <article
@@ -67,9 +69,36 @@ const getImageFetchPriority = (prioritize: boolean) => (prioritize ? 'high' : un
   </div>
 
   {Content ? (
-    <div class="bit-body">
-      <Content />
-    </div>
+    shouldUseExpandableBody ? (
+      <div class="bit-body" data-bit-expandable data-bit-fading="idle">
+        <div class="bit-body__preview" data-bit-expandable-preview>
+          <span class="bit-body__preview-text">{excerpt}</span>
+          <button
+            type="button"
+            class="bit-body__inline-toggle"
+            data-bit-expandable-toggle
+            aria-expanded="false"
+          >
+            展开
+          </button>
+        </div>
+        <div class="bit-body__content" data-bit-expandable-content hidden>
+          <Content />
+          <button
+            type="button"
+            class="bit-body__inline-toggle bit-body__inline-toggle--collapse"
+            data-bit-expandable-collapse
+            aria-expanded="true"
+          >
+            收起
+          </button>
+        </div>
+      </div>
+    ) : (
+      <div class="bit-body">
+        <Content />
+      </div>
+    )
   ) : excerpt ? (
     <div class="bit-body">
       <p>{excerpt}</p>
@@ -168,4 +197,125 @@ const getImageFetchPriority = (prioritize: boolean) => (prioritize ? 'high' : un
     ) : null}
     <div>{formatDateTime(bit.data.date)}</div>
   </div>
+  <script>
+    (() => {
+      const cards = document.querySelectorAll<HTMLElement>('[data-bit-expandable]');
+
+      cards.forEach((container) => {
+        const preview = container.querySelector<HTMLElement>('[data-bit-expandable-preview]');
+        const content = container.querySelector<HTMLElement>('[data-bit-expandable-content]');
+        const toggle = container.querySelector<HTMLButtonElement>('[data-bit-expandable-toggle]');
+        const collapse = container.querySelector<HTMLButtonElement>('[data-bit-expandable-collapse]');
+          
+        if (!preview || !content || !toggle || !collapse || toggle.dataset.bound === 'true') return;
+        const previewHeight = preview.getBoundingClientRect().height;
+
+        let collapseFadeFrame = 0;
+
+        const resetInlineFade = () => {
+          preview.style.removeProperty('opacity');
+          content.style.removeProperty('opacity');
+        };
+
+        const stopCollapseFade = () => {
+          if (collapseFadeFrame) {
+            cancelAnimationFrame(collapseFadeFrame);
+            collapseFadeFrame = 0;
+          }
+        };
+
+        const finishExpandedState = () => {
+          stopCollapseFade();
+          resetInlineFade();
+          container.classList.remove('is-expanding', 'is-collapsing');
+          container.classList.add('is-expanded');
+          container.style.removeProperty('--bit-body-current-max-height');
+        };
+
+        toggle.dataset.bound = 'true';
+
+        toggle.addEventListener('click', () => {
+          stopCollapseFade();
+          resetInlineFade();
+
+          const previewHeight = preview.getBoundingClientRect().height;
+          container.classList.remove('is-expanded', 'is-collapsing');
+          container.style.setProperty('--bit-body-current-max-height', `${previewHeight}px`);
+          container.classList.add('is-expanding');
+
+          preview.hidden = true;
+          content.hidden = false;
+          toggle.setAttribute('aria-expanded', 'true');
+
+          requestAnimationFrame(() => {
+            const fullHeight = content.scrollHeight;
+            container.style.setProperty('--bit-body-current-max-height', `${fullHeight + 26}px`);
+          });
+        });
+
+        collapse.addEventListener('click', () => {
+          stopCollapseFade();
+
+          // const currentPreviewHeight = preview.getBoundingClientRect().height;
+          const fullHeight = content.scrollHeight;
+          const collapseDistance = Math.max(fullHeight - previewHeight, 1);
+
+          container.classList.remove('is-expanded', 'is-expanding');
+          container.style.setProperty('--bit-body-current-max-height', `${fullHeight}px`);
+          container.classList.add('is-collapsing');
+
+          preview.hidden = false;
+          preview.style.opacity = '0';
+          content.hidden = false;
+          content.style.opacity = '1';
+          toggle.setAttribute('aria-expanded', 'false');
+
+          const syncCollapseFade = () => {
+            if (!container.classList.contains('is-collapsing')) {
+              stopCollapseFade();
+              return;
+            }
+
+            const currentHeight = container.getBoundingClientRect().height;
+            const progress = Math.min(Math.max((fullHeight - currentHeight) / collapseDistance, 0), 1);
+
+            preview.style.opacity = `${progress}`;
+            content.style.opacity = `${1 - progress}`;
+
+            if (progress < 1) {
+              collapseFadeFrame = requestAnimationFrame(syncCollapseFade);
+              return;
+            }
+
+            collapseFadeFrame = 0;
+          };
+
+          collapseFadeFrame = requestAnimationFrame(syncCollapseFade);
+
+          requestAnimationFrame(() => {
+            container.style.setProperty('--bit-body-current-max-height', `${previewHeight}px`);
+          });
+        });
+
+        container.addEventListener('transitionend', (event) => {
+          if (!(event.target instanceof HTMLElement) || event.target !== container) return;
+          if (event.propertyName !== 'max-height') return;
+
+          if (container.classList.contains('is-expanding')) {
+            finishExpandedState();
+            return;
+          }
+
+          if (!container.classList.contains('is-collapsing')) return;
+
+          stopCollapseFade();
+          container.classList.remove('is-collapsing', 'is-expanded');
+          content.hidden = true;
+          preview.hidden = false;
+          resetInlineFade();
+          container.style.removeProperty('--bit-body-current-max-height');
+        });
+      });
+    })();
+  </script>
 </article>

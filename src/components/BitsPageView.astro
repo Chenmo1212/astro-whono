@@ -56,11 +56,13 @@ const priorityMediaBitId = items.find((bit) => (bit.data.images?.length ?? 0) > 
 const cards = await Promise.all(
   items.map(async (bit) => {
     const derivedText = getBitsDerivedText(bit);
-    if (derivedText.shouldRenderFull) {
-      const { Content } = await render(bit);
-      return { bit, excerpt: '', Content };
-    }
-    return { bit, excerpt: derivedText.excerpt, Content: null };
+    const { Content } = await render(bit);
+    return {
+      bit,
+      excerpt: derivedText.excerpt,
+      Content,
+      shouldRenderFull: derivedText.shouldRenderFull
+    };
   })
 );
 ---
@@ -203,8 +205,8 @@ const cards = await Promise.all(
 
   <div data-bits-browse>
     <div id="bits-list">
-      {cards.map(({ bit, excerpt, Content }) => (
-        <BitCard bit={bit} excerpt={excerpt} Content={Content} prioritizeLeadMedia={bit.id === priorityMediaBitId} />
+      {cards.map(({ bit, excerpt, Content, shouldRenderFull }) => (
+        <BitCard bit={bit} excerpt={excerpt} Content={Content} shouldRenderFull={shouldRenderFull} prioritizeLeadMedia={bit.id === priorityMediaBitId} />
       ))}
     </div>
 
