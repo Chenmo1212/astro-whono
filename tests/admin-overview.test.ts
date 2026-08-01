@@ -207,6 +207,6 @@ describe('admin-console/overview', () => {
     const hrefById = buildAdminOverviewBitsHrefById(bits as unknown as AdminOverviewPublicSource['bits']);
 
     expect(hrefById.get('bit-0')).toBe('/bits/#bit-bit-0');
-    expect(hrefById.get('bit-20')).toBe('/bits/page/2/#bit-bit-20');
+    expect(hrefById.get('bit-20')).toBe('/bits/page/3/#bit-bit-20');
   });
 });

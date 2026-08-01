@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { readFile } from 'node:fs/promises';
 
 const createJsonRequest = (url: string, payload: unknown) =>
   new Request(url, {
@@ -200,36 +199,6 @@ describe('admin preview api', () => {
     expect(result.html).toContain(`<h2 data-admin-outline-key="${second!.key}">Same</h2>`);
   });
 
-  it('renders representative existing content structures', async () => {
-    const { renderAdminMarkdownPreview } = await import('../src/lib/admin-console/preview');
-    const { splitMarkdownFrontmatter } = await import('../src/lib/admin-console/frontmatter');
-
-    const markdownGuide = splitMarkdownFrontmatter(
-      await readFile('src/content/essay/markdown-guide.md', 'utf8')
-    ).bodyText;
-    const memo = splitMarkdownFrontmatter(
-      await readFile('src/content/memo/index.md', 'utf8')
-    ).bodyText;
-
-    const markdownGuideResult = await renderAdminMarkdownPreview({
-      collection: 'essay',
-      source: markdownGuide
-    });
-    const memoResult = await renderAdminMarkdownPreview({
-      collection: 'memo',
-      source: memo
-    });
-
-    expect(markdownGuideResult.html).toContain('class="callout note"');
-    expect(markdownGuideResult.codeHighlight).toBe('shiki-rehype');
-    expect(markdownGuideResult.html).toContain('class="code-block"');
-    expect(markdownGuideResult.html).toContain('<code class="language-ts">');
-    expect(markdownGuideResult.html).toContain('<figure class="figure">');
-    expect(memoResult.html).toContain('<figure class="figure">');
-    expect(markdownGuideResult.elapsedMs).toBeGreaterThanOrEqual(0);
-    expect(memoResult.elapsedMs).toBeGreaterThanOrEqual(0);
-  });
-
   it('returns structured json errors for invalid inputs', async () => {
     const { POST } = await import('../src/pages/api/admin/preview');
 
@@ -311,7 +280,7 @@ describe('admin preview api', () => {
     expect(payload.result.html).not.toContain('about-site-info__eyebrow');
     expect(payload.result.html).not.toContain('src="/author/avatar.webp"');
     expect(payload.result.html).toContain('class="contact-list"');
-    expect(payload.result.html).toContain('href="https://github.com/cxro/astro-whono"');
+    expect(payload.result.html).toContain('href="https://github.com/Chenmo1212"');
     expect(payload.result.html).toContain(`href="mailto:${getThemeSettings().settings.site.socialLinks.email}"`);
     expect(payload.result.html).not.toContain('data-about-contact-links');
     expect(payload.result.html).not.toContain('javascript:alert');

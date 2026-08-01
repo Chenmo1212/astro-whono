@@ -22,9 +22,7 @@ const restoreDirectiveText = (parent, index, node) => {
 
 export default function remarkCallout() {
   return (tree) => {
-    visit(tree, 'containerDirective', (node) => {
-      return node.type === 'textDirective' || node.type === 'leafDirective' || node.type === 'containerDirective';
-    }, (node, index, parent) => {
+    visit(tree, 'containerDirective', (node, index, parent) => {
       if (NON_CALLOUT_DIRECTIVES.has(node.name)) return;
       const type = CALLOUT_TYPES.has(node.name) ? node.name : 'note';
 

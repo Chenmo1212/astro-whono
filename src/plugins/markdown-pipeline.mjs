@@ -261,10 +261,10 @@ export const createMarkdownShikiConfig = () => ({
 /** @param {ProjectMarkdownRemarkOptions} [options] */
 export const createProjectMarkdownRemarkPlugins = ({ aboutEnabled } = {}) => [
   [remarkMath, markdownMathOptions],
-  remarkToc,
   remarkDirective,
-  remarkRelativeImages,
   withOptions(remarkAboutDirectives, aboutEnabled === undefined ? undefined : { enabled: aboutEnabled }),
+  remarkToc,
+  remarkRelativeImages,
   remarkCallout
 ];
 
