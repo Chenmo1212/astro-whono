@@ -201,7 +201,9 @@ describe('admin-console/overview', () => {
   });
 
   it('builds bits hrefs from the published bits order and page size', () => {
-    const bits = Array.from({ length: 21 }, (_, index) => bit(`bit-${index}`));
+    const bits = Array.from({ length: 21 }, (_, index) => bit(`bit-${index}`, {
+      date: date(`2026-01-${String(21 - index).padStart(2, '0')}T12:00:00.000Z`)
+    }));
     const hrefById = buildAdminOverviewBitsHrefById(bits as unknown as AdminOverviewPublicSource['bits']);
 
     expect(hrefById.get('bit-0')).toBe('/bits/#bit-bit-0');

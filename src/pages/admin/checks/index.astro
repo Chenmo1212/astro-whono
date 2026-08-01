@@ -14,7 +14,7 @@ import { createWithBase } from '../../../utils/format';
 const isDev = import.meta.env.DEV;
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
-const { default: adminShellStylesHref } = await import('../../../styles/components/admin-shell.css?url');
+const { default: adminShellStylesHref } = await import('../../../styles/components/admin/shell.css?url');
 
 const selectedCategoryParam = Astro.url.searchParams.get('category')?.trim() ?? '';
 const selectedCategory: AdminChecksFilterValue = isAdminChecksCategoryId(selectedCategoryParam)
@@ -24,7 +24,7 @@ const selectedCategory: AdminChecksFilterValue = isAdminChecksCategoryId(selecte
 const loadChecksDevState = async () => {
   const [{ default: adminChecksScriptHref }, { default: adminChecksStylesHref }] = await Promise.all([
     import('../../../scripts/admin-checks/index.ts?url'),
-    import('../../../styles/components/admin-checks.css?url')
+    import('../../../styles/components/admin/checks.css?url')
   ]);
 
   return {
@@ -142,7 +142,7 @@ const buildChecksHref = (category: AdminChecksFilterValue): string => {
             </div>
 
             <p class="admin-checks-toolbar__hint">
-              注：提交前仍建议执行 <code>npm run check</code>、<code>npm test</code>、<code>npm run build</code>。
+              注：提交前仍建议执行 <code>npm run verify</code>。
             </p>
           </header>
 

@@ -3,6 +3,7 @@ import {
   type CollectionEntry,
   type CollectionKey
 } from 'astro:content';
+import { existsSync } from 'node:fs';
 import {
   ESSAY_PUBLIC_SLUG_RE,
   RESERVED_ESSAY_SLUGS,
@@ -12,6 +13,12 @@ import { deriveMarkdownText, truncateText } from '../utils/excerpt';
 export { createWithBase } from '../utils/format';
 
 type OrderBy<K extends CollectionKey> = (a: CollectionEntry<K>, b: CollectionEntry<K>) => number;
+type CollectionEntryWithSourcePath = {
+  filePath?: unknown;
+};
+type CollectionEntryDataWithDraft = {
+  draft?: unknown;
+};
 
 export type GetPublishedOptions<K extends CollectionKey> = {
   orderBy?: OrderBy<K>;
@@ -37,6 +44,19 @@ export const getPageSlice = <T>(items: T[], currentPage: number, pageSize: numbe
   return items.slice(start, start + pageSize);
 };
 
+const isContentSourceFilePresent = <K extends CollectionKey>(entry: CollectionEntry<K>): boolean => {
+  if (!import.meta.env.DEV) return true;
+
+  // DEV-only 同步 existsSync 防御，仅服务公开页 / 公开内容 getter 在 dev preview 下避免显示已删除条目。
+  // Admin Content 列表已迁移到源文件索引层，不依赖也不扩散此过滤。
+  // 同步 IO 成本若随公开内容规模增长变得可见，应作为公开侧优化单独处理。
+  const filePath = (entry as CollectionEntryWithSourcePath).filePath;
+  return typeof filePath !== 'string' || filePath.length === 0 || existsSync(filePath);
+};
+
+const isDraftContentEntry = <K extends CollectionKey>(entry: CollectionEntry<K>): boolean =>
+  (entry.data as CollectionEntryDataWithDraft).draft === true;
+
 export const buildPaginatedPaths = (totalPages: number) => {
   if (totalPages <= 1) return [];
   return Array.from({ length: totalPages - 1 }, (_, i) => ({
@@ -50,8 +70,8 @@ export async function getPublished<K extends CollectionKey>(
 ) {
   const prod = import.meta.env.PROD;
   const includeDraft = opts.includeDraft ?? !prod;
-  const filter = includeDraft ? undefined : ({ data }: CollectionEntry<K>) => data.draft !== true;
-  const items = await getCollection(name, filter);
+  const filter = includeDraft ? undefined : (entry: CollectionEntry<K>) => !isDraftContentEntry(entry);
+  const items = (await getCollection(name, filter)).filter(isContentSourceFilePresent);
 
   if (!opts.orderBy) return items;
   return items.slice().sort(opts.orderBy);

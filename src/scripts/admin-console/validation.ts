@@ -59,6 +59,10 @@ type ValidationContext = {
   inputPageBitsAuthorName: HTMLInputElement;
   inputPageBitsAuthorAvatar: HTMLInputElement;
   inputSidebarDividerDefault: HTMLInputElement;
+  inputTypographyReadable: HTMLElement;
+  inputTypographyCopy: HTMLElement;
+  inputTypographyMono: HTMLElement;
+  inputTypographyBrand: HTMLElement;
   getPresetFieldTarget: (id: SiteSocialPresetId, field: 'order' | 'href') => () => HTMLElement | null;
   getCustomFieldTarget: (
     index: number,
@@ -123,6 +127,10 @@ export const createValidation = ({
   inputPageBitsAuthorName,
   inputPageBitsAuthorAvatar,
   inputSidebarDividerDefault,
+  inputTypographyReadable,
+  inputTypographyCopy,
+  inputTypographyMono,
+  inputTypographyBrand,
   getPresetFieldTarget,
   getCustomFieldTarget,
   getCustomVisibilityTarget,
@@ -166,6 +174,12 @@ export const createValidation = ({
     memo: () => inputPageMemoSubtitle,
     about: () => inputPageAboutSubtitle
   };
+
+  /* 字体卡片组本身不可聚焦，聚焦目标退到组内选中（或首个）radio。 */
+  const getTypographyFocusTarget = (group: HTMLElement): HTMLElement =>
+    group.querySelector<HTMLElement>('input[type="radio"]:checked')
+    ?? group.querySelector<HTMLElement>('input[type="radio"]')
+    ?? group;
 
   const resolveSharedIssueTarget = (path: string): (() => HTMLElement | null) | undefined => {
     switch (path) {
@@ -237,6 +251,14 @@ export const createValidation = ({
         return () => inputArticleMetaShowReadingTime;
       case 'ui.layout.sidebarDivider':
         return () => inputSidebarDividerDefault;
+      case 'ui.typography.readable':
+        return () => getTypographyFocusTarget(inputTypographyReadable);
+      case 'ui.typography.copy':
+        return () => getTypographyFocusTarget(inputTypographyCopy);
+      case 'ui.typography.mono':
+        return () => getTypographyFocusTarget(inputTypographyMono);
+      case 'ui.typography.brand':
+        return () => getTypographyFocusTarget(inputTypographyBrand);
       default:
         break;
     }

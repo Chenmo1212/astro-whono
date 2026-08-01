@@ -1,0 +1,594 @@
+/* Admin Content Editor Pane Content
+   承载正文编辑器、预览 scroller/prose 和空/错误内容态；不承载 data-layout/data-effective-view 覆盖。
+*/
+
+.admin-editor-shell__pane--body {
+  --admin-editor-codemirror-cursor: color-mix(in srgb, var(--text) 88%, var(--muted) 12%);
+  --admin-editor-codemirror-selection: color-mix(in srgb, var(--text) 13%, transparent);
+  --admin-editor-codemirror-selection-focus: color-mix(in srgb, var(--admin-focus-border) 24%, transparent);
+  --admin-editor-codemirror-surface: transparent;
+  --admin-editor-codemirror-gutter-surface: transparent;
+  --admin-editor-codemirror-gutter-border: color-mix(in srgb, var(--border) 64%, transparent);
+  --admin-editor-codemirror-gutter-text: color-mix(in srgb, var(--muted) 72%, transparent);
+  --admin-editor-codemirror-text: var(--text);
+  --admin-editor-markdown-heading-color: var(--text);
+  --admin-editor-markdown-heading3-color: var(--admin-editor-markdown-heading-color);
+  --admin-editor-markdown-heading-muted-color: var(--muted);
+  --admin-editor-markdown-link-color: var(--text);
+  --admin-editor-markdown-url-color: var(--admin-editor-markdown-link-color);
+  --admin-editor-markdown-link-underline: color-mix(in srgb, var(--text) 36%, transparent);
+  --admin-editor-markdown-code-color: var(--text);
+  --admin-editor-markdown-inline-code-color: var(--admin-editor-markdown-code-color);
+  --admin-editor-markdown-code-info-color: var(--admin-editor-markdown-marker-color);
+  --admin-editor-markdown-comment-color: var(--admin-editor-markdown-marker-color);
+  --admin-editor-markdown-html-color: var(--admin-editor-markdown-marker-color);
+  --admin-editor-markdown-html-tag-color: var(--admin-editor-markdown-html-color);
+  --admin-editor-markdown-html-attribute-color: var(--admin-editor-markdown-url-color);
+  --admin-editor-markdown-html-value-color: var(--admin-editor-markdown-literal-color);
+  --admin-editor-markdown-quote-color: var(--muted);
+  --admin-editor-markdown-marker-color: var(--muted);
+  --admin-editor-markdown-emphasis-color: var(--text);
+  --admin-editor-markdown-strong-color: var(--text);
+  --admin-editor-markdown-strike-color: var(--muted);
+  --admin-editor-markdown-literal-color: var(--text);
+  --admin-editor-themed-pane-bg: var(--admin-editor-body-surface);
+}
+
+.admin-editor-body__codemirror {
+  height: 100%;
+  min-height: 0;
+  inline-size: 100%;
+}
+
+/* Markdown highlight presets: keep palette variables scoped to the body pane. */
+.admin-editor-shell__pane--body[data-markdown-highlight-theme] {
+  background: var(--admin-editor-themed-pane-bg);
+}
+
+.admin-editor-shell__pane--body[data-markdown-highlight-theme='github'] {
+  --admin-editor-themed-pane-bg: #ffffff;
+  --admin-editor-codemirror-cursor: #0969da;
+  --admin-editor-codemirror-selection: #0969da1f;
+  --admin-editor-codemirror-selection-focus: #0969da2e;
+  --admin-editor-codemirror-surface: #ffffff;
+  --admin-editor-codemirror-gutter-surface: #f6f8fa;
+  --admin-editor-codemirror-gutter-border: #d1d9e0b3;
+  --admin-editor-codemirror-gutter-text: #59636e;
+  --admin-editor-codemirror-text: #1f2328;
+  --admin-editor-markdown-heading-color: #0969da;
+  --admin-editor-markdown-heading3-color: #1f6feb;
+  --admin-editor-markdown-heading-muted-color: #59636e;
+  --admin-editor-markdown-link-color: #0969da;
+  --admin-editor-markdown-url-color: #7a4fb3;
+  --admin-editor-markdown-link-underline: #0969da59;
+  --admin-editor-markdown-code-color: #24292e;
+  --admin-editor-markdown-inline-code-color: #8250df;
+  --admin-editor-markdown-code-info-color: #b35900;
+  --admin-editor-markdown-comment-color: #6e7781;
+  --admin-editor-markdown-html-color: #6e7781;
+  --admin-editor-markdown-html-tag-color: #116329;
+  --admin-editor-markdown-html-attribute-color: #953800;
+  --admin-editor-markdown-html-value-color: #0a3069;
+  --admin-editor-markdown-quote-color: #1a7f37;
+  --admin-editor-markdown-marker-color: #8c959f;
+  --admin-editor-markdown-emphasis-color: #1f2328;
+  --admin-editor-markdown-strong-color: #1f2328;
+  --admin-editor-markdown-strike-color: #59636e;
+  --admin-editor-markdown-literal-color: #7a4fb3;
+}
+
+.admin-editor-shell__pane--body[data-markdown-highlight-theme='nord'] {
+  --admin-editor-themed-pane-bg: #fbfdff;
+  --admin-editor-codemirror-cursor: #0078a8;
+  --admin-editor-codemirror-selection: #5e81ac24;
+  --admin-editor-codemirror-selection-focus: #5e81ac36;
+  --admin-editor-codemirror-surface: #fbfdff;
+  --admin-editor-codemirror-gutter-surface: #edf2f7;
+  --admin-editor-codemirror-gutter-border: #d8dee9;
+  --admin-editor-codemirror-gutter-text: #4c566a;
+  --admin-editor-codemirror-text: #2e3440;
+  --admin-editor-markdown-heading-color: #4d78a8;
+  --admin-editor-markdown-heading3-color: #3f6f93;
+  --admin-editor-markdown-heading-muted-color: #4c566a;
+  --admin-editor-markdown-link-color: #0078a8;
+  --admin-editor-markdown-url-color: #735f8a;
+  --admin-editor-markdown-link-underline: color-mix(in srgb, var(--admin-editor-markdown-link-color) 62%, transparent);
+  --admin-editor-markdown-code-color: #3b4252;
+  --admin-editor-markdown-inline-code-color: #9a5360;
+  --admin-editor-markdown-code-info-color: #b35c00;
+  --admin-editor-markdown-comment-color: #5f6f86;
+  --admin-editor-markdown-html-color: #5f6f86;
+  --admin-editor-markdown-html-tag-color: #3f6f93;
+  --admin-editor-markdown-html-attribute-color: #9a5360;
+  --admin-editor-markdown-html-value-color: #735f8a;
+  --admin-editor-markdown-quote-color: #3f777a;
+  --admin-editor-markdown-marker-color: #4c566a;
+  --admin-editor-markdown-emphasis-color: #2f8da3;
+  --admin-editor-markdown-literal-color: #735f8a;
+}
+
+.admin-editor-shell__pane--body[data-markdown-highlight-theme='onedark'] {
+  --admin-editor-themed-pane-bg: #fafafa;
+  --admin-editor-codemirror-cursor: #2f6f9f;
+  --admin-editor-codemirror-selection: #61afef24;
+  --admin-editor-codemirror-selection-focus: #61afef36;
+  --admin-editor-codemirror-surface: #fafafa;
+  --admin-editor-codemirror-gutter-surface: #fafafa;
+  --admin-editor-codemirror-gutter-border: #e1e4e8;
+  --admin-editor-codemirror-gutter-text: #6f7782;
+  --admin-editor-codemirror-text: #2b3038;
+  --admin-editor-markdown-heading-color: #a626a4;
+  --admin-editor-markdown-heading3-color: #8b55a2;
+  --admin-editor-markdown-heading-muted-color: #6f7782;
+  --admin-editor-markdown-link-color: #2f6f9f;
+  --admin-editor-markdown-url-color: #9a6118;
+  --admin-editor-markdown-link-underline: #2f6f9f73;
+  --admin-editor-markdown-code-color: #3a3f4b;
+  --admin-editor-markdown-inline-code-color: #8a5a12;
+  --admin-editor-markdown-code-info-color: #986801;
+  --admin-editor-markdown-comment-color: #6f7782;
+  --admin-editor-markdown-html-color: #6f7782;
+  --admin-editor-markdown-html-tag-color: #c53b36;
+  --admin-editor-markdown-html-attribute-color: #986801;
+  --admin-editor-markdown-html-value-color: #407f35;
+  --admin-editor-markdown-quote-color: #4f7f35;
+  --admin-editor-markdown-marker-color: #6f7782;
+  --admin-editor-markdown-emphasis-color: #8b55a2;
+  --admin-editor-markdown-strong-color: #2b3038;
+  --admin-editor-markdown-strike-color: #6f7782;
+  --admin-editor-markdown-literal-color: #9a6118;
+}
+
+.admin-editor-shell__pane--body[data-markdown-highlight-theme='classic'] {
+  --admin-editor-themed-pane-bg: #fffdf8;
+  --admin-editor-codemirror-cursor: #2f332d;
+  --admin-editor-codemirror-selection: #4c5f861f;
+  --admin-editor-codemirror-selection-focus: #4c5f8633;
+  --admin-editor-codemirror-surface: #fffdf8;
+  --admin-editor-codemirror-gutter-surface: #f6f1e7;
+  --admin-editor-codemirror-gutter-border: #ddd4c5;
+  --admin-editor-codemirror-gutter-text: #7a7468;
+  --admin-editor-codemirror-text: #2f332d;
+  --admin-editor-markdown-heading-color: #343a32;
+  --admin-editor-markdown-heading3-color: #596a82;
+  --admin-editor-markdown-heading-muted-color: #667064;
+  --admin-editor-markdown-link-color: #4c5f86;
+  --admin-editor-markdown-url-color: #6654a6;
+  --admin-editor-markdown-link-underline: #4c5f8673;
+  --admin-editor-markdown-code-color: #4a4032;
+  --admin-editor-markdown-inline-code-color: #755227;
+  --admin-editor-markdown-code-info-color: #9a5b13;
+  --admin-editor-markdown-comment-color: #747b70;
+  --admin-editor-markdown-html-color: #747b70;
+  --admin-editor-markdown-html-tag-color: #596a82;
+  --admin-editor-markdown-html-attribute-color: #755227;
+  --admin-editor-markdown-html-value-color: #76548c;
+  --admin-editor-markdown-quote-color: #8a5157;
+  --admin-editor-markdown-marker-color: #747b70;
+  --admin-editor-markdown-emphasis-color: #2f332d;
+  --admin-editor-markdown-strong-color: #2f332d;
+  --admin-editor-markdown-strike-color: #747b70;
+  --admin-editor-markdown-literal-color: #76548c;
+}
+
+.admin-editor-shell__pane--body[data-markdown-highlight-theme='vivid'] {
+  --admin-editor-themed-pane-bg: #fffefe;
+  --admin-editor-codemirror-cursor: #d12a91;
+  --admin-editor-codemirror-selection: #d12a9124;
+  --admin-editor-codemirror-selection-focus: #007c9f2e;
+  --admin-editor-codemirror-surface: #fffefe;
+  --admin-editor-codemirror-gutter-surface: #fbf8fd;
+  --admin-editor-codemirror-gutter-border: #eadff0;
+  --admin-editor-codemirror-gutter-text: #91869d;
+  --admin-editor-codemirror-text: #25222c;
+  --admin-editor-markdown-heading-color: #d12a91;
+  --admin-editor-markdown-heading3-color: #aa3fb3;
+  --admin-editor-markdown-heading-muted-color: #6f657c;
+  --admin-editor-markdown-link-color: #007c9f;
+  --admin-editor-markdown-url-color: #6f42c1;
+  --admin-editor-markdown-link-underline: #007c9f66;
+  --admin-editor-markdown-code-color: #3a3342;
+  --admin-editor-markdown-inline-code-color: #b14c00;
+  --admin-editor-markdown-code-info-color: #a94f00;
+  --admin-editor-markdown-comment-color: #8a8195;
+  --admin-editor-markdown-html-color: #007a7a;
+  --admin-editor-markdown-html-tag-color: #007a7a;
+  --admin-editor-markdown-html-attribute-color: #d12a91;
+  --admin-editor-markdown-html-value-color: #8a3ffc;
+  --admin-editor-markdown-quote-color: #08784f;
+  --admin-editor-markdown-marker-color: #9a93a6;
+  --admin-editor-markdown-emphasis-color: #007c9f;
+  --admin-editor-markdown-strong-color: #25222c;
+  --admin-editor-markdown-strike-color: #8a8195;
+  --admin-editor-markdown-literal-color: #8a3ffc;
+}
+
+:root[data-theme='dark'] .admin-editor-shell__pane--body[data-markdown-highlight-theme='github'] {
+  --admin-editor-themed-pane-bg: #22272e;
+  --admin-editor-codemirror-cursor: #2f81f7;
+  --admin-editor-codemirror-selection: #3392ff33;
+  --admin-editor-codemirror-selection-focus: #3392ff44;
+  --admin-editor-codemirror-surface: #22272e;
+  --admin-editor-codemirror-gutter-surface: #1c2128;
+  --admin-editor-codemirror-gutter-border: #373e47;
+  --admin-editor-codemirror-gutter-text: #768390;
+  --admin-editor-codemirror-text: #c9d1d9;
+  --admin-editor-markdown-heading-color: #2f81f7;
+  --admin-editor-markdown-heading3-color: #58a6ff;
+  --admin-editor-markdown-heading-muted-color: #768390;
+  --admin-editor-markdown-link-color: #2f81f7;
+  --admin-editor-markdown-url-color: #c29bf0;
+  --admin-editor-markdown-link-underline: #2f81f780;
+  --admin-editor-markdown-code-color: #c9d1d9;
+  --admin-editor-markdown-inline-code-color: #d2a8ff;
+  --admin-editor-markdown-code-info-color: #f69d50;
+  --admin-editor-markdown-comment-color: #8b949e;
+  --admin-editor-markdown-html-color: #8b949e;
+  --admin-editor-markdown-html-tag-color: #7ee787;
+  --admin-editor-markdown-html-attribute-color: #ffa657;
+  --admin-editor-markdown-html-value-color: #a5d6ff;
+  --admin-editor-markdown-quote-color: #57ab5a;
+  --admin-editor-markdown-marker-color: #636e7b;
+  --admin-editor-markdown-emphasis-color: #c9d1d9;
+  --admin-editor-markdown-strong-color: #c9d1d9;
+  --admin-editor-markdown-strike-color: #768390;
+  --admin-editor-markdown-literal-color: #d2a8ff;
+}
+
+:root[data-theme='dark'] .admin-editor-shell__pane--body[data-markdown-highlight-theme='nord'] {
+  --admin-editor-themed-pane-bg: #2e3440;
+  --admin-editor-codemirror-cursor: #88c0d0;
+  --admin-editor-codemirror-selection: #88c0d029;
+  --admin-editor-codemirror-selection-focus: #88c0d03d;
+  --admin-editor-codemirror-surface: #2e3440;
+  --admin-editor-codemirror-gutter-surface: #242933;
+  --admin-editor-codemirror-gutter-border: #3b4252;
+  --admin-editor-codemirror-gutter-text: #6c7a9c;
+  --admin-editor-codemirror-text: #d8dee9;
+  --admin-editor-markdown-heading-color: #88c0d0;
+  --admin-editor-markdown-heading3-color: #81a1c1;
+  --admin-editor-markdown-heading-muted-color: #616e88;
+  --admin-editor-markdown-link-color: #81a1c1;
+  --admin-editor-markdown-url-color: #a99bc7;
+  --admin-editor-markdown-link-underline: #81a1c199;
+  --admin-editor-markdown-code-color: #d8dee9;
+  --admin-editor-markdown-inline-code-color: #c8848c;
+  --admin-editor-markdown-code-info-color: #ebcb8b;
+  --admin-editor-markdown-comment-color: #6c7a9c;
+  --admin-editor-markdown-html-color: #6c7a9c;
+  --admin-editor-markdown-html-tag-color: #8fbcbb;
+  --admin-editor-markdown-html-attribute-color: #d08770;
+  --admin-editor-markdown-html-value-color: #a99bc7;
+  --admin-editor-markdown-quote-color: #8fbcbb;
+  --admin-editor-markdown-marker-color: #616e88;
+  --admin-editor-markdown-emphasis-color: #8fbcbb;
+  --admin-editor-markdown-literal-color: #a99bc7;
+}
+
+:root[data-theme='dark'] .admin-editor-shell__pane--body[data-markdown-highlight-theme='onedark'] {
+  --admin-editor-themed-pane-bg: #282c34;
+  --admin-editor-codemirror-cursor: #abb2bf;
+  --admin-editor-codemirror-selection: #3e4451;
+  --admin-editor-codemirror-selection-focus: #3e4451;
+  --admin-editor-codemirror-surface: #282c34;
+  --admin-editor-codemirror-gutter-surface: #21252b;
+  --admin-editor-codemirror-gutter-border: #3b4048;
+  --admin-editor-codemirror-gutter-text: #5c6370;
+  --admin-editor-codemirror-text: #abb2bf;
+  --admin-editor-markdown-heading-color: #c678dd;
+  --admin-editor-markdown-heading3-color: #b58bd0;
+  --admin-editor-markdown-heading-muted-color: #8f98a8;
+  --admin-editor-markdown-link-color: #61afef;
+  --admin-editor-markdown-url-color: #d19a66;
+  --admin-editor-markdown-link-underline: #61afef99;
+  --admin-editor-markdown-code-color: #abb2bf;
+  --admin-editor-markdown-inline-code-color: #e5c07b;
+  --admin-editor-markdown-code-info-color: #e5c07b;
+  --admin-editor-markdown-comment-color: #7f848e;
+  --admin-editor-markdown-html-color: #5c6370;
+  --admin-editor-markdown-html-tag-color: #e06c75;
+  --admin-editor-markdown-html-attribute-color: #d19a66;
+  --admin-editor-markdown-html-value-color: #98c379;
+  --admin-editor-markdown-quote-color: #98c379;
+  --admin-editor-markdown-marker-color: #5c6370;
+  --admin-editor-markdown-emphasis-color: #c678dd;
+  --admin-editor-markdown-strong-color: #abb2bf;
+  --admin-editor-markdown-strike-color: #5c6370;
+  --admin-editor-markdown-literal-color: #d19a66;
+}
+
+:root[data-theme='dark'] .admin-editor-shell__pane--body[data-markdown-highlight-theme='classic'] {
+  --admin-editor-themed-pane-bg: #232326;
+  --admin-editor-codemirror-cursor: #e3e0d8;
+  --admin-editor-codemirror-selection: #aeb8d626;
+  --admin-editor-codemirror-selection-focus: #aeb8d63d;
+  --admin-editor-codemirror-surface: #232326;
+  --admin-editor-codemirror-gutter-surface: #1d1d20;
+  --admin-editor-codemirror-gutter-border: #39383d;
+  --admin-editor-codemirror-gutter-text: #858790;
+  --admin-editor-codemirror-text: #e3e0d8;
+  --admin-editor-markdown-heading-color: #ece7dd;
+  --admin-editor-markdown-heading3-color: #b7c4d8;
+  --admin-editor-markdown-heading-muted-color: #aaa9a1;
+  --admin-editor-markdown-link-color: #aeb8d6;
+  --admin-editor-markdown-url-color: #c0a8e8;
+  --admin-editor-markdown-link-underline: #aeb8d699;
+  --admin-editor-markdown-code-color: #d8d0bf;
+  --admin-editor-markdown-inline-code-color: #d3b678;
+  --admin-editor-markdown-code-info-color: #d3b678;
+  --admin-editor-markdown-comment-color: #9a9aa1;
+  --admin-editor-markdown-html-color: #8a8d94;
+  --admin-editor-markdown-html-tag-color: #b7c4d8;
+  --admin-editor-markdown-html-attribute-color: #d3b678;
+  --admin-editor-markdown-html-value-color: #c0a8e8;
+  --admin-editor-markdown-quote-color: #d19aa2;
+  --admin-editor-markdown-marker-color: #8a8d94;
+  --admin-editor-markdown-emphasis-color: #e3e0d8;
+  --admin-editor-markdown-strong-color: #e3e0d8;
+  --admin-editor-markdown-strike-color: #8a8d94;
+  --admin-editor-markdown-literal-color: #c0a8e8;
+}
+
+:root[data-theme='dark'] .admin-editor-shell__pane--body[data-markdown-highlight-theme='vivid'] {
+  --admin-editor-themed-pane-bg: #282435;
+  --admin-editor-codemirror-cursor: #ff3eb5;
+  --admin-editor-codemirror-selection: #ff3eb533;
+  --admin-editor-codemirror-selection-focus: #39dce844;
+  --admin-editor-codemirror-surface: #282435;
+  --admin-editor-codemirror-gutter-surface: #211e2b;
+  --admin-editor-codemirror-gutter-border: #3e374c;
+  --admin-editor-codemirror-gutter-text: #7b748a;
+  --admin-editor-codemirror-text: #f2edf7;
+  --admin-editor-markdown-heading-color: #ff3eb5;
+  --admin-editor-markdown-heading3-color: #ff6fd0;
+  --admin-editor-markdown-heading-muted-color: #b9a7c8;
+  --admin-editor-markdown-link-color: #39dce8;
+  --admin-editor-markdown-url-color: #9ee7ff;
+  --admin-editor-markdown-link-underline: #39dce899;
+  --admin-editor-markdown-code-color: #eee7f4;
+  --admin-editor-markdown-inline-code-color: #ffb86b;
+  --admin-editor-markdown-code-info-color: #ff9f43;
+  --admin-editor-markdown-comment-color: #9d95ad;
+  --admin-editor-markdown-html-color: #65e4d5;
+  --admin-editor-markdown-html-tag-color: #65e4d5;
+  --admin-editor-markdown-html-attribute-color: #ff6fd0;
+  --admin-editor-markdown-html-value-color: #ffb86b;
+  --admin-editor-markdown-quote-color: #68e6a1;
+  --admin-editor-markdown-marker-color: #7b748a;
+  --admin-editor-markdown-emphasis-color: #39dce8;
+  --admin-editor-markdown-strong-color: #f2edf7;
+  --admin-editor-markdown-strike-color: #7b748a;
+  --admin-editor-markdown-literal-color: #c084fc;
+}
+
+.admin-editor-body__codemirror .cm-editor {
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--admin-editor-codemirror-text);
+  font-family: var(--admin-font-mono);
+  font-size: var(--admin-text-base);
+  line-height: 1.65;
+}
+
+.admin-editor-body__codemirror .cm-scroller {
+  overflow: auto;
+  background: var(--admin-editor-codemirror-surface);
+  font-family: inherit;
+  line-height: inherit;
+}
+
+.admin-editor-body__codemirror .cm-gutters {
+  border: 0;
+  border-inline-end: 1px solid var(--admin-editor-codemirror-gutter-border);
+  background: var(--admin-editor-codemirror-gutter-surface);
+  color: var(--admin-editor-codemirror-gutter-text);
+  font-family: inherit;
+  font-size: var(--admin-text-xs);
+  line-height: inherit;
+}
+
+.admin-editor-body__codemirror .cm-lineNumbers .cm-gutterElement {
+  min-width: 3ch;
+  padding: 0 8px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-editor-body__codemirror .cm-content {
+  min-height: 100%;
+  padding: 6px var(--admin-field-padding-inline);
+  caret-color: var(--admin-editor-codemirror-cursor);
+}
+
+.admin-editor-body__codemirror .cm-cursor,
+.admin-editor-body__codemirror .cm-dropCursor {
+  border-left-color: var(--admin-editor-codemirror-cursor);
+}
+
+.admin-editor-body__codemirror .cm-selectionBackground,
+.admin-editor-body__codemirror .cm-content ::selection {
+  background: var(--admin-editor-codemirror-selection) !important;
+}
+
+.admin-editor-body__codemirror .cm-focused .cm-selectionBackground {
+  background: var(--admin-editor-codemirror-selection-focus) !important;
+}
+
+.admin-editor-body__codemirror .cm-line {
+  padding: 0;
+}
+
+.admin-editor-body__codemirror .cm-admin-markdown-inline-code {
+  color: var(--admin-editor-markdown-inline-code-color);
+}
+
+.admin-editor-body__codemirror .cm-admin-markdown-code-info {
+  color: var(--admin-editor-markdown-code-info-color);
+}
+
+.admin-editor-body__codemirror .cm-admin-markdown-html-block {
+  color: var(--admin-editor-markdown-html-color);
+}
+
+.admin-editor-body__codemirror .cm-admin-about-directive-input {
+  font-weight: 500;
+}
+
+.admin-editor-body__codemirror .cm-admin-about-directive-input--text {
+  color: var(--admin-editor-markdown-html-value-color);
+}
+
+.admin-editor-body__codemirror .cm-admin-about-directive-input--question {
+  color: var(--admin-editor-markdown-html-tag-color);
+}
+
+.admin-editor-body__codemirror .cm-admin-about-directive-input--url {
+  color: var(--admin-editor-markdown-html-attribute-color);
+  text-decoration: underline;
+  text-decoration-color: var(--admin-editor-markdown-link-underline);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.admin-editor-body__codemirror .cm-admin-about-directive-input--path {
+  color: var(--admin-editor-markdown-code-info-color);
+}
+
+.admin-editor-body__codemirror .cm-tooltip:has(.admin-editor-image-edit-tooltip) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-body__codemirror .admin-editor-image-edit-tooltip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--admin-focus-border) 44%, var(--border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--admin-control-bg) 92%, var(--bg) 8%);
+  color: var(--text);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--overlay-45) 16%, transparent);
+  font-family: var(--admin-font-ui);
+  font-size: var(--admin-text-xs);
+  font-weight: 650;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-editor-body__codemirror .admin-editor-image-edit-tooltip:hover {
+  border-color: var(--admin-focus-border);
+  background: var(--admin-control-bg);
+}
+
+.admin-editor-body__codemirror .admin-editor-image-edit-tooltip:focus-visible {
+  outline: 2px solid var(--admin-focus-border);
+  outline-offset: 2px;
+}
+
+.admin-editor-body__codemirror .cm-scroller,
+.admin-editor-preview__scroller {
+  scrollbar-color: transparent transparent;
+}
+
+.admin-editor-body__codemirror .cm-scroller[data-scrolling='true'],
+.admin-editor-preview__scroller[data-scrolling='true'] {
+  scrollbar-color: auto;
+}
+
+.admin-editor-body__codemirror .cm-editor:hover {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-body__codemirror .cm-editor.cm-focused,
+.admin-editor-body__codemirror .cm-editor:focus-visible {
+  border: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-body__codemirror .cm-editor:has(.cm-content[contenteditable='false']) {
+  border: 0;
+  background: color-mix(in srgb, var(--admin-control-bg-disabled) 72%, transparent);
+  box-shadow: none;
+  color: var(--admin-control-text-disabled);
+}
+
+.admin-editor-body__codemirror .cm-editor:has(.cm-content[contenteditable='false']) .cm-content {
+  caret-color: transparent;
+}
+
+.admin-editor-preview {
+  align-content: start;
+}
+
+.admin-editor-shell__pane--preview {
+  grid-area: preview;
+  padding: 6px var(--admin-editor-shell-edge-gap) 0;
+  border-radius: 0 0 6px 6px;
+  background: var(--admin-editor-preview-surface);
+}
+
+.admin-editor-preview__scroller {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  inline-size: 100%;
+  padding: 14px var(--admin-editor-preview-scroller-padding-inline) 18px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: auto;
+}
+
+.admin-editor-preview__article,
+.admin-editor-preview__empty,
+.admin-editor-preview__error {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-editor-preview__article {
+  max-inline-size: var(--admin-editor-preview-content-max-inline-size);
+  margin-inline: auto;
+}
+
+.admin-editor-preview__article:not(.memo-content) > :first-child {
+  margin-top: 0;
+}
+
+.admin-editor-preview__scroller[data-refreshing='true'] {
+  cursor: progress;
+}
+
+.admin-editor-preview__empty,
+.admin-editor-preview__error {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  color: var(--muted);
+  font-size: var(--admin-text-sm);
+  line-height: 1.65;
+  text-align: center;
+}
+
+.admin-editor-preview__error {
+  color: var(--admin-error-accent);
+}
+
+.admin-editor-preview__error--inline {
+  min-height: 0;
+  padding: 10px 12px;
+  display: block;
+  text-align: left;
+}

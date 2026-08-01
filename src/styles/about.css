@@ -1,6 +1,7 @@
 /* about.css
-   只承载 about 页面私有规则；禁止回填共享布局或正文规则。
+   承载 about 页面私有规则，并保留普通 Markdown 代码块能力。
 */
+@import "./components/code-block.css";
 
 @import "./animations.css";
 
@@ -22,7 +23,7 @@
   height: 18px;
 }
 
-.about-intro-line {
+.about-body {
   margin: 30px 0 0;
   font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
   animation: fadeUp 0.45s ease both 0.07s;
@@ -31,6 +32,249 @@
 .about-section-title {
   margin-top: 32px;
   animation: fadeUp 0.45s ease both 0.12s;
+  font-family: var(--font-copy);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.about-body > :first-child {
+  margin-top: 0;
+}
+
+.about-body > :last-child {
+  margin-bottom: 0;
+}
+
+.about-body p,
+.about-body ul,
+.about-body ol {
+  margin: 12px 0;
+}
+
+.about-body .code-block pre {
+  font-size: 15px;
+}
+
+.about-body .code-block pre code {
+  font-size: 0.92em;
+}
+
+.about-body h2,
+.about-body h3 {
+  margin: 38px 0 10px;
+  font-family: var(--font-readable);
+}
+
+.about-body h2 {
+  font-size: 18px;
+}
+
+.about-body h3 {
+  font-size: 16px;
+}
+
+.about-section {
+  margin-top: 34px;
+}
+
+.about-section-title {
+  margin-top: 0;
+}
+
+.friend-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.friend-card {
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-content-bg);
+  color: var(--text);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.friend-card:hover {
+  background: #f7f7f5;
+  border-color: #dfdcd8;
+}
+
+:root[data-theme="dark"] .friend-card:hover {
+  background: #252525;
+  border-color: #3d3d3d;
+}
+
+.friend-card__avatar {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--muted);
+  flex: 0 0 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: var(--font-copy);
+}
+
+.friend-card__avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.friend-card__avatar--image .friend-card__avatar-text {
+  display: none;
+}
+
+.friend-card__body {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.friend-card__name {
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 600;
+  font-family: var(--font-readable);
+}
+
+.friend-card__description {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: var(--font-copy);
+}
+
+.about-site-info {
+  position: relative;
+  margin: 16px 0;
+  padding: 12px 44px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-content-bg);
+}
+
+.about-site-info__copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.about-site-info__copy-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.about-site-info__check-icon {
+  width: 15px;
+  height: 15px;
+  display: none;
+}
+
+.about-site-info__copy:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.about-site-info__copy:hover:not(:disabled) {
+  border-color: #dfdcd8;
+  background: #f7f7f5;
+  color: var(--text);
+}
+
+.about-site-info__copy:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.about-site-info__copy[data-state="copied"] {
+  border-color: #dfdcd8;
+  background: #f7f7f5;
+  color: var(--text);
+}
+
+.about-site-info__copy[data-state="copied"] .about-site-info__copy-icon {
+  display: none;
+}
+
+.about-site-info__copy[data-state="copied"] .about-site-info__check-icon {
+  display: block;
+}
+
+:root[data-theme="dark"] .about-site-info__copy:hover:not(:disabled) {
+  border-color: #3d3d3d;
+  background: #252525;
+}
+
+:root[data-theme="dark"] .about-site-info__copy[data-state="copied"] {
+  border-color: #3d3d3d;
+  background: #252525;
+}
+
+.about-site-info__fields {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.about-site-info__field {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  align-items: start;
+}
+
+.about-site-info__field-label,
+.about-site-info__field-value {
+  margin: 0;
+}
+
+.about-site-info__field-label {
+  color: var(--faint);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.about-site-info__field-value {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: var(--font-copy);
+  overflow-wrap: anywhere;
+}
+
+.about-site-info__field-value a {
+  color: var(--text);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 .qa-list {
@@ -42,6 +286,10 @@
 
 .qa-item {
   padding: 0;
+}
+
+.qa-item[open] .qa-answer {
+  animation: fadeInDown 0.5s ease both;
 }
 
 .qa-item > summary {
@@ -62,7 +310,7 @@
   font-size: 16px;
   line-height: 1.75;
   font-weight: 400;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
 }
 
 .qa-icon {
@@ -81,23 +329,62 @@
 
 .qa-answer {
   margin: 12px 0 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
   color: var(--muted);
   font-size: 16px;
   line-height: 1.75;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
+}
+
+.qa-answer::before {
+  content: "A";
+  width: 22px;
+  height: 22px;
+  margin-top: 3px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #f7f7f5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+}
+
+:root[data-theme="dark"] .qa-answer::before {
+  background: #252525;
+}
+
+.qa-answer > * {
+  grid-column: 2;
+}
+
+.qa-answer > :first-child {
+  margin-top: 0;
+}
+
+.qa-answer > :last-child {
+  margin-bottom: 0;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .contact-block {
   margin-top: 12px;
   animation: fadeUp 0.45s ease both 0.2s;
-}
-
-.contact-note {
-  margin: 0 0 10px;
-  color: var(--text);
-  font-size: 16px;
-  line-height: 1.75;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
 }
 
 .contact-list {
@@ -117,7 +404,7 @@
   color: var(--text);
   font-size: 16px;
   line-height: 1.75;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
 }
 
 .contact-link-head {
@@ -262,12 +549,7 @@
     transform: none;
   }
 
-  .site-guide {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .tech-stack {
+  .friend-list {
     grid-template-columns: 1fr;
   }
 }

@@ -2,12 +2,17 @@
 import AdminLayout from '../../../components/admin/AdminLayout.astro';
 import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
 import AdminShell from '../../../components/admin/AdminShell.astro';
+import {
+  ADMIN_IMAGE_LIST_API_PATH,
+  ADMIN_IMAGE_META_API_PATH,
+  ADMIN_SETTINGS_API_PATH
+} from '../../../lib/admin-console/admin-api-paths';
 import { createWithBase } from '../../../utils/format';
 
 const isDev = import.meta.env.DEV;
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
-const { default: adminShellStylesHref } = await import('../../../styles/components/admin-shell.css?url');
+const { default: adminShellStylesHref } = await import('../../../styles/components/admin/shell.css?url');
 
 const loadThemeDevState = async () => {
   const [
@@ -23,10 +28,6 @@ const loadThemeDevState = async () => {
       ADMIN_SOCIAL_CUSTOM_LIMIT,
       getAdminFooterStartYearMax
     },
-    {
-      ADMIN_IMAGE_LIST_API_PATH,
-      ADMIN_IMAGE_META_API_PATH
-    },
     { default: AdminThemeDevConsole },
     { default: AdminImagePicker },
     { default: adminConsoleScriptHref },
@@ -36,15 +37,14 @@ const loadThemeDevState = async () => {
     import('astro:content'),
     import('../../../lib/theme-settings'),
     import('../../../lib/admin-console/theme-shared'),
-    import('../../../lib/admin-console/image-shared'),
     import('../../../components/admin/AdminThemeDevConsole.astro'),
     import('../../../components/admin/AdminImagePicker.astro'),
     import('../../../scripts/admin-console/index.ts?url'),
-    import('../../../styles/components/admin-theme.css?url'),
-    import('../../../styles/components/admin-images-shared.css?url')
+    import('../../../styles/components/admin/theme/index.css?url'),
+    import('../../../styles/components/admin/images/shared.css?url')
   ]);
 
-  const settingsEndpoint = withBase('/api/admin/settings/');
+  const settingsEndpoint = withBase(ADMIN_SETTINGS_API_PATH);
   const navIdOrder = ADMIN_NAV_IDS;
   const navLabelFallback = {
     essay: '随笔',

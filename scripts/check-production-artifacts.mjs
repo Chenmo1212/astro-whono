@@ -1,16 +1,28 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   assertAdminOverviewHeader,
   assertAdminContentStaticShell,
   assertAdminImageStaticShell,
+  assertAdminImageUploadStaticShell,
+  assertAdminPreviewStaticShell,
   assertNoAdminRouteNav,
+  assertNoDevAdminUiPreferenceChrome,
   assertAdminSettingsStaticShell,
+  DEV_ADMIN_UI_PREFERENCE_MARKERS,
   expect
 } from './smoke-utils.mjs';
 
 const normalizeSiteUrl = (value) => value.trim().replace(/\/+$/, '');
+
+/* 与 astro.config.mjs 的 normalizeDeploymentBase 同语义；根路径为空串，子路径形如 '/blog'。
+   dist 目录结构不随 base 嵌套，base 只影响产物内的 URL。 */
+const basePathSegment = String(process.env.ASTRO_WHONO_BASE_PATH ?? '').trim().replace(/^\/+|\/+$/g, '');
+const basePrefix = basePathSegment ? `/${basePathSegment}` : '';
+
+const stripBasePrefix = (pathname) =>
+  basePrefix && pathname.startsWith(`${basePrefix}/`) ? pathname.slice(basePrefix.length) : pathname;
 
 export const resolveRequiredSiteUrl = () => {
   const siteUrl = normalizeSiteUrl(process.env.SITE_URL ?? '');
@@ -23,8 +35,75 @@ const readText = (filePath) => {
   return readFileSync(filePath, 'utf8');
 };
 
+const findAdminContentEditArtifactDirs = () => {
+  const root = 'dist/admin/content';
+  if (!existsSync(root)) return [];
+
+  const matches = [];
+  const walk = (dirPath) => {
+    for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.name === '_edit') {
+        matches.push(fullPath);
+      }
+      walk(fullPath);
+    }
+  };
+
+  walk(root);
+  return matches;
+};
+
+const findBuiltAstroAssets = () => {
+  const root = 'dist/_astro';
+  if (!existsSync(root)) return [];
+
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /\.(css|js)$/i.test(entry.name))
+    .map((entry) => path.join(root, entry.name));
+};
+
+const assertNoDevAdminUiPreferenceAssets = () => {
+  for (const filePath of findBuiltAstroAssets()) {
+    for (const marker of DEV_ADMIN_UI_PREFERENCE_MARKERS) {
+      expect(
+        !filePath.includes(marker),
+        `${filePath} should not be emitted as a DEV-only admin UI preference asset`
+      );
+    }
+    assertNoDevAdminUiPreferenceChrome(filePath, readText(filePath));
+  }
+};
+
+const EMOJI_PICKER_ARTIFACT_MARKERS = [
+  'emoji-picker-element',
+  'emoji-picker-element-data',
+  '<emoji-picker'
+];
+
+const assertNoEmojiPickerAssets = () => {
+  for (const filePath of findBuiltAstroAssets()) {
+    const content = readText(filePath);
+    for (const marker of EMOJI_PICKER_ARTIFACT_MARKERS) {
+      expect(
+        !content.includes(marker),
+        `${filePath} should not contain emoji picker artifacts (${marker})`
+      );
+    }
+  }
+};
+
 const PREV_LINK_PATTERN = /<a class="prev-next__link prev-next__link--prev"[^>]*rel="prev">/;
 const NEXT_LINK_PATTERN = /<a class="prev-next__link prev-next__link--next"[^>]*rel="next">/;
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const EXTERNAL_MODULE_SCRIPT_PATTERN = new RegExp(
+  `<script type="module" src="(${escapeRegExp(basePrefix)}/_astro/[^"]+)"></script>`,
+  'g'
+);
+const getExternalModuleScriptSrcs = (html) =>
+  Array.from(html.matchAll(EXTERNAL_MODULE_SCRIPT_PATTERN), (match) => match[1]);
 
 export const runProductionArtifactCheck = async (options = {}) => {
   const siteUrl = options.siteUrl ?? resolveRequiredSiteUrl();
@@ -40,9 +119,6 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/about/index.html',
     'dist/admin/index.html',
     'dist/admin/content/index.html',
-    'dist/admin/content/essay/index.html',
-    'dist/admin/content/bits/index.html',
-    'dist/admin/content/memo/index.html',
     'dist/admin/images/index.html',
     'dist/admin/checks/index.html',
     'dist/bits/index.html',
@@ -51,8 +127,16 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/settings',
     'dist/api/admin/data/settings',
     'dist/api/admin/content/entry',
+    'dist/api/admin/content/create',
+    'dist/api/admin/content/export',
+    'dist/api/admin/content/delete',
+    'dist/api/admin/content/bulk-status',
+    'dist/api/admin/content/bulk-delete',
+    'dist/api/admin/content/bulk-export',
+    'dist/api/admin/preview',
     'dist/api/admin/images/list',
-    'dist/api/admin/images/meta'
+    'dist/api/admin/images/meta',
+    'dist/api/admin/images/upload'
   ];
 
   for (const artifactPath of requiredArtifacts) {
@@ -61,13 +145,13 @@ export const runProductionArtifactCheck = async (options = {}) => {
 
   const robotsTxt = readText('dist/robots.txt');
   expect(
-    robotsTxt.includes(`Sitemap: ${siteUrl}/sitemap-index.xml`),
+    robotsTxt.includes(`Sitemap: ${siteUrl}${basePrefix}/sitemap-index.xml`),
     'robots.txt is missing the expected Sitemap line'
   );
 
   const sitemapXml = readText('dist/sitemap-0.xml');
   expect(
-    sitemapXml.includes(`<loc>${siteUrl}/about/</loc>`),
+    sitemapXml.includes(`<loc>${siteUrl}${basePrefix}/about/</loc>`),
     'Sitemap is missing the expected /about/ location'
   );
   expect(!sitemapXml.includes('/admin/'), 'Admin route leaked into sitemap');
@@ -77,7 +161,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
   expect(!sitemapXml.includes('/admin/checks/'), 'Admin checks route leaked into sitemap');
   expect(!sitemapXml.includes('/admin/data/'), 'Admin data route leaked into sitemap');
   expect(
-    !sitemapXml.includes(`${siteUrl}/bits/draft-dialog/`),
+    !sitemapXml.includes(`${siteUrl}${basePrefix}/bits/draft-dialog/`),
     'Bits draft partial route leaked into sitemap'
   );
 
@@ -85,42 +169,60 @@ export const runProductionArtifactCheck = async (options = {}) => {
     sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g),
     (match) => match[1].trim()
   ).filter(Boolean);
-  const leakedEssayDetail = sitemapLocs.find((loc) => /^\/essay\/[^/]+\/$/.test(new URL(loc).pathname));
+  const leakedEssayDetail = sitemapLocs.find((loc) =>
+    /^\/essay\/[^/]+\/$/.test(stripBasePrefix(new URL(loc).pathname))
+  );
   expect(!leakedEssayDetail, `Essay compatibility redirect leaked into sitemap: ${leakedEssayDetail}`);
+
+  assertNoEmojiPickerAssets();
 
   const aboutHtml = readText('dist/about/index.html');
   expect(
-    aboutHtml.includes(`<link rel="canonical" href="${siteUrl}/about/"`),
+    aboutHtml.includes(`<link rel="canonical" href="${siteUrl}${basePrefix}/about/"`),
     'About page canonical no longer matches SITE_URL'
   );
   expect(
-    aboutHtml.includes(`<meta property="og:url" content="${siteUrl}/about/"`),
+    aboutHtml.includes(`<meta property="og:url" content="${siteUrl}${basePrefix}/about/"`),
     'About page og:url no longer matches SITE_URL'
   );
+  assertNoDevAdminUiPreferenceChrome('dist/about/index.html', aboutHtml);
   expect(!/\.admin-/.test(aboutHtml), 'Public about page still contains admin CSS rules');
   expect(!/--admin-status-/.test(aboutHtml), 'Public about page still contains admin CSS tokens');
 
+  const indexHtml = readText('dist/index.html');
+  // 公开首页外链的 _astro 模块脚本 = 全站共享 chunk 基线（如 BaseLayout 公共脚本
+  // 超过 vite assetsInlineLimit 后会从逐页内联翻转为外链共享 chunk）。
+  // admin 只读壳允许共享这些公共 chunk，但不得外链任何 admin 专属脚本。
+  const publicExternalModuleScripts = new Set(getExternalModuleScriptSrcs(indexHtml));
+
   const adminHtml = readText('dist/admin/index.html');
   const adminContentHtml = readText('dist/admin/content/index.html');
-  const adminContentEssayHtml = readText('dist/admin/content/essay/index.html');
-  const adminContentBitsHtml = readText('dist/admin/content/bits/index.html');
-  const adminContentMemoHtml = readText('dist/admin/content/memo/index.html');
   const adminImageHtml = readText('dist/admin/images/index.html');
   const adminChecksHtml = readText('dist/admin/checks/index.html');
   const adminThemeHtml = readText('dist/admin/theme/index.html');
   const adminDataHtml = readText('dist/admin/data/index.html');
   const readonlyAdminHtmlChecks = [
     ['dist/admin/content/index.html', adminContentHtml, 'Content Console'],
-    ['dist/admin/content/essay/index.html', adminContentEssayHtml, 'Content Console'],
-    ['dist/admin/content/bits/index.html', adminContentBitsHtml, 'Content Console'],
-    ['dist/admin/content/memo/index.html', adminContentMemoHtml, 'Content Console'],
     ['dist/admin/images/index.html', adminImageHtml, 'Images Console'],
     ['dist/admin/checks/index.html', adminChecksHtml, 'Checks Console'],
     ['dist/admin/theme/index.html', adminThemeHtml, 'Theme Console'],
     ['dist/admin/data/index.html', adminDataHtml, 'Data Console']
   ];
+  [
+    'dist/admin/content/essay/index.html',
+    'dist/admin/content/bits/index.html',
+    'dist/admin/content/memo/index.html'
+  ].forEach((filePath) => {
+    expect(!existsSync(filePath), `${filePath} should not be generated after collection list routes were removed`);
+  });
+  const adminContentEditArtifactDirs = findAdminContentEditArtifactDirs();
+  expect(
+    adminContentEditArtifactDirs.length === 0,
+    `Production build should not generate per-entry admin content edit artifacts: ${adminContentEditArtifactDirs.join(', ')}`
+  );
 
   assertAdminOverviewHeader('dist/admin/index.html', adminHtml);
+  assertNoDevAdminUiPreferenceChrome('dist/admin/index.html', adminHtml);
   if (adminHtml.includes('data-admin-overview-mode="hidden"')) {
     expect(
       adminHtml.includes('admin-site-overview__hidden-message'),
@@ -138,33 +240,58 @@ export const runProductionArtifactCheck = async (options = {}) => {
   expect(!adminHtml.includes('id="admin-images-bootstrap"'), 'dist/admin/index.html should not emit images bootstrap payload');
   expect(!adminHtml.includes('data-admin-data-root'), 'dist/admin/index.html should not emit data console payload');
   expect(!adminHtml.includes('id="admin-data-bootstrap"'), 'dist/admin/index.html should not emit data bootstrap payload');
-  expect(
-    !/<script type="module" src="\/_astro\/[^"]+"><\/script>/.test(adminHtml),
-    'dist/admin/index.html still links an external _astro module script'
-  );
+  for (const scriptSrc of getExternalModuleScriptSrcs(adminHtml)) {
+    expect(
+      publicExternalModuleScripts.has(scriptSrc),
+      `dist/admin/index.html links an admin-only external module script (not shared with dist/index.html): ${scriptSrc}`
+    );
+  }
 
   for (const [filePath, html, heading] of readonlyAdminHtmlChecks) {
     expect(html.includes(heading), `${filePath} is missing the expected ${heading} route heading`);
     assertNoAdminRouteNav(filePath, html);
+    assertNoDevAdminUiPreferenceChrome(filePath, html);
     expect(!html.includes('data-admin-root'), `${filePath} should stay readonly outside dev`);
     expect(!html.includes('id="admin-bootstrap"'), `${filePath} should not emit theme bootstrap payload`);
     expect(!html.includes('data-admin-content-root'), `${filePath} should not emit content console payload`);
     expect(!html.includes('data-admin-images-root'), `${filePath} should not emit images console payload`);
     expect(!html.includes('id="admin-images-bootstrap"'), `${filePath} should not emit images bootstrap payload`);
     expect(!/index@_@astro\.[^"]+\.css/.test(html), `${filePath} still links admin-only CSS`);
-    expect(
-      !/<script type="module" src="\/_astro\/[^"]+"><\/script>/.test(html),
-      `${filePath} still links an external _astro module script`
-    );
+    for (const scriptSrc of getExternalModuleScriptSrcs(html)) {
+      expect(
+        publicExternalModuleScripts.has(scriptSrc),
+        `${filePath} links an admin-only external module script (not shared with dist/index.html): ${scriptSrc}`
+      );
+    }
   }
+  assertNoDevAdminUiPreferenceAssets();
 
-  const indexHtml = readText('dist/index.html');
   expect(
     /<h1 class="sr-only">[^<]+<\/h1>/.test(indexHtml),
     'Homepage hidden H1 is missing from dist/index.html'
   );
+  assertNoDevAdminUiPreferenceChrome('dist/index.html', indexHtml);
   expect(!/\.admin-/.test(indexHtml), 'Homepage still contains admin CSS rules');
   expect(!/--admin-status-/.test(indexHtml), 'Homepage still contains admin CSS tokens');
+
+  // typography 覆盖（<html style> 内联属性）引用的每个 --font-* 变量必须在同页有定义
+  // （定义由 <Font> 组件的内联 <style> 提供）；缺定义 = 构建期字体下载失败被静默降级
+  // （如 provider 不可达），在这里显式失败。默认态 <html> 无 style 属性，本断言空转；
+  // 页面样式对 --font-readable/copy/mono 角色 token 的引用由外链 global.css 的 :root
+  // 提供定义，不在本断言范围内。
+  const htmlStyleMatch = indexHtml.match(/<html[^>]+style="([^"]*)"/);
+  const referencedFontVariables = htmlStyleMatch
+    ? Array.from(
+        htmlStyleMatch[1].matchAll(/var\((--font-[a-z0-9-]+)\)/g),
+        (match) => match[1]
+      )
+    : [];
+  for (const variableName of new Set(referencedFontVariables)) {
+    expect(
+      indexHtml.includes(`${variableName}:`),
+      `dist/index.html references ${variableName} but never defines it — the font download likely failed at build time (unreachable provider?). Switch the registry entry to provider 'local' or build on a network that can reach the provider.`
+    );
+  }
 
   const pageSettings = existsSync('src/data/settings/page.json')
     ? JSON.parse(readFileSync('src/data/settings/page.json', 'utf8'))
@@ -207,7 +334,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
 
   const normalizeArchiveDetailPath = (href) => {
     const url = new URL(href);
-    const normalizedPath = url.pathname.replace(/\/+$/, '').replace(/^\/+/, '');
+    const normalizedPath = stripBasePrefix(url.pathname).replace(/\/+$/, '').replace(/^\/+/, '');
     expect(
       normalizedPath.startsWith('archive/') && normalizedPath.split('/').length >= 2,
       `Archive RSS item did not resolve to an /archive/{slug}/ detail page: ${href}`
@@ -229,7 +356,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
 
   const sampleArchiveLink = archiveRssLinks[0];
   expect(
-    sampleArchiveLink.startsWith(`${siteUrl}/archive/`),
+    sampleArchiveLink.startsWith(`${siteUrl}${basePrefix}/archive/`),
     `Archive RSS item link is not absolute or not under /archive/: ${sampleArchiveLink}`
   );
   expect(
@@ -291,6 +418,58 @@ export const runProductionArtifactCheck = async (options = {}) => {
     adminContentEntryArtifact,
     '/api/admin/content/entry/'
   );
+  const adminContentCreateArtifact = readText('dist/api/admin/content/create');
+  assertAdminContentStaticShell(
+    'dist/api/admin/content/create',
+    adminContentCreateArtifact,
+    '/api/admin/content/create/'
+  );
+  const adminContentExportArtifact = readText('dist/api/admin/content/export');
+  assertAdminContentStaticShell(
+    'dist/api/admin/content/export',
+    adminContentExportArtifact,
+    '/api/admin/content/export/'
+  );
+  expect(
+    !adminContentExportArtifact.includes('content-disposition')
+      && !adminContentExportArtifact.includes('# Admin Console'),
+    'dist/api/admin/content/export should not expose source download response data'
+  );
+  const adminContentDeleteArtifact = readText('dist/api/admin/content/delete');
+  assertAdminContentStaticShell(
+    'dist/api/admin/content/delete',
+    adminContentDeleteArtifact,
+    '/api/admin/content/delete/'
+  );
+  expect(
+    !adminContentDeleteArtifact.includes('"trashedPath"')
+      && !adminContentDeleteArtifact.includes('.trash/content'),
+    'dist/api/admin/content/delete should not expose delete response data'
+  );
+  const adminContentBulkStatusArtifact = readText('dist/api/admin/content/bulk-status');
+  assertAdminContentStaticShell(
+    'dist/api/admin/content/bulk-status',
+    adminContentBulkStatusArtifact,
+    '/api/admin/content/bulk-status/'
+  );
+  const adminContentBulkDeleteArtifact = readText('dist/api/admin/content/bulk-delete');
+  assertAdminContentStaticShell(
+    'dist/api/admin/content/bulk-delete',
+    adminContentBulkDeleteArtifact,
+    '/api/admin/content/bulk-delete/'
+  );
+  const adminContentBulkExportArtifact = readText('dist/api/admin/content/bulk-export');
+  assertAdminContentStaticShell(
+    'dist/api/admin/content/bulk-export',
+    adminContentBulkExportArtifact,
+    '/api/admin/content/bulk-export/'
+  );
+  const adminPreviewArtifact = readText('dist/api/admin/preview');
+  assertAdminPreviewStaticShell(
+    'dist/api/admin/preview',
+    adminPreviewArtifact,
+    '/api/admin/preview/'
+  );
   const adminImageListArtifact = readText('dist/api/admin/images/list');
   assertAdminImageStaticShell(
     'dist/api/admin/images/list',
@@ -302,6 +481,12 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/images/meta',
     adminImageMetaArtifact,
     '/api/admin/images/meta/'
+  );
+  const adminImageUploadArtifact = readText('dist/api/admin/images/upload');
+  assertAdminImageUploadStaticShell(
+    'dist/api/admin/images/upload',
+    adminImageUploadArtifact,
+    '/api/admin/images/upload/'
   );
 
   console.log('Production artifact verification passed.');

@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
@@ -172,5 +173,9 @@ runSubset('noto-600-ext', [
   '--with-zopfli',
   '--unicodes=U+3400-4DBF,U+20000-2A6DF'
 ]);
+
+// 记录本次子集化对应的 charset 内容指纹，供 check:font-charset 校验 woff2 未过期。
+const charsetHash = createHash('sha256').update(readFileSync(CHARSET_PATH)).digest('hex');
+writeFileSync(path.join(ROOT, 'tools', 'charset-common.sha256'), `${charsetHash}\n`);
 
 console.log('font subsets generated (wenkai + noto).');

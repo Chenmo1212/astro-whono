@@ -1,0 +1,134 @@
+/* Admin Images Responsive
+   负责 Images 容器宽度收口与保留的 viewport 边界。
+*/
+
+@container admin-images-console (max-width: 660px) {
+  .admin-images-browser__detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-images-browser__detail-media {
+    aspect-ratio: auto;
+    min-height: 200px;
+    max-height: 300px;
+    border-inline-end: 0;
+    border-radius: var(--admin-control-radius) var(--admin-control-radius) 0 0;
+  }
+}
+
+@container admin-images-console (max-width: 660px) {
+  .admin-images-browser__toolbar,
+  .admin-images-browser__filter-head {
+    align-items: start;
+  }
+
+  .admin-images-browser__toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .admin-images-browser__toolbar-main,
+  .admin-images-browser__toolbar-actions {
+    width: auto;
+  }
+
+  .admin-images-browser__toolbar-main {
+    --admin-images-toolbar-main-gap: 6px;
+
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .admin-images-browser__toolbar-actions {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 4px 8px;
+    margin-left: 0;
+  }
+
+  .admin-images-browser__toolbar-separator {
+    display: none;
+  }
+
+  .admin-images-browser__tool-btn {
+    inline-size: 34px;
+    block-size: 34px;
+  }
+
+  .admin-images-browser__view-switch {
+    gap: 4px;
+  }
+
+  .admin-images-browser__recent-link::before {
+    inset-inline-start: -5px;
+    block-size: 16px;
+  }
+
+  .admin-images-browser__search-toggle::before {
+    block-size: 16px;
+  }
+
+  .admin-images-browser__filter-toggle {
+    min-height: 34px;
+    padding-inline: 7px;
+  }
+
+  .admin-images-browser__recent-link {
+    min-height: 28px;
+    font-size: var(--admin-text-xs);
+  }
+
+  .admin-images-browser__items[data-view='grid'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .admin-images-browser__card {
+    grid-template-columns: minmax(104px, 32%) minmax(0, 1fr);
+  }
+
+  .admin-images-browser__thumb {
+    width: 100%;
+  }
+
+  .admin-images-browser__detail-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-images-browser__filter-toggle,
+  .admin-images-browser__recent-link,
+  .admin-images-browser__tool-btn {
+    touch-action: manipulation;
+  }
+
+  .admin-images-browser__search-panel {
+    max-width: calc(100vw - 96px);
+    transform: none;
+  }
+
+  .admin-images-browser__search-panel[data-open='true'] {
+    width: min(var(--admin-images-browser-search-w), calc(100vw - 96px));
+    transform: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-images-browser__items[data-view='grid'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-images-browser__items[data-view='list'] .admin-images-browser__card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-images-browser__items[data-view='list'] .admin-images-browser__thumb {
+    aspect-ratio: 16 / 10;
+  }
+
+  .admin-images-browser__detail-body {
+    padding: 16px;
+  }
+}

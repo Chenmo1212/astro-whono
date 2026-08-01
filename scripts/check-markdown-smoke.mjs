@@ -1,8 +1,38 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { readSmokeFixtureHtml, reportSmokeCheckResult } from './smoke-utils.mjs';
+
+const distDir = path.resolve('dist');
+const KATEX_STYLESHEET_ID = 'astro-whono-katex-stylesheet';
+const KATEX_STYLESHEET_DATA_ATTR = 'data-astro-whono-katex';
 
 const hasClass = (html, className) => {
   const pattern = new RegExp(`class="[^"]*\\b${className}\\b`, 'i');
   return pattern.test(html);
+};
+
+const getStylesheetLinks = (html) => {
+  const pattern = /<link\b(?=[^>]*\brel="stylesheet")[^>]*>/gi;
+  return Array.from(html.matchAll(pattern)).map((match) => match[0]);
+};
+
+const hasKatexStylesheet = (html) =>
+  getStylesheetLinks(html).some((tag) =>
+    tag.includes(`id="${KATEX_STYLESHEET_ID}"`)
+    && tag.includes(KATEX_STYLESHEET_DATA_ATTR)
+    && /href="[^"]*katex[^"]*\.css/i.test(tag)
+  );
+
+const readBuiltHtml = async (relativePath, label) => {
+  const filePath = path.join(distDir, ...relativePath.split('/'));
+  try {
+    return await readFile(filePath, 'utf8');
+  } catch {
+    console.error(`${label} failed: unable to read build output.`);
+    console.error(`Expected file: ${filePath}`);
+    console.error('Run `npm run build` first.');
+    process.exit(1);
+  }
 };
 
 const getTagsByClass = (html, tag, className) => {
@@ -70,11 +100,43 @@ const checkGroups = [
     ]
   },
   {
+    label: 'Math check',
+    checks: [
+      {
+        id: 'math.katex.inline',
+        test: (html) => hasClass(html, 'katex')
+      },
+      {
+        id: 'math.katex.display',
+        test: (html) => hasClass(html, 'katex-display')
+      },
+      {
+        id: 'math.stylesheet',
+        test: (html) => hasKatexStylesheet(html)
+      },
+      {
+        id: 'math.not-shiki-code',
+        test: (html) =>
+          !html.includes('language-math')
+          && !html.includes('math-inline')
+          && !html.includes('math-display')
+      }
+    ]
+  },
+  {
     label: 'Figure check',
     checks: [
       {
         id: 'figure.wrapper',
         test: (html) => /<figure[^>]*\bclass="[^"]*\bfigure\b/.test(html)
+      },
+      {
+        id: 'figure.size-class',
+        test: (html) => /<figure[^>]*\bclass="[^"]*\bfigure--md\b/.test(html)
+      },
+      {
+        id: 'figure.align-class',
+        test: (html) => /<figure[^>]*\bclass="[^"]*\bfigure--left\b/.test(html)
       },
       {
         id: 'figure.media',
@@ -94,6 +156,10 @@ const checkGroups = [
         test: (html) => /<ul[^>]*\bclass="[^"]*\bgallery\b/.test(html)
       },
       {
+        id: 'gallery.cols-2',
+        test: (html) => /<ul[^>]*\bclass="[^"]*\bcols-2\b/.test(html)
+      },
+      {
         id: 'gallery.item',
         test: (html) => /<li[\s>]/i.test(getGalleryBlock(html))
       },
@@ -110,6 +176,10 @@ const checkGroups = [
 ];
 
 const html = await readSmokeFixtureHtml('Markdown smoke check');
+const noMathFixtureHtml = await readBuiltHtml(
+  'checks/markdown-smoke-no-math/index.html',
+  'No-math markdown smoke fixture'
+);
 const failedIds = [];
 
 for (const group of checkGroups) {
@@ -122,6 +192,16 @@ for (const group of checkGroups) {
   } else {
     failedIds.push(...groupFailedIds);
   }
+}
+
+const noMathFailedIds = [];
+if (hasKatexStylesheet(noMathFixtureHtml)) noMathFailedIds.push('math.stylesheet.absent.fixture-no-math');
+if (hasClass(noMathFixtureHtml, 'katex')) noMathFailedIds.push('math.katex.absent.fixture-no-math');
+
+if (noMathFailedIds.length === 0) {
+  console.log('KaTeX absence check passed.');
+} else {
+  failedIds.push(...noMathFailedIds);
 }
 
 reportSmokeCheckResult('Markdown smoke check', failedIds);

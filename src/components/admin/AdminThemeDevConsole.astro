@@ -81,6 +81,7 @@ const qiniuConfig = bootstrapState?.payload?.settings?.ui?.imageProvider?.qiniu;
       qiniuSecretKey={qiniuConfig?.secretKey || ''}
       qiniuBucket={qiniuConfig?.bucket || ''}
       qiniuDomain={qiniuConfig?.domain || ''}
+      qiniuPath={qiniuConfig?.path || ''}
       qiniuAutoReplace={qiniuConfig?.autoReplace || false}
     />
   </form>
@@ -89,16 +90,18 @@ const qiniuConfig = bootstrapState?.payload?.settings?.ui?.imageProvider?.qiniu;
   <div id="admin-actions" class="admin-actions" data-dirty="false" data-sticky="false">
     <div class="admin-actions__meta">
       <p id="admin-dirty-banner" class="admin-banner admin-banner--dirty" hidden>
-        * 你有未保存更改，离开页面会触发提醒。
+        * 你有未保存更改。
       </p>
+    </div>
+    <div class="admin-actions__controls">
       <p id="admin-status-inline" class="admin-status admin-status--inline" data-state="idle" aria-hidden="true">
         等待加载
       </p>
-    </div>
-    <div class="admin-actions__buttons">
-      <button id="admin-validate" class="admin-btn admin-btn--secondary" type="button">检查配置</button>
-      <button id="admin-reset" class="admin-btn admin-btn--ghost" type="button">重置更改</button>
-      <button id="admin-save" class="admin-btn admin-btn--primary" type="button">保存</button>
+      <div class="admin-actions__buttons">
+        <button id="admin-validate" class="admin-btn admin-btn--secondary admin-btn--compact" type="button">检查配置</button>
+        <button id="admin-reset" class="admin-btn admin-btn--ghost admin-btn--compact" type="button">重置更改</button>
+        <button id="admin-save" class="admin-btn admin-btn--primary admin-btn--compact" type="button">保存</button>
+      </div>
     </div>
   </div>
 

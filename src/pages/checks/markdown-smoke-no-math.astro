@@ -1,0 +1,36 @@
+---
+import Fixture from '../../test-fixtures/markdown-smoke-no-math.md';
+import fixtureSource from '../../test-fixtures/markdown-smoke-no-math.md?raw';
+import { containsMarkdownMath } from '../../lib/markdown-math';
+import {
+  MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
+  MARKDOWN_MATH_STYLESHEET_HREF,
+  MARKDOWN_MATH_STYLESHEET_ID
+} from '../../lib/markdown-math-styles';
+
+const hasMath = containsMarkdownMath(fixtureSource);
+const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Markdown Smoke Fixture Without Math</title>
+    {hasMath ? (
+      <link
+        id={MARKDOWN_MATH_STYLESHEET_ID}
+        rel="stylesheet"
+        href={MARKDOWN_MATH_STYLESHEET_HREF}
+        {...katexStylesheetAttrs}
+      />
+    ) : null}
+  </head>
+  <body>
+    <main>
+      <Fixture />
+    </main>
+  </body>
+</html>

@@ -1,23 +1,42 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'astro/config';
+import { defineConfig, fontProviders } from 'astro/config';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
 import remarkDirective from 'remark-directive';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkCallout from './src/plugins/remark-callout.mjs';
-import remarkRelativeImages from './src/plugins/remark-relative-images.mjs';
-import remarkToc from './src/plugins/remark-toc.mjs';
 import shikiToolbar from './src/plugins/shiki-toolbar.mjs';
+import svelte from '@astrojs/svelte';
+import { createPublicMarkdownConfig } from './src/plugins/markdown-pipeline.mjs';
+import {
+  getSelectedAstroApiFonts,
+  resolveTypographyFromRawUiSettings
+} from './src/lib/fonts/registry';
 import { site, hasSiteUrl } from './site.config.mjs';
 
-const getSchemaAttrs = (tagName) => {
-  const attrs = defaultSchema.attributes?.[tagName];
-  return Array.isArray(attrs) ? attrs : [];
+const isProductionBuild = process.env.NODE_ENV === 'production';
+const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'essay', 'memo']);
+const rawDeploymentBase = process.env.ASTRO_WHONO_BASE_PATH ?? '/';
+const trimmedDeploymentBase = String(rawDeploymentBase).trim();
+
+// Git Bash 的 MSYS 路径转换会把 "/blog" 这类值改写成 "C:/Program Files/Git/blog"，
+// 导致深处的 "Missing parameter" 预渲染错误；在配置期直接报可读错误。
+// 规避：命令前加 MSYS_NO_PATHCONV=1（或 MSYS2_ENV_CONV_EXCL=ASTRO_WHONO_BASE_PATH）。
+if (/[:\s]/.test(trimmedDeploymentBase)) {
+  throw new Error(
+    `Invalid ASTRO_WHONO_BASE_PATH "${rawDeploymentBase}": looks like a filesystem path, not a URL base. ` +
+      'If running under Git Bash, prefix the command with MSYS_NO_PATHCONV=1 to stop MSYS path conversion.',
+  );
+}
+
+const normalizeDeploymentBase = (value) => {
+  const segment = String(value ?? '').trim().replace(/^\/+|\/+$/g, '');
+  return segment ? `/${segment}/` : '/';
 };
 
-const mergeAttrs = (...lists) => Array.from(new Set(lists.flat()));
-const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'essay', 'memo']);
+const deploymentBase = normalizeDeploymentBase(rawDeploymentBase);
 
 const normalizeSitemapPathname = (page) => {
   let pathname = '/';
@@ -48,118 +67,98 @@ const isExcludedSitemapPathname = (pathname) =>
   || /^\/essay\/[^/]+$/.test(pathname);
 
 const isExcludedSitemapEntry = (page) => isExcludedSitemapPathname(normalizeSitemapPathname(page));
+const integrations = [
+  ...(!isProductionBuild ? [svelte()] : []),
+  ...(hasSiteUrl ? [sitemap({ filter: (page) => !isExcludedSitemapEntry(page) })] : [])
+];
 
-const sanitizeSchema = {
-  ...defaultSchema,
-  tagNames: [
-    ...(defaultSchema.tagNames ?? []),
-    'cite',
-    'figure',
-    'figcaption',
-    'picture',
-    'source',
-    'summary',
-    'details',
-    'dialog',
-    'button',
-    'svg',
-    'path',
-    'rect'
-  ],
-  attributes: {
-    ...(defaultSchema.attributes ?? {}),
-    '*': [
-      ...((defaultSchema.attributes?.['*'] ?? [])),
-      'className',
-      'class',
-      'id',
-      'title',
-      'role',
-      'style',
-      'tabIndex',
-      'tabindex',
-      'aria-label',
-      'aria-hidden',
-      'aria-live',
-      'aria-controls',
-      'aria-haspopup',
-      'aria-pressed',
-      'data-icon',
-      'data-lang',
-      'data-lines',
-      'data-state'
-    ],
-    a: mergeAttrs(getSchemaAttrs('a'), ['target', 'rel']),
-    img: mergeAttrs(getSchemaAttrs('img'), ['loading', 'decoding', 'width', 'height']),
-    source: mergeAttrs(getSchemaAttrs('source'), ['srcset', 'srcSet', 'type', 'media', 'sizes']),
-    ul: [['className', 'gallery', 'cols-2', 'cols-3', 'contains-task-list']],
-    figure: [['className', 'figure']],
-    figcaption: [['className', 'figure-caption']],
-    div: mergeAttrs(getSchemaAttrs('div'), ['dataIcon', 'dataLang', 'dataLines', 'data-icon', 'data-lang', 'data-lines']),
-    p: mergeAttrs(getSchemaAttrs('p'), ['dataIcon', 'data-icon']),
-    pre: mergeAttrs(getSchemaAttrs('pre'), ['dataLang', 'dataLines', 'data-lang', 'data-lines']),
-    code: mergeAttrs(getSchemaAttrs('code'), ['dataLang', 'data-lang']),
-    button: mergeAttrs(getSchemaAttrs('button'), [
-      'type',
-      'disabled',
-      'title',
-      'ariaLabel',
-      'aria-label',
-      'dataState',
-      'data-state'
-    ]),
-    svg: [
-      ...getSchemaAttrs('svg'),
-      'viewBox',
-      'width',
-      'height',
-      'fill',
-      'stroke',
-      'strokeWidth',
-      'strokeLinecap',
-      'strokeLinejoin',
-      'ariaHidden'
-    ],
-    path: [
-      ...getSchemaAttrs('path'),
-      'd',
-      'fill',
-      'stroke',
-      'strokeWidth',
-      'strokeLinecap',
-      'strokeLinejoin'
-    ],
-    rect: [...getSchemaAttrs('rect'), 'x', 'y', 'rx', 'ry', 'width', 'height']
+// ui.typography 选中 astro-fonts-api 字体时，构建期由 Astro Fonts API 下载自托管；
+// 只下载被选中的条目，默认配置下 fonts 数组为空。config 期手读 ui.json（dev 下改字体需重启）。
+const FONT_PROVIDERS = {
+  google: () => fontProviders.google(),
+  fontsource: () => fontProviders.fontsource()
+};
+
+const readUiSettingsRaw = () => {
+  try {
+    return JSON.parse(readFileSync(new URL('./src/data/settings/ui.json', import.meta.url), 'utf8'));
+  } catch {
+    return undefined;
   }
 };
+
+const selectedApiFonts = getSelectedAstroApiFonts(resolveTypographyFromRawUiSettings(readUiSettingsRaw()));
+const fonts = selectedApiFonts.flatMap((entry) => {
+  if (!entry.familyName) return [];
+
+  if (entry.provider === 'local') {
+    if (!entry.localVariants?.length) return [];
+    return [{
+      provider: fontProviders.local(),
+      name: entry.familyName,
+      cssVariable: `--font-${entry.id}`,
+      options: {
+        variants: entry.localVariants.map((variant) => ({
+          weight: variant.weight,
+          style: variant.style,
+          src: [variant.src]
+        }))
+      }
+    }];
+  }
+
+  if (!entry.provider || !FONT_PROVIDERS[entry.provider]) return [];
+  return [{
+    provider: FONT_PROVIDERS[entry.provider](),
+    name: entry.familyName,
+    cssVariable: `--font-${entry.id}`,
+    weights: [...entry.weights],
+    styles: ['normal'],
+    subsets: entry.subsets ? [...entry.subsets] : ['latin']
+  }];
+});
 
 export default defineConfig({
   // Required for RSS generation. Prefer SITE_URL; fallback keeps build passing.
   site: site.url,
   // Required adapter to support /api/decrypt endpoints for encrypted articles
   adapter: node({ mode: 'standalone' }),
-  output: 'static',
-  integrations: hasSiteUrl ? [sitemap({ filter: (page) => !isExcludedSitemapEntry(page) })] : [],
+  base: deploymentBase,
+  // DEV 使用 server output 允许 Theme Console 的 /api/admin/settings/ 处理读写；
+  // 构建阶段回到 static，让 /admin/ 保持只读提示，并避免把该路径当作生产公开 API。
+  output: process.env.NODE_ENV === 'production' ? 'static' : 'server',
+  integrations,
+  ...(fonts.length ? { fonts } : {}),
   trailingSlash: 'always',
   build: {
     inlineStylesheets: 'auto'
   },
   vite: {
+    // 本次启动实际注册进 fonts[] 的 cssVariable 快照。BaseLayout 据此过滤 <Font> 渲染：
+    // dev 下 ui.json 热改字体（config 期快照不含新条目）时跳过渲染而非让 Astro 抛
+    // FontFamilyNotFound 崩掉全站；重启后生效。
+    define: {
+      'import.meta.env.ASTRO_WHONO_FONT_CSS_VARIABLES': JSON.stringify(
+        fonts.map((font) => font.cssVariable).join(',')
+      )
+    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url))
       }
+    },
+    optimizeDeps: {
+      include: [
+        'emoji-picker-element',
+        '@lucide/svelte/icons/*',
+        '@codemirror/commands',
+        '@codemirror/lang-markdown',
+        '@codemirror/language',
+        '@codemirror/state',
+        '@codemirror/view',
+        '@lezer/highlight'
+      ]
     }
   },
-  markdown: {
-    remarkPlugins: [remarkDirective, remarkCallout, remarkRelativeImages, remarkToc],
-    rehypePlugins: [rehypeRaw, [rehypeSanitize, sanitizeSchema]],
-    shikiConfig: {
-      themes: {
-        light: 'github-light',
-        dark: 'github-dark'
-      },
-      transformers: [shikiToolbar()]
-    }
-  }
+  markdown: createPublicMarkdownConfig({ base: deploymentBase })
 });

@@ -1,0 +1,9 @@
+/* Admin Images
+   负责 Images Console 私有浏览器。
+*/
+
+@import "./base.css";
+@import "./toolbar.css";
+@import "./results.css";
+@import "./detail.css";
+@import "./responsive.css";

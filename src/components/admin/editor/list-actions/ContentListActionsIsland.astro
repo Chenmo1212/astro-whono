@@ -1,0 +1,22 @@
+---
+import BitsCreateAction from './BitsCreateAction.svelte';
+import ContentActionStatus from './ContentActionStatus.svelte';
+import ContentListActions from './ContentListActions.svelte';
+import type { BitsCardAuthorInput } from '../../../../lib/bits-card-view-model';
+
+type Props = {
+  base?: string;
+  endpoint: string;
+  createEndpoint: string;
+  deleteEndpoint: string;
+  bitsDefaultAuthor?: BitsCardAuthorInput;
+};
+
+const props = Astro.props;
+---
+
+<div class="admin-content-action-feedback">
+  <ContentActionStatus client:only="svelte" />
+  <ContentListActions client:only="svelte" {...props} />
+  <BitsCreateAction client:only="svelte" base={props.base ?? '/'} createEndpoint={props.createEndpoint} />
+</div>

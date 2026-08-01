@@ -8,8 +8,15 @@ import type {
   SiteSocialIconKey,
   SiteSocialPresetId,
   SiteSocialPresetOrder,
-  ThemeSettingsFileGroup
+  ThemeSettingsFileGroup,
+  TypographySettings
 } from '../theme-settings';
+import {
+  THEME_TYPOGRAPHY_DEFAULT,
+  asThemeFontIdForRole,
+  getThemeFontOptionsForRole,
+  isThemeFontIdForRole
+} from '../fonts/registry';
 import {
   getBitsAvatarLocalFilePath as getAdminBitsAvatarLocalFilePath,
   getHeroImageLocalFilePath as getAdminHeroImageLocalFilePath,
@@ -51,6 +58,10 @@ export const ADMIN_SIDEBAR_DIVIDER_OPTIONS = [
 id: SidebarDividerVariant;
   label: string;
 }[];
+
+export const ADMIN_TYPOGRAPHY_DEFAULT: TypographySettings = THEME_TYPOGRAPHY_DEFAULT;
+export const getAdminTypographyFontOptions = getThemeFontOptionsForRole;
+export const isAdminTypographyFontId = isThemeFontIdForRole;
 
 export const ADMIN_HOME_INTRO_LINK_KEYS = [
   'archive',
@@ -387,9 +398,14 @@ export const canonicalizeAdminThemeSettings = (
   const rawUiArticleMeta: LooseRecord = isRecord(ui.articleMeta) ? ui.articleMeta : {};
   const rawUiSidebarActions: LooseRecord = isRecord(ui.sidebarActions) ? ui.sidebarActions : {};
   const rawUiLayout: LooseRecord = isRecord(ui.layout) ? ui.layout : {};
+  const rawUiTypography: LooseRecord = isRecord(ui.typography) ? ui.typography : {};
   const rawHeroPresetId = normalizeTrimmed(home.heroPresetId);
   const heroPresetId = isAdminHeroPresetId(rawHeroPresetId) ? rawHeroPresetId : 'default';
   const rawSidebarDivider = normalizeTrimmed(rawUiLayout.sidebarDivider);
+  const rawTypographyReadable = normalizeTrimmed(rawUiTypography.readable);
+  const rawTypographyCopy = normalizeTrimmed(rawUiTypography.copy);
+  const rawTypographyMono = normalizeTrimmed(rawUiTypography.mono);
+  const rawTypographyBrand = normalizeTrimmed(rawUiTypography.brand);
 
   const normalizedCustom: EditableThemeSettings['site']['socialLinks']['custom'] = customItems
     .map((item, index) => {
@@ -564,8 +580,16 @@ export const canonicalizeAdminThemeSettings = (
           secretKey: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.secretKey ?? '' : ''),
           bucket: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.bucket ?? '' : ''),
           domain: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.domain ?? '' : ''),
+          path: String(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.path ?? '' : ''),
           autoReplace: Boolean(isRecord(ui.imageProvider) && isRecord(ui.imageProvider.qiniu) ? ui.imageProvider.qiniu.autoReplace : false)
         }
+      },
+      typography: {
+        readable: asThemeFontIdForRole('readable', rawTypographyReadable)
+          ?? ADMIN_TYPOGRAPHY_DEFAULT.readable,
+        copy: asThemeFontIdForRole('copy', rawTypographyCopy) ?? ADMIN_TYPOGRAPHY_DEFAULT.copy,
+        mono: asThemeFontIdForRole('mono', rawTypographyMono) ?? ADMIN_TYPOGRAPHY_DEFAULT.mono,
+        brand: asThemeFontIdForRole('brand', rawTypographyBrand) ?? ADMIN_TYPOGRAPHY_DEFAULT.brand
       }
     }
   };
@@ -624,7 +648,8 @@ export const createAdminWritableThemeSettingsGroups = (
     layout: { ...settings.ui.layout },
     imageProvider: {
       qiniu: { ...settings.ui.imageProvider.qiniu }
-    }
+    },
+    typography: { ...settings.ui.typography }
   }
 });
 
@@ -975,6 +1000,21 @@ export const validateAdminThemeSettings = (
     pushIssue('ui.layout.sidebarDivider', '侧栏分隔线只允许 默认 / 弱化 / 隐藏');
   }
 
+  if (!isAdminTypographyFontId('readable', settings.ui?.typography?.readable ?? '')) {
+    pushIssue('ui.typography.readable', '正文字体必须从注册表可选项中选择');
+  }
+
+  if (!isAdminTypographyFontId('copy', settings.ui?.typography?.copy ?? '')) {
+    pushIssue('ui.typography.copy', '文案字体必须从注册表可选项中选择');
+  }
+
+  if (!isAdminTypographyFontId('mono', settings.ui?.typography?.mono ?? '')) {
+    pushIssue('ui.typography.mono', '等宽字体必须从注册表可选项中选择');
+  }
+  if (!isAdminTypographyFontId('brand', settings.ui?.typography?.brand ?? '')) {
+    pushIssue('ui.typography.brand', '品牌字体必须从注册表可选项中选择');
+  }
+
   const nav = Array.isArray(settings.shell.nav) ? settings.shell.nav : [];
   if (nav.length !== ADMIN_NAV_IDS.length) {
     pushIssue('shell.nav', 'Sidebar 导航项数量必须与既有导航一致');
@@ -1170,32 +1210,32 @@ const fillAdminThemeSettingsSiteCompatibilityDefaults = (
   };
 };
 
+/* ui.* 分组兼容回填的字段表：新增分组只需在此登记，不再复制合并块。 */
+const UI_COMPATIBILITY_GROUP_FIELDS: ReadonlyArray<readonly [string, readonly string[]]> = [
+  ['sidebarActions', ['showRssLink', 'showThemeToggle', 'showAdminEntry']],
+  ['typography', ['readable', 'copy', 'mono', 'brand']]
+];
+
 const fillAdminThemeSettingsUiCompatibilityDefaults = (
   rawUi: LooseRecord,
   canonicalUi: LooseRecord
 ): LooseRecord => {
-  const canonicalSidebarActions = canonicalUi.sidebarActions;
-  if (!isRecord(canonicalSidebarActions)) return rawUi;
+  let next = rawUi;
 
-  const rawSidebarActions = rawUi.sidebarActions;
-  if (rawSidebarActions === undefined) {
-    return {
-      ...rawUi,
-      sidebarActions: canonicalSidebarActions
-    };
+  for (const [key, fields] of UI_COMPATIBILITY_GROUP_FIELDS) {
+    const canonicalGroup = canonicalUi[key];
+    if (!isRecord(canonicalGroup)) continue;
+
+    const rawGroup = next[key];
+    if (rawGroup === undefined) {
+      next = { ...next, [key]: canonicalGroup };
+    } else if (isRecord(rawGroup)) {
+      const defaults = Object.fromEntries(fields.map((field) => [field, canonicalGroup[field]]));
+      next = { ...next, [key]: { ...defaults, ...rawGroup } };
+    }
   }
 
-  if (!isRecord(rawSidebarActions)) return rawUi;
-
-  return {
-    ...rawUi,
-    sidebarActions: {
-      showRssLink: canonicalSidebarActions.showRssLink,
-      showThemeToggle: canonicalSidebarActions.showThemeToggle,
-      showAdminEntry: canonicalSidebarActions.showAdminEntry,
-      ...rawSidebarActions
-    }
-  };
+  return next;
 };
 
 const fillAdminThemeSettingsShellCompatibilityDefaults = (

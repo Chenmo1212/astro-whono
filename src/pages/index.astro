@@ -8,6 +8,7 @@ import {
   getAdminHomeIntroLinkOption
 } from '../lib/admin-console/theme-shared';
 import { getEssayDerivedText, getEssaySlug, getVisibleEssays } from '../lib/content';
+import { getThemeFontRegistryEntry, getThemeFontStack } from '../lib/fonts/registry';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../lib/theme-settings';
 import { createWithBase } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
@@ -17,7 +18,7 @@ const withBase = createWithBase(base);
 const {
   settings: {
     home: { introLead, introMore, introMoreLinks, showIntroLead, showIntroMore, heroPresetId, heroImageSrc, heroImageAlt },
-    ui: { articleMeta }
+    ui: { articleMeta, typography }
   }
 } = getThemeSettings();
 const shouldShowHero = heroPresetId !== 'none';
@@ -83,6 +84,24 @@ const HOME_HEAD_CRITICAL_FONT_FACES = [
   }
 ] as const satisfies readonly HomeHeadCriticalFontFace[];
 
+/* 首屏 critical CSS 只消费 readable/copy/brand 三个 role token（mono 首屏未用），
+   值经 getThemeFontStack 与全局解析一致；默认 @font-face 只保留被当前选择实际
+   引用的 family，非默认字体下不再声明（@font-face 本身不触发下载，纯去死字节）。 */
+const homeCriticalFontStacks = {
+  readable: getThemeFontStack(typography.readable),
+  copy: getThemeFontStack(typography.copy),
+  brand: getThemeFontStack(typography.brand)
+};
+// 按注册表 familyName 精确匹配（而非在 CSS 栈字符串里找带引号子串），不依赖 getThemeFontStack 的引号格式。
+const homeCriticalFontFamilies = new Set(
+  (['readable', 'copy', 'brand'] as const)
+    .map((role) => getThemeFontRegistryEntry(typography[role])?.familyName)
+    .filter(Boolean)
+);
+const homeCriticalFontFaces = HOME_HEAD_CRITICAL_FONT_FACES.filter((face) =>
+  homeCriticalFontFamilies.has(face.family)
+);
+
 const renderHomeHeadCriticalFontFace = ({
   family,
   fileName,
@@ -98,7 +117,7 @@ const renderHomeHeadCriticalFontFace = ({
 }`;
 
 const homeHeadCriticalCss = [
-  HOME_HEAD_CRITICAL_FONT_FACES.map(renderHomeHeadCriticalFontFace).join('\n\n'),
+  homeCriticalFontFaces.map(renderHomeHeadCriticalFontFace).join('\n\n'),
   String.raw`
 
 :root {
@@ -116,6 +135,9 @@ const homeHeadCriticalCss = [
   --tap-min-h: 44px;
   --pad-x: 48px;
   --card-pad: 12px 14px;
+  --font-readable: ${homeCriticalFontStacks.readable};
+  --font-copy: ${homeCriticalFontStacks.copy};
+  --font-brand: ${homeCriticalFontStacks.brand};
 }
 
 :root[data-theme="dark"] {
@@ -140,7 +162,7 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
+  font-family: var(--font-readable);
   line-height: 1.75;
   font-size: 16px;
 }
@@ -209,7 +231,7 @@ a {
 }
 
 .sidebar__title {
-  font-family: Georgia, serif;
+  font-family: var(--font-brand);
   font-size: 28px;
   letter-spacing: 0.5px;
 }
@@ -217,7 +239,7 @@ a {
 .sidebar__quote {
   max-width: 220px;
   text-align: right;
-  font-family: Georgia, serif;
+  font-family: var(--font-brand);
   font-style: italic;
   font-size: 16px;
   color: var(--muted);
@@ -264,7 +286,7 @@ a {
   opacity: 0.55;
   font-size: 14px;
   line-height: 1;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
 }
 
 .sidebar-actions {
@@ -294,15 +316,25 @@ a {
   display: block;
 }
 
-.theme-toggle .icon-sun {
+.theme-toggle .icon-moon,
+.theme-toggle .icon-system {
   display: none;
 }
 
-:root[data-theme="dark"] .theme-toggle .icon-sun {
+:root[data-theme="dark"] .theme-toggle .icon-moon {
   display: block;
 }
 
-:root[data-theme="dark"] .theme-toggle .icon-moon {
+:root[data-theme="dark"] .theme-toggle .icon-sun {
+  display: none;
+}
+
+:root[data-theme-mode="system"] .theme-toggle .icon-system {
+  display: block;
+}
+
+:root[data-theme-mode="system"] .theme-toggle .icon-moon,
+:root[data-theme-mode="system"] .theme-toggle .icon-sun {
   display: none;
 }
 
@@ -384,6 +416,12 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   gap: 16px;
 }
 
+.list-item__row .badge {
+  height: 24px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .list-item__title {
   margin: 0;
   font-size: 18px;
@@ -401,7 +439,7 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   -webkit-line-clamp: 3;
   line-clamp: 3;
   overflow: hidden;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
 }
 
 .meta-line {
@@ -671,6 +709,7 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
           href={href}
           title={entry.data.title}
           date={entry.data.date}
+          updatedAt={entry.data.updatedAt}
           visibleTags={visibleTags}
           articleMetaSettings={articleMeta}
           excerpt={excerptToShow}

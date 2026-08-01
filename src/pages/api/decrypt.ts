@@ -16,9 +16,14 @@ export const POST: APIRoute = async ({ request }) => {
 	try {
 		const { postId, password } = await request.json();
 
-		// Get the post from collection
-		const posts = await getCollection('essay');
-		const post = posts.find((p) => p.id === postId);
+		// Search in both essay and bits collections
+		const [essays, bits] = await Promise.all([
+			getCollection('essay'),
+			getCollection('bits'),
+		]);
+		const post =
+			essays.find((p) => p.id === postId) ??
+			bits.find((p) => p.id === postId);
 
 		if (!post) {
 			return new Response(

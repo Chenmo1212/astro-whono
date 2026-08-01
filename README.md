@@ -4,7 +4,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/cxro/astro-whono/ci.yml?style=flat&label=CI&labelColor=2E3440&color=A3BE8C&logo=githubactions&logoColor=ECEFF4)](https://github.com/cxro/astro-whono/actions/workflows/ci.yml)  [![Node](https://img.shields.io/badge/Node-%3E%3D22.12.0-81A1C1?style=flat&labelColor=2E3440&logo=nodedotjs&logoColor=ECEFF4)](https://github.com/cxro/astro-whono#%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82)  [![Astro](https://img.shields.io/github/package-json/dependency-version/cxro/astro-whono/astro?branch=main&style=flat&label=Astro&labelColor=2E3440&color=BC52EE&logo=astro&logoColor=ECEFF4)](https://docs.astro.build/)  [![License](https://img.shields.io/badge/License-MIT-4C566A?style=flat&labelColor=2E3440&logo=opensourceinitiative&logoColor=ECEFF4)](LICENSE)
 
-**✨ astro-whono 现已升级至 Astro v6**
+**✨ astro-whono 现已支持本地后台可视化预览写作**
 
 一个极简双栏的 Astro 主题，用于个人写作与轻量内容发布。
 
@@ -27,8 +27,8 @@
 
 - 双栏布局（侧栏导航 + 内容区）
 - 移动端适配
-- 内容集合：随笔 / 絮语 / 小记（归档为目录视图）
-- 内置本地 Admin Console（/admin）：开发环境下可使用 Theme / Images / Checks / Data Console 管理站点配置与资源，fork / clone 后可快速完成站点接管
+- 内容集合：随笔 / 絮语 / 小记 / 关于（归档为目录视图）
+- 内置本地 Admin Console（/admin）：开发环境下可使用 Theme / Content / Images / Checks / Data Console 管理站点配置、内容与资源，fork / clone 后可快速完成站点接管
 - 絮语草稿生成器：/bits 页面一键生成 Markdown（复制/下载），支持多图与自动读取尺寸
 - RSS：默认归档订阅 + 分栏订阅
 - 浅色 / 深色模式 + 阅读模式
@@ -44,11 +44,11 @@
 ### 快速开始
 
 ```bash
-npm i
+npm install
 # 可重复安装（推荐 CI/排障时使用）
 # npm ci
 npm run dev
-npm run build && npm run preview
+npm run build
 ```
 
 <details>
@@ -63,32 +63,34 @@ npm run build && npm run preview
 
 ### 常用命令
 
-  - npm run dev
-  - npm run build
-  - npm run ci
-  - npm run new:bit
+  - `npm run dev`：启动本地开发服务
+  - `npm run build`：生成静态站点
+  - `npm run preview`：预览构建产物
+  - `npm run new:bit`：创建一条 bits 草稿
 
 <details>
-  <summary>检查与回归命令说明</summary>
+  <summary>维护者校验</summary>
 
-推荐按场景选择：
+以下命令用于维护主题本身，普通写作与部署通常不需要执行。
 
 ```bash
-# 默认回归（GitHub Actions ）
-npm run ci
+# 基础回归：Astro check、Vitest、build
+npm run verify
 
-# 发布前手动复核绝对链接 / sitemap / RSS（需已确定正式域名）
+# Markdown 渲染契约：改动渲染链路、文章样式或代码块工具栏时执行
+npm run build
+npm run check:markdown-smoke
+
+# 发布前产物检查：需已确定正式域名
 SITE_URL=https://你的域名 npm run build
 SITE_URL=https://你的域名 npm run check:prod-artifacts
 
-# 仅在改动 Admin Console 子路由、/api/admin/** 静态边界或 dev/prod 只读边界时
+# Admin 边界检查：仅改动 /admin/** 或 /api/admin/** 时执行
 npm run check:preview-admin
-```
 
-- `npm test` 主要覆盖标签工具、Theme Console 共享校验规则，以及主题设置 `revision` 的关键纯逻辑回归。
-- `npm run ci` 是默认回归入口；`npm run ci:core` 仅作为维护者兼容别名保留。
-- 未设置 SITE_URL 时，npm run build 仍可构建，但 SEO 相关输出会不完整。
-- 发布前如需核对绝对链接产物，设置真实 SITE_URL 后运行 npm run check:prod-artifacts。
+# 生产依赖审计：发布前或依赖变更时执行
+npm run audit:prod
+```
 </details>
 
 
@@ -113,11 +115,9 @@ npm run check:preview-admin
 - 本项目已提供 `.nvmrc`，Cloudflare Pages 会自动读取。
 - 如需手动指定，可在 Pages 的环境变量里设置：`NODE_VERSION=22.22.0`
 
-**环境变量（强烈推荐：生产环境一定要设）**
+**环境变量（生产环境应设置）**
 - 在 Pages 项目 → Settings → Environment variables 添加：`SITE_URL=https://你的域名`（例如 `https://astro.whono.me`，不要以 `/` 结尾）
-
-**为什么要设 `SITE_URL`？**
-- Astro 会用它生成 canonical、Open Graph 的 `og:url`、RSS 链接、sitemap 等“必须是完整网址”的内容；不设置时，站点也能部署，但这些链接可能变成相对地址或占位域名，影响分享预览和搜索引擎收录。
+- `SITE_URL` 用于生成 canonical、Open Graph 的 `og:url`、RSS 链接与 sitemap 等绝对链接；未设置时相关链接会退化为占位域名，影响分享预览与搜索收录。
 
 **关于 sitemap / robots**
 - 只有设置了 `SITE_URL`，才会生成 sitemap，并且 `/robots.txt` 才会输出 `Sitemap:` 行（避免指向错误域名）。
@@ -143,7 +143,7 @@ npm run check:preview-admin
 - 内容集合：`src/content.config.ts`
 - 样式共享入口：`src/styles/global.css`
 - 页面 / 场景样式入口：`src/styles/home.css`、`src/styles/about.css`、`src/styles/memo.css`、`src/styles/article.css`、`src/styles/bits-page.css`
-- 后台样式入口：`src/styles/components/admin-shell.css` + 各 Admin 路由私有样式；不再提供全量 `admin.css` 聚合入口
+- 后台样式入口：`src/styles/components/admin/shell.css` + `src/styles/components/admin/**` 路由私有样式；不再提供全量 `admin.css` 聚合入口
 
 ### Admin Console（/admin）
 
@@ -170,7 +170,9 @@ npm run dev
 | `/admin/images/` | 可用 | 图片资源浏览与路径辅助 |
 | `/admin/checks/` | 可用 | 结构化诊断与发布前自检 |
 | `/admin/data/` | 可用 | settings 快照导出 / dry-run 导入 / 确认写入 |
-| `/admin/content/` | 开发中 | 文章管理与可视化写作占位页 |
+| `/admin/content/` | 可用 | 内容管理、新建随笔 / 絮语草稿，支持随笔 / 絮语 / 小记 / 关于页的本地编辑与源文件导出 |
+
+> 使用详情：[Admin Console 快速指南](https://astro.whono.me/archive/admin-console-guide/) · [Theme Console 配置指南](https://astro.whono.me/archive/theme-console-guide/) · [Content Console 使用指南](https://astro.whono.me/archive/content-console-guide/)
 
 
 <details>
@@ -198,12 +200,10 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 
 #### 生产环境说明
 
-- Theme Console / Data Console 仅在本地开发环境提供写入能力；Content Console 当前仍为占位页
-- `/admin/content/` 与 `/admin/content/:collection/` 当前仅显示开发中提示，不开放 collection 概览、详情与 frontmatter 写入界面
-- 生产构建保持静态站点输出；`/admin/` 可按 Theme 设置显示只读公开 Overview 或关闭态文案，生产态不展示后台 tabs，其他后台子路由仅保留本地开发提示
-- `/api/admin/settings/` 仅供本地开发使用，生产环境不要依赖该接口
-- `/api/admin/content/entry/` 仅供本地开发写入内容 frontmatter，生产环境不要依赖该接口
-- `/api/admin/data/settings/` 仅供本地开发导出 settings 快照，生产环境不要依赖该接口
+- Admin Console 的写入能力仅面向本地开发环境，包括主题配置、内容编辑、settings 导入导出和受支持内容图片上传
+- `/admin/content/` 提供内容列表、筛选、搜索、新建随笔 / 絮语草稿和行级操作。开发态编辑页支持随笔、絮语、小记和关于页的本地编辑与预览
+- 生产构建保持静态站点输出；`/admin/` 可按 Theme 设置显示只读公开 Overview 或关闭态文案，其他后台子路由仅保留本地开发提示
+- `/api/admin/**` 仅作为本地开发接口使用，不属于生产环境公开 API
 
 #### 兼容迁移（已 fork 用户）
 
@@ -219,11 +219,16 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 - 随笔：位于 `src/content/essay` 目录
 - 絮语：位于 `src/content/bits` 目录
 - 小记：位于 `src/content/memo/index.md`
+- 关于：位于 `src/content/about/index.md`（固定单页）
 - 归档：由随笔集合按 `archive` 字段生成目录视图
 
 主要路由：
 - 列表页：`/archive/`、`/essay/`、`/bits/`、`/memo/`、`/about/`
 - 详情页规范入口：/archive/[slug]（/essay/[slug] 保留兼容跳转）
+
+草稿规则：
+- `essay` / `bits` 的 `draft: true` 在本地开发可见，生产构建、RSS 与公开列表会过滤
+- `memo` 是单页内容；`src/content/memo/index.md` 不应标记为草稿，生产构建会终止以避免 `/memo/` 输出空页
 
 ### 图片资源
 
@@ -243,6 +248,7 @@ draft: false        # 草稿：上线后不会出现在列表/RSS（本地预览
 archive: true       # 归档开关：false 不进 /archive 与 /archive/rss.xml（默认 true，详情与 /essay 仍可见，可省略）
 slug: optional      # 自定义 URL slug（默认使用拍平后的内容路径，例如 2024/my-post → 2024-my-post）
 badge: optional     # 列表徽标；未填时列表显示“随笔”
+updatedAt: 2026-01-02 # 可选更新日期；填写后前台日期显示为“更新于：YYYY-MM-DD”
 ```
 
 `essay.date` 建议使用 `YYYY-MM-DD` 格式，用于归档、排序和页面日期展示。
@@ -255,7 +261,15 @@ badge: optional     # 列表徽标；未填时列表显示“随笔”
 publishedAt: 2026-01-01T12:00:00+08:00
 ```
 
-`publishedAt` 无需为旧内容批量补充。当前公开列表、归档、RSS 和页面日期仍以 `date` 为准。
+`publishedAt` 无需为旧内容批量补充。它只用于保留更精确的发布时间；归档排序和 RSS 发布时间仍会按现有规则读取 `date` / `publishedAt`。
+
+如果文章有修订日期，可以填写：
+
+```yaml
+updatedAt: 2026-01-02
+```
+
+`updatedAt` 表示可选更新日期，建议使用 `YYYY-MM-DD`。填写后，首页索引、随笔列表和文章详情页会用“更新于：YYYY-MM-DD”替代原日期展示；未填写时保持原有日期展示。
 
 未加引号的 YAML datetime 也会继续兼容读取。少数跨 UTC 日期边界的场景下，解析器可能已丢失原始时区文本，此时会按解析后的 UTC 日期处理。
 
@@ -301,8 +315,9 @@ author:
 ### 写作约定（内容块）
 
 - Callout：推荐语法糖 `:::note[title] ... :::`（note / tip / info / warning）；HTML 方式使用 `.callout-title`，隐藏图标用 `data-icon="none"`
-- Figure：`figure > (img|picture) + figcaption?`
-- Gallery：`ul.gallery > li > figure > (img|picture) + figcaption?`（可选 cols-2/cols-3）
+- Figure：`figure.figure > (img|picture) + figcaption.figure-caption?`，可选 `figure--sm/md/lg/full` 与 `figure--left/center/right`
+- Gallery：`ul.gallery > li > figure > (img|picture) + figcaption?`，可选 `cols-2` / `cols-3`
+- Math：支持双美元公式，行内写 `$$x$$`，块级写 `$$ ... $$`；单美元 `$x$` 不作为公式解析
 - Quote：标准 `blockquote`，可选 `cite` 标注来源
 - Pullquote：`blockquote.pullquote`
 - Code Block：构建时增强工具栏/复制按钮/行号（作者无需额外写法）
@@ -363,6 +378,16 @@ HTML 示例：
 </details>
 
 字体许可：SIL Open Font License 1.1（见 `public/fonts/OFL-LXGW-WenKai-Lite.txt` 与 `public/fonts/OFL-NotoSerifSC.txt`）。
+
+### 配置排版字体
+
+在开发模式下打开 Theme Console（`/admin/theme/` →「排版字体」），可分别设置正文、文案、等宽和品牌字体。保存后在下次构建时生效；品牌字体用于侧栏站点名和引言。
+
+字体卡片显示预览和来源信息。选项包括系统字体、自托管字体，以及在构建时下载并自托管的在线字体。页面加载字体时不会访问第三方字体服务。如需添加内置选项以外的字体，可在 `src/lib/fonts/registry.ts` 中注册。
+
+三类字体的来源、体积差异和自定义字体配置步骤，见 [Theme Console 配置指南 →「排版字体」](https://astro.whono.me/archive/theme-console-guide/)。
+
+运行 `npm run check:font-charset` 可检查字符集和字体子集是否与站点内容一致；检查失败时，按提示运行 `npm run font:build` 重新生成。
 
 
 ## RSS

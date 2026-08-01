@@ -11,7 +11,7 @@ import {
   getAdminImageFieldPreviewSrc,
   getAdminRenderedImagePreviewSrc
 } from '../src/lib/admin-console/image-params';
-import { getEditableThemeSettingsPayload } from '../src/lib/theme-settings';
+import { getEditableThemeSettingsPayload, type EditableThemeSettings } from '../src/lib/theme-settings';
 import {
   buildSearchHaystack,
   getBitsAvatarLocalFilePath,
@@ -185,6 +185,60 @@ describe('admin-console/shared', () => {
     expect(mismatchPaths).not.toContain('ui.sidebarActions');
     expect(mismatchPaths).not.toContain('ui.sidebarActions.showRssLink');
     expect(mismatchPaths).not.toContain('ui.sidebarActions.showAdminEntry');
+  });
+
+  it('canonicalizes typography font ids against the registry per role', () => {
+    const raw = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
+    raw.ui.typography.readable = 'lxgw-wenkai-lite';
+    raw.ui.typography.copy = 'system-mono';
+    raw.ui.typography.mono = 'bogus-font';
+    raw.ui.typography.brand = 'system-mono';
+
+    const canonical = canonicalizeAdminThemeSettings(raw);
+
+    expect(canonical.ui.typography).toEqual({
+      readable: 'lxgw-wenkai-lite',
+      copy: 'lxgw-wenkai-lite',
+      mono: 'system-mono',
+      brand: 'serif-georgia'
+    });
+
+    const mismatchPaths = createAdminThemeSettingsCanonicalMismatchIssues(raw, canonical).map((issue) => issue.path);
+    expect(mismatchPaths).toEqual(
+      expect.arrayContaining(['ui.typography.copy', 'ui.typography.mono', 'ui.typography.brand'])
+    );
+    expect(mismatchPaths).not.toContain('ui.typography.readable');
+  });
+
+  it('fills compatibility defaults for legacy snapshots missing typography', () => {
+    const canonical = getEditableThemeSettingsPayload().settings;
+    const legacySnapshot = structuredClone(canonical) as Record<string, any>;
+    delete legacySnapshot.ui.typography;
+
+    const compatible = fillAdminThemeSettingsCompatibilityDefaults(legacySnapshot, canonical);
+    const mismatchPaths = createAdminThemeSettingsCanonicalMismatchIssues(compatible, canonical).map((issue) => issue.path);
+    expect(mismatchPaths).not.toContain('ui.typography');
+
+    const partialSnapshot = structuredClone(canonical) as Record<string, any>;
+    partialSnapshot.ui.typography = { readable: canonical.ui.typography.readable };
+    const partialCompatible = fillAdminThemeSettingsCompatibilityDefaults(partialSnapshot, canonical);
+    const partialMismatchPaths = createAdminThemeSettingsCanonicalMismatchIssues(partialCompatible, canonical).map(
+      (issue) => issue.path
+    );
+    expect(partialMismatchPaths).not.toContain('ui.typography.copy');
+    expect(partialMismatchPaths).not.toContain('ui.typography.mono');
+    expect(partialMismatchPaths).not.toContain('ui.typography.brand');
+  });
+
+  it('validates typography font ids per role', () => {
+    const settings = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
+    settings.ui.typography.copy = 'system-mono';
+    settings.ui.typography.mono = 'bogus-font';
+
+    const paths = validateAdminThemeSettings(settings as EditableThemeSettings).map((issue) => issue.path);
+    expect(paths).toContain('ui.typography.copy');
+    expect(paths).toContain('ui.typography.mono');
+    expect(paths).not.toContain('ui.typography.readable');
   });
 
   it('validates admin overview public display settings', () => {

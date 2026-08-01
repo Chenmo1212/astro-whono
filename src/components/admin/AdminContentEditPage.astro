@@ -1,0 +1,350 @@
+---
+import AdminLayout from './AdminLayout.astro';
+import AdminImagePicker from './AdminImagePicker.astro';
+import AdminReadonlyNotice from './AdminReadonlyNotice.astro';
+import AdminShell from './AdminShell.astro';
+import {
+  getAdminContentEntryListHref
+} from '../../lib/admin-console/content';
+import type {
+  AdminContentWriteCollectionKey
+} from '../../lib/admin-console/content-collections';
+import {
+  ADMIN_CONTENT_DELETE_API_PATH,
+  ADMIN_CONTENT_ENTRY_API_PATH,
+  ADMIN_CONTENT_EXPORT_API_PATH,
+  ADMIN_IMAGE_LIST_API_PATH,
+  ADMIN_IMAGE_META_API_PATH,
+  ADMIN_IMAGE_UPLOAD_API_PATH,
+  ADMIN_PREVIEW_API_PATH
+} from '../../lib/admin-console/admin-api-paths';
+import { getThemeSettings } from '../../lib/theme-settings';
+import { createWithBase } from '../../utils/format';
+import {
+  buildAdminContentEditorIslandProps,
+  getAdminContentEditorPageRegistration
+} from './admin-content-editor-registry';
+import {
+  loadAdminContentEditDevState
+} from './admin-content-edit-dev-state';
+import type {
+  AdminContentEditorIslandComponent
+} from './admin-content-editor-islands';
+
+type Props = {
+  collection: AdminContentWriteCollectionKey;
+  entryId: string;
+  initialArticleInfoOpen?: boolean;
+};
+
+const { collection, entryId, initialArticleInfoOpen = false } = Astro.props;
+
+const isDev = import.meta.env.DEV;
+const shouldShowContentConsole = isDev;
+const base = import.meta.env.BASE_URL ?? '/';
+const withBase = createWithBase(base);
+const { settings } = getThemeSettings();
+const bitsDefaultAuthor = settings.page.bits.defaultAuthor;
+const DEFAULT_MEMO_TITLE = '生活小记';
+const resolveMemoDisplayText = (settingValue: string | null, frontmatterValue: string, fallback: string): string =>
+  settingValue ?? (frontmatterValue || fallback);
+const { default: adminShellStylesHref } = await import('../../styles/components/admin/shell.css?url');
+const contentEditDevState = shouldShowContentConsole
+  ? await loadAdminContentEditDevState({
+      collection,
+      entryId,
+      adminShellStylesHref,
+      withBase
+    })
+  : null;
+const selectedEntryEditorPayload = contentEditDevState?.payload ?? null;
+const workspaceEditorPayload = selectedEntryEditorPayload;
+const editorRegistration = workspaceEditorPayload
+  ? getAdminContentEditorPageRegistration(workspaceEditorPayload.collection)
+  : null;
+// Keep Svelte islands behind DEV-only dynamic imports; static imports leak
+// editor chunks into the production build.
+let EditorIsland: AdminContentEditorIslandComponent | null = null;
+if (import.meta.env.DEV && editorRegistration) {
+  const { loadAdminContentEditorIsland } = await import('./admin-content-editor-islands');
+  EditorIsland = await loadAdminContentEditorIsland(editorRegistration.island);
+}
+const adminStylesHref = contentEditDevState?.stylesHref ?? adminShellStylesHref;
+const collectionHref = withBase(getAdminContentEntryListHref(collection));
+const shouldUseEditorPageLayout = Boolean(EditorIsland && workspaceEditorPayload && editorRegistration);
+const contentEditorBodyClass = shouldUseEditorPageLayout ? 'admin-page--content-editor' : undefined;
+const adminEditorRecoveryScriptHref = isDev && shouldUseEditorPageLayout
+  ? (await import('../../scripts/admin-content/editor-recovery.ts?url')).default
+  : null;
+const memoPublicTitle = workspaceEditorPayload?.collection === 'memo'
+  ? resolveMemoDisplayText(settings.page.memo.title, workspaceEditorPayload.values.title, DEFAULT_MEMO_TITLE)
+  : DEFAULT_MEMO_TITLE;
+const editorEndpoints = {
+  endpoint: withBase(ADMIN_CONTENT_ENTRY_API_PATH),
+  exportEndpoint: withBase(ADMIN_CONTENT_EXPORT_API_PATH),
+  deleteEndpoint: withBase(ADMIN_CONTENT_DELETE_API_PATH),
+  previewEndpoint: withBase(ADMIN_PREVIEW_API_PATH),
+  imageUploadEndpoint: withBase(ADMIN_IMAGE_UPLOAD_API_PATH)
+};
+const adminImageListEndpoint = withBase(ADMIN_IMAGE_LIST_API_PATH);
+const adminImageMetaEndpoint = withBase(ADMIN_IMAGE_META_API_PATH);
+const editorReturnHref = editorRegistration
+  ? editorRegistration.resolveReturnHref({ withBase, collectionHref })
+  : collectionHref;
+const editorIslandProps = workspaceEditorPayload && contentEditDevState
+  ? buildAdminContentEditorIslandProps({
+      payload: workspaceEditorPayload,
+      endpoints: editorEndpoints,
+      returnHref: editorReturnHref,
+      defaultAuthor: bitsDefaultAuthor,
+      outlines: contentEditDevState.outlines,
+      initialArticleInfoOpen
+    })
+  : null;
+const contentConsoleSubtitle = selectedEntryEditorPayload
+  ? `${selectedEntryEditorPayload.collection} · 内容编辑`
+  : '内容编辑';
+const selectedEntryTitle = selectedEntryEditorPayload
+  ? selectedEntryEditorPayload.collection === 'memo'
+    ? memoPublicTitle
+    : selectedEntryEditorPayload.collection === 'about'
+      ? '关于'
+      : selectedEntryEditorPayload.values.title
+  : '';
+const selectedEntryDescription = selectedEntryEditorPayload && 'description' in selectedEntryEditorPayload.values
+  ? selectedEntryEditorPayload.values.description
+  : '';
+const editTitle = selectedEntryEditorPayload
+  ? selectedEntryTitle || selectedEntryDescription || selectedEntryEditorPayload.entryId
+  : entryId;
+const getReadonlyValue = (value: string): string => value || '(未设置)';
+const memoReadonlyRows = workspaceEditorPayload?.collection === 'memo'
+  ? [
+      { label: 'memo.title', value: getReadonlyValue(workspaceEditorPayload.values.title) },
+      { label: 'memo.subtitle', value: getReadonlyValue(workspaceEditorPayload.values.subtitle) },
+      { label: 'memo.date', value: getReadonlyValue(workspaceEditorPayload.values.date) },
+      { label: 'memo.slug', value: getReadonlyValue(workspaceEditorPayload.values.slug) },
+      { label: 'memo.draft', value: workspaceEditorPayload.values.draft ? 'true' : 'false' }
+    ]
+  : [];
+const infoTrigger = shouldUseEditorPageLayout ? editorRegistration?.infoTrigger : null;
+---
+
+<AdminLayout
+  title={shouldUseEditorPageLayout ? editTitle : 'Content Console'}
+  stylesHref={adminStylesHref}
+  bodyClass={contentEditorBodyClass}
+  adminSidebarScope="page"
+>
+  {
+    adminEditorRecoveryScriptHref ? (
+      <Fragment slot="head">
+        <script is:inline type="module" src={adminEditorRecoveryScriptHref}></script>
+      </Fragment>
+    ) : null
+  }
+
+  <AdminShell
+    currentRoute="content"
+    title="Content Console"
+    subtitle={contentConsoleSubtitle}
+    showHeader={!shouldUseEditorPageLayout}
+    showNav={false}
+  >
+    {
+      shouldShowContentConsole && selectedEntryEditorPayload ? (
+        <section
+          class:list={[
+            'admin-content-console',
+            'admin-content-edit-page',
+            shouldUseEditorPageLayout && 'admin-content-edit-page--workspace',
+            shouldUseEditorPageLayout && editorRegistration?.workspaceClassName
+          ]}
+        >
+          <header class="admin-content-page-head">
+            <div class="admin-content-page-head__copy">
+              {
+                shouldUseEditorPageLayout ? (
+                  <div class="admin-content-title-row">
+                    <h1 class="admin-content-heading">{editTitle}</h1>
+                    {
+                      infoTrigger ? (
+                        <button
+                          class="admin-content-info-trigger"
+                          type="button"
+                          {...{ [infoTrigger.attribute]: true }}
+                          aria-haspopup="dialog"
+                          aria-controls={infoTrigger.panelId}
+                          aria-expanded="false"
+                        >
+                          {infoTrigger.label}
+                        </button>
+                      ) : null
+                    }
+                    {
+                      adminEditorRecoveryScriptHref ? (
+                        <span class="admin-editor-recovery" data-admin-editor-recovery hidden>
+                          <button
+                            class="admin-editor-recovery__trigger admin-badge"
+                            type="button"
+                            data-admin-editor-recovery-trigger
+                            data-tone="warning"
+                            aria-haspopup="dialog"
+                            aria-controls="admin-editor-recovery-dialog"
+                            aria-expanded="false"
+                            hidden
+                          >
+                            Dev 缓存异常
+                          </button>
+                        </span>
+                      ) : null
+                    }
+                  </div>
+                ) : (
+                  <>
+                    <p class="admin-content-kicker">{selectedEntryEditorPayload.collection}</p>
+                    <h2 class="admin-content-heading">{editTitle}</h2>
+                  </>
+                )
+              }
+              {
+                !shouldUseEditorPageLayout ? (
+                  <p class="admin-content-copy">
+                    <code>{selectedEntryEditorPayload.relativePath}</code>
+                  </p>
+                ) : null
+              }
+            </div>
+            <div
+              class="admin-content-actions"
+              data-admin-editor-page-actions-host={shouldUseEditorPageLayout ? true : undefined}
+            >
+              {
+                shouldUseEditorPageLayout ? (
+                  <a
+                    class="admin-btn admin-btn--ghost admin-btn--compact"
+                    href={editorReturnHref}
+                    data-admin-editor-page-actions-fallback
+                  >
+                    返回
+                  </a>
+                ) : (
+                  <>
+                    <a class="admin-btn admin-btn--ghost" href={collectionHref}>返回列表</a>
+                    <a class="admin-btn admin-btn--ghost" href={withBase('/admin/content/')}>Content 总入口</a>
+                  </>
+                )
+              }
+            </div>
+          </header>
+
+          {
+            adminEditorRecoveryScriptHref ? (
+              <div
+                class="admin-modal admin-editor-recovery-modal"
+                id="admin-editor-recovery-dialog"
+                data-admin-editor-recovery-modal
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="admin-editor-recovery-title"
+                hidden
+              >
+                <button
+                  type="button"
+                  class="admin-modal__backdrop"
+                  data-admin-editor-recovery-close="restore"
+                  aria-label="关闭"
+                ></button>
+                <section class="admin-modal__panel admin-editor-recovery-modal__panel">
+                  <header class="admin-modal__head">
+                    <h3 class="admin-modal__title" id="admin-editor-recovery-title">本地依赖缓存已过期</h3>
+                    <button
+                      class="admin-btn admin-btn--ghost admin-btn--compact"
+                      type="button"
+                      data-admin-editor-recovery-close="restore"
+                    >
+                      关闭
+                    </button>
+                  </header>
+                  <div class="admin-modal__body admin-editor-recovery-modal__body">
+                    <p class="admin-content-copy">
+                      本地开发缓存可能已过期，编辑器未能加载。
+                    </p>
+                    <p class="admin-content-copy">
+                      请先停止开发服务，重新运行 <code>npm run dev</code>，然后刷新本页。
+                    </p>
+                    <p class="admin-content-copy">
+                      如果仍无法加载，请停止开发服务并运行：
+                    </p>
+                    <code class="admin-editor-recovery-modal__command" data-admin-editor-recovery-command>npm run dev:clean</code>
+                    <p class="admin-content-muted" data-admin-editor-recovery-status aria-live="polite" hidden></p>
+                  </div>
+                  <footer class="admin-modal__actions">
+                    <button
+                      class="admin-btn admin-btn--primary admin-btn--compact"
+                      type="button"
+                      data-admin-editor-recovery-copy
+                    >
+                      复制命令
+                    </button>
+                    <button
+                      class="admin-btn admin-btn--ghost admin-btn--compact"
+                      type="button"
+                      data-admin-editor-recovery-reload
+                    >
+                      刷新页面
+                    </button>
+                  </footer>
+                </section>
+              </div>
+            ) : null
+          }
+
+          {
+            EditorIsland && editorIslandProps ? (
+              <article
+                class:list={[
+                  'admin-content-editor',
+                  'admin-content-editor--workspace',
+                  editorRegistration?.articleClassName
+                ]}
+              >
+                <EditorIsland {...editorIslandProps} />
+              </article>
+            ) : (
+              <article class="admin-content-readonly">
+                <div class="admin-content-section-head">
+                  <div>
+                    <p class="admin-content-kicker">Readonly</p>
+                    <h3 class="admin-content-section-title">当前 collection 保持只读</h3>
+                    <p class="admin-content-copy">{selectedEntryEditorPayload.readonlyReason}</p>
+                  </div>
+                </div>
+                <dl class="admin-data-meta admin-content-detail-meta">
+                  {
+                    memoReadonlyRows.map((row) => (
+                      <>
+                        <dt class="admin-data-meta__label">{row.label}</dt>
+                        <dd class="admin-data-meta__value">{row.value}</dd>
+                      </>
+                    ))
+                  }
+                </dl>
+              </article>
+            )
+          }
+        </section>
+      ) : (
+        <AdminReadonlyNotice>
+          若需查看或编辑内容索引，请在本地运行 <code translate="no">npm run dev</code> 后从此入口进入。
+        </AdminReadonlyNotice>
+      )
+    }
+  </AdminShell>
+
+  {
+    shouldShowContentConsole && shouldUseEditorPageLayout && editorRegistration?.usesImagePicker ? (
+      <AdminImagePicker listEndpoint={adminImageListEndpoint} metaEndpoint={adminImageMetaEndpoint} />
+    ) : null
+  }
+</AdminLayout>

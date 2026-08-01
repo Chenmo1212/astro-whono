@@ -3,6 +3,7 @@
 */
 
 @import "../animations.css";
+@import "./bit-card.css";
 
 /* Bits（絮语） */
 
@@ -285,7 +286,7 @@
 
 .bits-search input::placeholder {
   font-size: 14px;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
   color: var(--muted);
   opacity: 1;
 }
@@ -551,7 +552,7 @@
   border-radius: 10px;
   font-size: 12px;
   line-height: 1.6;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
   color: var(--muted);
   background: color-mix(in srgb, var(--panel) 38%, var(--bg));
 }
@@ -581,40 +582,6 @@
 
   50% {
     opacity: 0.55;
-  }
-}
-
-.bit-card {
-  padding: 18px 18px 14px;
-  border: 0;
-  border-radius: 10px;
-  margin: 16px 0;
-  background: var(--panel);
-  scroll-margin-top: 24px;
-}
-
-@supports (background: color-mix(in srgb, #000 50%, #fff 50%)) {
-  .bit-card {
-    background: color-mix(in srgb, var(--panel) 38%, var(--bg));
-  }
-}
-
-.bit-card:target {
-  outline: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
-  animation: bit-card-target-highlight 2.3s ease-out forwards;
-}
-
-@keyframes bit-card-target-highlight {
-  0%,
-  86.96% {
-    outline-color: color-mix(in srgb, var(--accent) 42%, transparent);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-
-  100% {
-    outline-color: transparent;
-    box-shadow: 0 0 0 0 transparent;
   }
 }
 
@@ -742,7 +709,7 @@
   padding: 0 9px;
   border-radius: 999px;
   font-size: 12px;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
   color: var(--muted);
   background: color-mix(in srgb, var(--panel) 65%, var(--bg));
   border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
@@ -833,6 +800,52 @@
 
 .bit-body {
   font-size: 14px;
+}
+
+.bit-body[data-bit-expandable] {
+  overflow: hidden;
+}
+
+.bit-body[data-bit-expandable].is-expanding,
+.bit-body[data-bit-expandable].is-collapsing {
+  max-height: var(--bit-body-current-max-height);
+  transition: max-height 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bit-body__preview,
+.bit-body__content {
+  color: var(--text);
+  line-height: 1.85;
+  word-break: break-word;
+}
+
+.bit-body__inline-toggle {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #d34;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  font-weight: 600;
+  vertical-align: baseline;
+}
+
+.bit-body__inline-toggle:hover,
+.bit-body__inline-toggle:focus-visible {
+  color: color-mix(in srgb, #d34 82%, #ff6b6b);
+}
+
+.bit-body__inline-toggle:focus-visible {
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.bit-body__content[hidden],
+.bit-body__preview[hidden] {
+  display: none !important;
 }
 
 .bit-media {
@@ -1351,7 +1364,7 @@
   border-radius: 12px;
   background: var(--bg);
   color: var(--text);
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
   --bits-focus: var(--muted);
   padding: 0;
 }
@@ -1562,7 +1575,7 @@
 }
 
 #bits-draft-content {
-  font-family: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
+  font-family: var(--font-readable);
   min-height: 160px;
 }
 

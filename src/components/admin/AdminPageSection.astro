@@ -1,5 +1,6 @@
 ---
 import AdminIcon from './AdminIcon.astro';
+import AdminHelpTip from './AdminHelpTip.astro';
 import { ADMIN_ARTICLE_META_DATE_LABEL_MAX_LENGTH } from '../../lib/admin-console/theme-shared';
 
 interface Props {
@@ -31,7 +32,6 @@ const {
         <span class="admin-label__main">
           <code>/essay/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
         </span>
-        <span class="admin-label__hint">（动态计数 / RSS 固定输出）</span>
       </span>
       <span class="admin-title-pair" role="group" aria-label="/essay/ 页面主标题与副标题">
         <input
@@ -83,12 +83,16 @@ const {
         />
       </span>
     </label>
-    <label class="admin-field admin-field--full admin-field--memo">
+    <div class="admin-field admin-field--full admin-field--memo">
       <span class="admin-label">
         <span class="admin-label__main">
           <code>/memo/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
         </span>
-        <span class="admin-label__hint">（填写后覆盖对应字段，留空则沿用 src/content/memo/index.md）</span>
+        <AdminHelpTip
+          id="page-memo-title-tip"
+          label="/memo/ 页面标题说明"
+          text="填写后覆盖对应字段，留空则沿用 src/content/memo/index.md。"
+        />
       </span>
       <span class="admin-title-pair" role="group" aria-label="/memo/ 页面主标题与副标题">
         <input
@@ -99,6 +103,7 @@ const {
           autocomplete="off"
           placeholder={memoTitlePlaceholder || undefined}
           aria-label="/memo/ 页面主标题"
+          aria-describedby="page-memo-title-tip"
         />
         <span class="admin-title-pair__sep" aria-hidden="true">|</span>
         <input
@@ -109,15 +114,15 @@ const {
           autocomplete="off"
           placeholder={memoSubtitlePlaceholder || undefined}
           aria-label="/memo/ 页面副标题"
+          aria-describedby="page-memo-title-tip"
         />
       </span>
-    </label>
+    </div>
     <label class="admin-field">
       <span class="admin-label">
         <span class="admin-label__main">
           <code>/archive/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
         </span>
-        <span class="admin-label__hint">（动态计数 / RSS 固定输出）</span>
       </span>
       <span class="admin-title-pair" role="group" aria-label="/archive/ 页面主标题与副标题">
         <input

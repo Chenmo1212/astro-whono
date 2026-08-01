@@ -1,106 +1,715 @@
 ---
 import AdminLayout from '../../../components/admin/AdminLayout.astro';
+import AdminIcon from '../../../components/admin/AdminIcon.astro';
 import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
 import AdminShell from '../../../components/admin/AdminShell.astro';
 import {
-  getAdminContentCollectionHref,
-  getAdminContentOverviewData
+  ADMIN_CONTENT_DRAFT_OPTIONS,
+  ADMIN_CONTENT_SORT_OPTIONS,
+  getAdminContentConsolePageData,
+  getAdminContentEntryEditHref,
+  getAdminContentFilterHref,
+  getAdminContentEntryListHref,
+  getAdminContentPublicFallbackLabel,
+  getAdminContentCollectionCapability
 } from '../../../lib/admin-console/content';
-import { createWithBase } from '../../../utils/format';
+import type {
+  AdminContentCollectionKey,
+  AdminContentDraftFilter,
+  AdminContentIndexItem,
+  AdminContentScopeKey,
+  AdminContentSortKey
+} from '../../../lib/admin-console/content';
+import type { AdminContentCreatableCollectionKey } from '../../../lib/admin-console/content-collections';
+import {
+  ADMIN_CONTENT_CREATE_API_PATH,
+  ADMIN_CONTENT_DELETE_API_PATH,
+  ADMIN_CONTENT_ENTRY_API_PATH,
+  ADMIN_CONTENT_EXPORT_API_PATH,
+  ADMIN_CONTENT_BULK_STATUS_API_PATH,
+  ADMIN_CONTENT_BULK_DELETE_API_PATH,
+  ADMIN_CONTENT_BULK_EXPORT_API_PATH
+} from '../../../lib/admin-console/admin-api-paths';
+import { isAdminContentDeletableCollectionKey } from '../../../lib/admin-console/content-delete-contract';
+import { getThemeSettings } from '../../../lib/theme-settings';
+import { createWithBase, formatISODate } from '../../../utils/format';
 
 const isDev = import.meta.env.DEV;
-// Content Console 暂停对 dev 环境开放，保留实现供后续前端技术栈重构恢复。
-const isAdminContentConsoleEnabled: boolean = false;
-const shouldShowContentConsole = isDev && isAdminContentConsoleEnabled;
+const shouldShowContentConsole = isDev;
 const shouldShowAdminNav = isDev;
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
-const { default: adminShellStylesHref } = await import('../../../styles/components/admin-shell.css?url');
+const { settings } = getThemeSettings();
+const bitsDefaultAuthor = settings.page.bits.defaultAuthor;
+const { default: adminShellStylesHref } = await import('../../../styles/components/admin/shell.css?url');
+const contentHref = '/admin/content/';
 
-const loadContentOverviewDevState = async () => {
-  const { default: adminContentStylesHref } = await import('../../../styles/components/admin-content.css?url');
+const loadContentDevState = async () => {
+  const [
+    { default: adminContentStylesHref },
+    { default: adminContentFilterMenusScriptHref }
+  ] = await Promise.all([
+    import('../../../styles/components/admin/content/index.css?url'),
+    import('../../../scripts/admin-content/filter-menus.ts?url')
+  ]);
 
   return {
     stylesHref: [adminShellStylesHref, adminContentStylesHref],
-    overview: await getAdminContentOverviewData()
+    filterMenusScriptHref: adminContentFilterMenusScriptHref,
+    pageData: await getAdminContentConsolePageData(Astro.url.searchParams)
   };
 };
 
-const contentOverviewDevState = shouldShowContentConsole ? await loadContentOverviewDevState() : null;
-const adminStylesHref = contentOverviewDevState?.stylesHref ?? adminShellStylesHref;
-const contentOverviewTotals = contentOverviewDevState
-  ? contentOverviewDevState.overview.summaries.reduce(
-      (acc, summary) => ({
-        totalCount: acc.totalCount + summary.totalCount,
-        draftCount: acc.draftCount + summary.draftCount
-      }),
-      { totalCount: 0, draftCount: 0 }
-    )
-  : null;
+const contentDevState = shouldShowContentConsole ? await loadContentDevState() : null;
+const pageData = contentDevState?.pageData ?? null;
+// Keep the Svelte list-action island behind a DEV-only dynamic import; production
+// builds intentionally skip the Svelte integration.
+let ContentListActionsIsland: any = null;
+let ContentBulkActionsIsland: any = null;
+if (import.meta.env.DEV && pageData) {
+  const actions = await Promise.all([
+    import('../../../components/admin/editor/list-actions/ContentListActionsIsland.astro'),
+    import('../../../components/admin/editor/list-actions/ContentBulkActionsIsland.astro')
+  ]);
+  ContentListActionsIsland = actions[0].default;
+  ContentBulkActionsIsland = actions[1].default;
+}
+const adminStylesHref = contentDevState?.stylesHref ?? adminShellStylesHref;
+const contentConsoleSubtitle = '内容管理';
+const resetHref = withBase(contentHref);
+const adminContentEntryEndpoint = withBase(ADMIN_CONTENT_ENTRY_API_PATH);
+const adminContentCreateEndpoint = withBase(ADMIN_CONTENT_CREATE_API_PATH);
+const adminContentExportEndpoint = withBase(ADMIN_CONTENT_EXPORT_API_PATH);
+const adminContentDeleteEndpoint = withBase(ADMIN_CONTENT_DELETE_API_PATH);
+const adminContentBulkStatusEndpoint = withBase(ADMIN_CONTENT_BULK_STATUS_API_PATH);
+const adminContentBulkDeleteEndpoint = withBase(ADMIN_CONTENT_BULK_DELETE_API_PATH);
+const adminContentBulkExportEndpoint = withBase(ADMIN_CONTENT_BULK_EXPORT_API_PATH);
+const adminContentFilterMenusScriptHref = contentDevState?.filterMenusScriptHref ?? null;
+const shouldOpenContentFilters = pageData?.hasActiveFilters ?? false;
+const clearScopedStateHref = pageData && pageData.collection !== 'all'
+  ? withBase(getAdminContentEntryListHref(pageData.collection))
+  : resetHref;
+const searchPlaceholder = '搜索标题、标签或 slug…';
+
+const getContentEntryExportHref = (collection: string, entryId: string): string => {
+  const params = new URLSearchParams({
+    collection,
+    entryId
+  });
+  return `${adminContentExportEndpoint}?${params.toString()}`;
+};
+
+const getCollectionListHref = (collection: AdminContentCollectionKey): string =>
+  withBase(getAdminContentEntryListHref(collection));
+
+const getContentRowDateLabel = (
+  item: Pick<AdminContentIndexItem, 'collection' | 'date' | 'dateLabel'>
+): string =>
+  item.collection === 'bits' && item.date ? formatISODate(item.date) : item.dateLabel;
+
+const getContentPublicLinkLabel = (item: Pick<AdminContentIndexItem, 'collection'>): string => {
+  const capability = getAdminContentCollectionCapability(item.collection);
+  if (capability.fixedPage) return `转到${capability.label}`;
+  if (item.collection === 'bits') return '前台查看';
+  return '转到文章';
+};
+
+const getContentInfoActionLabel = (item: Pick<AdminContentIndexItem, 'collection'>): string => {
+  const capability = getAdminContentCollectionCapability(item.collection);
+  if (!capability.writable) return '查看源信息';
+  if (item.collection === 'essay' || item.collection === 'bits') return '修改信息';
+  if (capability.fixedPage) return `${capability.label}信息`;
+  return '编辑信息';
+};
+
+const hasListInfoAction = (collection: AdminContentCollectionKey): collection is 'essay' | 'bits' =>
+  collection === 'essay' || collection === 'bits';
+
+const getContentPaginationHref = (page: number): string => {
+  // 分页只属于具体 collection scope；总览和全部内容搜索不生成分页链接。
+  if (!pageData || pageData.collection === 'all') return resetHref;
+
+  const { filterState } = pageData;
+  const params = new URLSearchParams({
+    collection: pageData.collection
+  });
+
+  if (filterState.query) params.set('q', filterState.query);
+  if (filterState.draft !== 'all') params.set('draft', filterState.draft);
+  if (filterState.tag) params.set('tag', filterState.tag);
+  if (filterState.sort !== 'recent') params.set('sort', filterState.sort);
+  if (filterState.year !== null) params.set('year', String(filterState.year));
+  if (page > 1) params.set('page', String(page));
+
+  return withBase(`${contentHref}?${params.toString()}`);
+};
+
+const getContentFilterHref = (updates: {
+  collection?: AdminContentScopeKey;
+  draft?: AdminContentDraftFilter;
+  sort?: AdminContentSortKey;
+  year?: string | number | null;
+}): string => {
+  if (!pageData) return resetHref;
+
+  return withBase(getAdminContentFilterHref(pageData.filterState, updates, contentHref));
+};
+
+const defaultDraftFilterLabel = ADMIN_CONTENT_DRAFT_OPTIONS[0].label;
+const defaultSortFilterLabel = ADMIN_CONTENT_SORT_OPTIONS[0].label;
+
+const getDraftFilterLabel = (value: AdminContentDraftFilter): string =>
+  ADMIN_CONTENT_DRAFT_OPTIONS.find((option) => option.value === value)?.label ?? defaultDraftFilterLabel;
+
+const getSortFilterLabel = (value: AdminContentSortKey): string =>
+  ADMIN_CONTENT_SORT_OPTIONS.find((option) => option.value === value)?.label ?? defaultSortFilterLabel;
+
+const currentDraftLabel = pageData ? getDraftFilterLabel(pageData.filterState.draft) : defaultDraftFilterLabel;
+const currentSortLabel = pageData ? getSortFilterLabel(pageData.filterState.sort) : defaultSortFilterLabel;
+const currentYearLabel = pageData?.filterState.year !== null && pageData?.filterState.year !== undefined
+  ? String(pageData.filterState.year)
+  : '全部年份';
+const shouldEnableScopedFilterMenus = Boolean(
+  pageData
+  && pageData.collection !== 'all'
+  && getAdminContentCollectionCapability(pageData.collection).articleFilters
+);
+const hiddenFilterInputs = pageData && pageData.collection !== 'all'
+  ? [
+      { name: 'collection', value: pageData.collection },
+      ...(pageData.filterState.draft !== 'all'
+        ? [{ name: 'draft', value: pageData.filterState.draft }]
+        : []),
+      ...(pageData.filterState.sort !== 'recent'
+        ? [{ name: 'sort', value: pageData.filterState.sort }]
+        : []),
+      ...(pageData.filterState.year !== null
+        ? [{ name: 'year', value: String(pageData.filterState.year) }]
+        : [])
+    ]
+  : [];
+const contentFilterMenuGroupName = 'admin-content-filter-menu';
+
+const getContentEmptyMessage = (sectionLabel: string): string => {
+  const query = pageData?.filterState.query.trim() ?? '';
+  if (query) return `${sectionLabel}中没有命中“${query}”的内容。`;
+  if (pageData?.hasActiveFilters) return `${sectionLabel}中没有符合当前筛选条件的内容。`;
+  return `${sectionLabel}中暂无内容。`;
+};
+
+const CONTENT_CREATE_ACTIONS = {
+  essay: {
+    attribute: 'data-admin-content-create-action',
+    label: '新建文章'
+  },
+  bits: {
+    attribute: 'data-admin-content-bits-create-action',
+    label: '新建动态'
+  }
+} as const satisfies Record<AdminContentCreatableCollectionKey, { attribute: string; label: string }>;
+
+const hasContentCreateAction = (
+  collection: AdminContentCollectionKey
+): collection is AdminContentCreatableCollectionKey =>
+  collection in CONTENT_CREATE_ACTIONS;
+
+const getContentCreateAction = (
+  collection: AdminContentCollectionKey
+): { attribute: string; label: string } | null => {
+  if (!hasContentCreateAction(collection)) return null;
+  return CONTENT_CREATE_ACTIONS[collection];
+};
 ---
 
 <AdminLayout title="Content Console" stylesHref={adminStylesHref}>
   <AdminShell
     currentRoute="content"
     title="Content Console"
-    subtitle="内容管理"
+    subtitle={contentConsoleSubtitle}
     showNav={shouldShowAdminNav}
   >
-    {
-      shouldShowContentConsole && contentOverviewDevState ? (
-        <section class="admin-overview admin-content-home">
-          <article class="admin-overview-card admin-content-home__lead">
-            <div class="admin-content-home__lead-copy">
-              <p class="admin-overview-card__eyebrow">Content</p>
-              <h2 class="admin-overview-card__title">内容总览</h2>
-              <p class="admin-overview-card__body">
-                当前共收口 {contentOverviewTotals?.totalCount ?? 0} 条内容，其中草稿 {contentOverviewTotals?.draftCount ?? 0} 条。
-                当前页面只负责 collection 概览与能力分流；具体筛选、分页与编辑入口放在各 collection 列表页。
-              </p>
-            </div>
-            <div class="admin-overview-card__actions admin-content-home__lead-actions">
-              <a class="admin-btn admin-btn--primary" href={withBase('/admin/content/essay/')}>进入 Essay 列表</a>
-              <a class="admin-btn admin-btn--ghost" href={withBase('/admin/')}>返回 Admin 首页</a>
-            </div>
-          </article>
+    {ContentListActionsIsland ? (
+      <div slot="status" class="admin-status-slot">
+        <ContentListActionsIsland
+          base={base}
+          endpoint={adminContentEntryEndpoint}
+          createEndpoint={adminContentCreateEndpoint}
+          deleteEndpoint={adminContentDeleteEndpoint}
+          bitsDefaultAuthor={bitsDefaultAuthor}
+        />
+      </div>
+    ) : null}
 
-          <div class="admin-content-home__rail">
+    {
+      shouldShowContentConsole && pageData ? (
+        <section
+          class:list={[
+            'admin-content-console',
+            `admin-content-console--mode-${pageData.mode}`,
+            `admin-content-console--scope-${pageData.collection}`
+          ]}
+          data-admin-content-root
+        >
+          <form class="admin-content-toolbar" method="get">
+            <div class="admin-content-home-toolbar">
+              <h2 id="admin-content-home-title" class="admin-content-home-toolbar__title">内容管理</h2>
+              <span class="admin-content-home-toolbar__separator" aria-hidden="true">｜</span>
+
+              <input
+                id="admin-content-filter-toggle"
+                class="admin-sr-only admin-content-filter-toggle"
+                type="checkbox"
+                checked={shouldOpenContentFilters}
+              />
+              <label
+                class="admin-btn admin-btn--tool admin-btn--compact admin-content-filter-summary"
+                for="admin-content-filter-toggle"
+              >
+                <AdminIcon name="funnel" size={16} />
+                <span>筛选</span>
+                {
+                  pageData.hasActiveFilters ? (
+                    <span class="admin-content-filter-summary__count" aria-label={`当前结果数 ${pageData.filteredCount}`}>{pageData.filteredCount}</span>
+                  ) : null
+                }
+              </label>
+              <div class="admin-content-bulk-slot">
+                {ContentBulkActionsIsland ? (
+                  <ContentBulkActionsIsland
+                    entryEndpoint={adminContentEntryEndpoint}
+                    statusEndpoint={adminContentBulkStatusEndpoint}
+                    deleteEndpoint={adminContentBulkDeleteEndpoint}
+                    exportEndpoint={adminContentBulkExportEndpoint}
+                  />
+                ) : null}
+              </div>
+              <label class="admin-content-toolbar-search">
+                <span class="admin-sr-only">搜索</span>
+                <input
+                  class="admin-content-toolbar-search__input"
+                  type="search"
+                  name="q"
+                  value={pageData.filterState.query}
+                  placeholder={searchPlaceholder}
+                />
+                <AdminIcon name="search" size={17} />
+              </label>
+              {hiddenFilterInputs.map((input) => (
+                <input type="hidden" name={input.name} value={input.value} />
+              ))}
+
+              <div id="admin-content-filter-panel" class="admin-content-filter-panel">
+                <div class="admin-content-filter-bar">
+                  <div class="admin-content-filter-menus" aria-label="内容筛选">
+                    <details class="admin-content-filter-menu admin-content-filter-menu--scope" name={contentFilterMenuGroupName}>
+                      <summary class="admin-content-filter-trigger">
+                        <span>{pageData.collectionLabel}</span>
+                        <AdminIcon name="chevron-down" size={14} />
+                      </summary>
+                      <div class="admin-content-filter-menu__panel" aria-label="内容范围">
+                        {
+                          pageData.collectionOptions.map((option) => (
+                            <a
+                              class:list={[
+                                'admin-content-filter-option',
+                                option.value === pageData.filterState.collection && 'is-active'
+                              ]}
+                              href={getContentFilterHref({ collection: option.value })}
+                            >
+                              <span>{option.label}</span>
+                              <span class="admin-content-filter-option__count">{option.count}</span>
+                            </a>
+                          ))
+                        }
+                      </div>
+                    </details>
+
+                    {
+                      shouldEnableScopedFilterMenus ? (
+                        <details class="admin-content-filter-menu" name={contentFilterMenuGroupName}>
+                          <summary class="admin-content-filter-trigger">
+                            <span>{currentDraftLabel}</span>
+                            <AdminIcon name="chevron-down" size={14} />
+                          </summary>
+                          <div class="admin-content-filter-menu__panel" aria-label="内容状态">
+                            {
+                              ADMIN_CONTENT_DRAFT_OPTIONS.map((option) => (
+                                <a
+                                  class:list={[
+                                    'admin-content-filter-option',
+                                    option.value === pageData.filterState.draft && 'is-active'
+                                  ]}
+                                  href={getContentFilterHref({ draft: option.value })}
+                                >
+                                  {getDraftFilterLabel(option.value)}
+                                </a>
+                              ))
+                            }
+                          </div>
+                        </details>
+                      ) : (
+                        <span class="admin-content-filter-trigger admin-content-filter-trigger--disabled" aria-disabled="true">
+                          <span>{currentDraftLabel}</span>
+                        </span>
+                      )
+                    }
+
+                    {
+                      shouldEnableScopedFilterMenus ? (
+                        <details class="admin-content-filter-menu" name={contentFilterMenuGroupName}>
+                          <summary class="admin-content-filter-trigger">
+                            <span>{currentSortLabel}</span>
+                            <AdminIcon name="chevron-down" size={14} />
+                          </summary>
+                          <div class="admin-content-filter-menu__panel" aria-label="排序方式">
+                            {
+                              ADMIN_CONTENT_SORT_OPTIONS.map((option) => (
+                                <a
+                                  class:list={[
+                                    'admin-content-filter-option',
+                                    option.value === pageData.filterState.sort && 'is-active'
+                                  ]}
+                                  href={getContentFilterHref({ sort: option.value })}
+                                >
+                                  {option.label}
+                                </a>
+                              ))
+                            }
+                          </div>
+                        </details>
+                      ) : (
+                        <span class="admin-content-filter-trigger admin-content-filter-trigger--disabled" aria-disabled="true">
+                          <span>{currentSortLabel}</span>
+                        </span>
+                      )
+                    }
+
+                    {
+                      shouldEnableScopedFilterMenus ? (
+                        <details class="admin-content-filter-menu" name={contentFilterMenuGroupName}>
+                          <summary class="admin-content-filter-trigger">
+                            <span>{currentYearLabel}</span>
+                            <AdminIcon name="chevron-down" size={14} />
+                          </summary>
+                          <div class="admin-content-filter-menu__panel" aria-label="内容年份">
+                            <a
+                              class:list={[
+                                'admin-content-filter-option',
+                                pageData.filterState.year === null && 'is-active'
+                              ]}
+                              href={getContentFilterHref({ year: null })}
+                            >
+                              全部年份
+                            </a>
+                            {
+                              pageData.yearOptions.map((option) => (
+                                <a
+                                  class:list={[
+                                    'admin-content-filter-option',
+                                    option.value === (pageData.filterState.year !== null ? String(pageData.filterState.year) : '') && 'is-active'
+                                  ]}
+                                  href={getContentFilterHref({ year: option.value })}
+                                >
+                                  <span>{option.label}</span>
+                                  <span class="admin-content-filter-option__count">{option.count}</span>
+                                </a>
+                              ))
+                            }
+                          </div>
+                        </details>
+                      ) : (
+                        <span class="admin-content-filter-trigger admin-content-filter-trigger--disabled" aria-disabled="true">
+                          <span>{currentYearLabel}</span>
+                        </span>
+                      )
+                    }
+                  </div>
+
+                  <div class="admin-content-filter-actions">
+                    {
+                      pageData.mode === 'entry' ? (
+                        <a class="admin-btn admin-btn--ghost admin-btn--compact admin-content-reset" href={clearScopedStateHref}>清除定位</a>
+                      ) : pageData.mode === 'search' ? (
+                        <a class="admin-btn admin-btn--ghost admin-btn--compact admin-content-reset" href={resetHref}>清除搜索</a>
+                      ) : pageData.collection !== 'all' ? (
+                        <a class="admin-btn admin-btn--ghost admin-btn--compact admin-content-reset" href={clearScopedStateHref}>清除筛选</a>
+                      ) : null
+                    }
+                    {
+                      pageData.collection !== 'all' ? (
+                        <a class="admin-btn admin-btn--ghost admin-btn--compact admin-content-reset" href={resetHref}>全部内容</a>
+                      ) : null
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="admin-content-modules">
             {
-              contentOverviewDevState.overview.summaries.map((summary) => (
-                <article class="admin-overview-card admin-content-home__collection">
-                  <div class="admin-content-home__collection-head">
-                    <p class="admin-overview-card__eyebrow">{summary.key}</p>
-                    {summary.draftCount > 0 ? <span class="admin-badge">draft {summary.draftCount}</span> : null}
-                  </div>
-                  <h2 class="admin-overview-card__title">{summary.label}</h2>
-                  <p class="admin-overview-card__body">
-                    共 {summary.totalCount} 条内容，其中草稿 {summary.draftCount} 条；最近更新时间 {summary.latestDateLabel}。
-                  </p>
-                  <div class="admin-overview-card__actions">
-                    <a class="admin-btn admin-btn--secondary" href={withBase(getAdminContentCollectionHref(summary.key))}>
-                      进入 {summary.label}
-                    </a>
-                  </div>
-                </article>
-              ))
+              pageData.sections.map((section) => {
+                const sectionTitleId = `admin-content-${section.collection}-title`;
+                const sectionCapability = getAdminContentCollectionCapability(section.collection);
+                const createAction = sectionCapability.create
+                  ? getContentCreateAction(section.collection)
+                  : null;
+                const shouldShowSectionCreateAction = Boolean(createAction);
+                const isSectionTitleLinked = pageData.mode === 'overview';
+                return (
+                  <section class="admin-content-module" aria-labelledby={sectionTitleId}>
+                    <div class="admin-content-module__head">
+                      <h3 id={sectionTitleId}>
+                        {
+                          isSectionTitleLinked ? (
+                            <a
+                              class="admin-content-module__title-link"
+                              href={getCollectionListHref(section.collection)}
+                              title={`查看全部${section.collectionLabel}`}
+                            >
+                              <span>{section.collectionLabel}</span>
+                              {
+                                !sectionCapability.fixedPage ? (
+                                  <span class="admin-content-module__title-count">{section.filteredCount}</span>
+                                ) : null
+                              }
+                            </a>
+                          ) : (
+                            <span>{section.collectionLabel}</span>
+                          )
+                        }
+                        <span class="admin-content-module__route">{sectionCapability.consoleSectionHref}</span>
+                      </h3>
+                      {
+                        shouldShowSectionCreateAction ? (
+                          <div class="admin-content-module__actions">
+                            {
+                              shouldShowSectionCreateAction && createAction ? (
+                                <button
+                                  class="admin-btn admin-btn--ghost admin-btn--compact admin-content-create-action"
+                                  type="button"
+                                  {...{ [createAction.attribute]: true }}
+                                  data-create-action-label={createAction.label}
+                                  disabled
+                                >
+                                  <AdminIcon name="plus" size={13} strokeWidth={2.2} class="admin-content-create-action__icon" />
+                                  <span>{createAction.label}</span>
+                                </button>
+                              ) : null
+                            }
+                          </div>
+                        ) : null
+                      }
+                    </div>
+
+                    {
+                      section.items.length > 0 ? (
+                        <ol class="admin-content-list" aria-label={`${section.collectionLabel}内容条目`}>
+                            {
+                              section.items.map((item, itemIndex) => {
+                                const capability = getAdminContentCollectionCapability(item.collection);
+                                const editPath = getAdminContentEntryEditHref(item.collection, item.id);
+                                const editHref = withBase(editPath);
+                                const supportsListInfoAction = capability.writable && hasListInfoAction(item.collection);
+                                const articleInfoHref = capability.writable
+                                  ? item.collection === 'essay'
+                                    ? withBase(`${editPath}?panel=info`)
+                                    : editHref
+                                  : null;
+                                const entryTitleHref = capability.writable ? editHref : getCollectionListHref(item.collection);
+                                const publicHref = item.publicHref ? withBase(item.publicHref) : null;
+                                const publicFallbackLabel = getAdminContentPublicFallbackLabel(item);
+                                const exportHref = getContentEntryExportHref(item.collection, item.id);
+                                const deleteUnsupportedReason = capability.deleteUnsupportedReason ?? `当前 collection 暂不支持删除：${item.collection}`;
+                                const sourceErrorPanelId = item.sourceError
+                                  ? `admin-content-source-error-${section.collection}-${itemIndex}`
+                                  : null;
+                                const hasBulkIdentity = Boolean(item.collection && item.id && item.relativePath);
+                                const bulkCheckboxLabel = hasBulkIdentity
+                                  ? `选择${item.title}`
+                                  : '缺少源文件身份，无法批量操作';
+                                return (
+                                  <li
+                                    class="admin-row admin-row--plain admin-row--interactive admin-row--table admin-content-item"
+                                    data-collection={item.collection}
+                                    data-admin-content-item
+                                  >
+                                    <label class="admin-content-bulk-select" title={bulkCheckboxLabel}>
+                                      <input
+                                        class="admin-content-bulk-checkbox"
+                                        type="checkbox"
+                                        data-admin-content-bulk-entry={hasBulkIdentity ? true : undefined}
+                                        data-collection={hasBulkIdentity ? item.collection : undefined}
+                                        data-entry-id={hasBulkIdentity ? item.id : undefined}
+                                        data-relative-path={hasBulkIdentity ? item.relativePath : undefined}
+                                        data-title={hasBulkIdentity ? item.title : undefined}
+                                        disabled={!hasBulkIdentity}
+                                        aria-label={bulkCheckboxLabel}
+                                      />
+                                    </label>
+                                    <p class="admin-content-row-meta">
+                                      <span data-admin-content-row-date>{getContentRowDateLabel(item)}</span>
+                                    </p>
+
+                                  <div class="admin-content-item__title-row">
+                                    <a class="admin-content-row-title" href={entryTitleHref} data-admin-content-row-title>{item.title}</a>
+                                    {
+                                      item.sourceError && sourceErrorPanelId ? (
+                                        <details class="admin-content-source-error">
+                                          <summary
+                                            class="admin-content-source-error__trigger"
+                                            title={item.sourceError}
+                                            aria-label={`查看源文件异常：${item.title}`}
+                                            aria-controls={sourceErrorPanelId}
+                                          >
+                                            <AdminIcon name="triangle-alert" size={14} />
+                                          </summary>
+                                          <div
+                                            id={sourceErrorPanelId}
+                                            class="admin-content-source-error__panel"
+                                            role="note"
+                                          >
+                                            <p class="admin-content-source-error__label">源文件异常</p>
+                                            <p class="admin-content-source-error__message">{item.sourceError}</p>
+                                          </div>
+                                        </details>
+                                      ) : null
+                                    }
+                                    <span
+                                      class="admin-content-row-mark admin-content-row-mark--draft"
+                                      hidden={!item.isDraft}
+                                    >
+                                      [draft]
+                                    </span>
+                                    <span
+                                      class="admin-content-row-mark admin-content-row-mark--archive"
+                                      data-admin-content-row-archive
+                                      hidden={item.archive !== false}
+                                    >
+                                      [archive off]
+                                    </span>
+                                  </div>
+
+                                  <div class="admin-content-item__actions">
+                                    {capability.writable ? (
+                                      <a class="admin-btn admin-btn--secondary admin-btn--compact" href={editHref}>
+                                        编辑
+                                      </a>
+                                    ) : (
+                                      <span
+                                        class="admin-btn admin-btn--secondary admin-btn--compact is-disabled"
+                                        aria-disabled="true"
+                                        title={capability.readonlyReason ?? '当前内容暂不支持编辑'}
+                                      >
+                                        待接入
+                                      </span>
+                                    )}
+                                    <details class="admin-content-item__more">
+                                      <summary class="admin-btn admin-btn--ghost admin-btn--compact">更多</summary>
+                                      <div class="admin-content-more-panel" aria-label="内容操作">
+                                        <a
+                                          class:list={[
+                                            'admin-content-menu-item',
+                                            !articleInfoHref && 'is-disabled'
+                                          ]}
+                                          href={articleInfoHref ?? undefined}
+                                          data-admin-content-info-action={supportsListInfoAction ? true : undefined}
+                                          data-collection={supportsListInfoAction ? item.collection : undefined}
+                                          data-entry-id={supportsListInfoAction ? item.id : undefined}
+                                          aria-disabled={articleInfoHref ? undefined : 'true'}
+                                          title={articleInfoHref ? undefined : capability.readonlyReason ?? '当前内容暂不支持编辑'}
+                                          tabindex={articleInfoHref ? undefined : '-1'}
+                                        >
+                                          <AdminIcon name="admin-page" size={14} />
+                                          <span>{getContentInfoActionLabel(item)}</span>
+                                        </a>
+                                        <a
+                                          class:list={[
+                                            'admin-content-menu-item',
+                                            !publicHref && 'is-disabled'
+                                          ]}
+                                          href={publicHref ?? undefined}
+                                          data-admin-content-row-public-link
+                                          aria-disabled={publicHref ? undefined : 'true'}
+                                          title={publicHref ? undefined : publicFallbackLabel}
+                                          tabindex={publicHref ? undefined : '-1'}
+                                        >
+                                          <AdminIcon name="link" size={14} />
+                                          <span>{getContentPublicLinkLabel(item)}</span>
+                                        </a>
+                                        <a
+                                          class="admin-content-menu-item"
+                                          href={exportHref}
+                                          data-admin-content-export-action
+                                        >
+                                          <AdminIcon name="download" size={14} />
+                                          <span>导出</span>
+                                        </a>
+                                        {isAdminContentDeletableCollectionKey(item.collection) ? (
+                                          <button
+                                            type="button"
+                                            class="admin-content-menu-item admin-content-menu-item--danger"
+                                            data-admin-content-delete-action
+                                            data-collection={item.collection}
+                                            data-entry-id={item.id}
+                                            data-relative-path={item.relativePath}
+                                          >
+                                            <AdminIcon name="trash" size={14} />
+                                            <span>删除</span>
+                                          </button>
+                                        ) : (
+                                          <span class="admin-content-menu-item admin-content-menu-item--danger is-disabled" aria-disabled="true" title={deleteUnsupportedReason}>
+                                            <AdminIcon name="trash" size={14} />
+                                            <span>删除</span>
+                                          </span>
+                                        )}
+                                      </div>
+                                    </details>
+                                  </div>
+                                  </li>
+                                );
+                              })
+                            }
+                          </ol>
+                      ) : (
+                        <p class="admin-content-empty">
+                          {getContentEmptyMessage(section.collectionLabel)}
+                        </p>
+                      )
+                    }
+                  </section>
+                );
+              })
             }
           </div>
 
-          <article class="admin-overview-card admin-content-home__boundary">
-            <p class="admin-overview-card__eyebrow">Current Boundary</p>
-            <h2 class="admin-overview-card__title">当前入口负责总览与分流</h2>
-            <ul class="admin-overview-card__list">
-              <li>真实路由：`/admin/content/` 与 `/admin/content/:collection/`。</li>
-              <li>URL 次级状态：`q / draft / tag / year / sort / page / entry`。</li>
-              <li>维护动作：公开页跳转、路径复制、`entry.id` 复制。</li>
-              <li>`essay / bits` 的 frontmatter dry-run 与保存已下沉到 collection 页；`memo` 继续只读。</li>
-              <li>正文编辑与正文写盘仍不在当前范围内。</li>
-            </ul>
-          </article>
+          {
+            pageData.pagination && pageData.pagination.totalPages > 1 ? (
+              <nav class="admin-content-pagination" aria-label="内容分页">
+                {pageData.pagination.hasPrev ? (
+                  <a class="admin-btn admin-btn--ghost admin-btn--compact" href={getContentPaginationHref(pageData.pagination.page - 1)}>上一页</a>
+                ) : (
+                  <span class="admin-btn admin-btn--ghost admin-btn--compact is-disabled" aria-disabled="true">上一页</span>
+                )}
+                <p class="admin-content-pagination__status">
+                  {pageData.pagination.page} / {pageData.pagination.totalPages}
+                </p>
+                {pageData.pagination.hasNext ? (
+                  <a class="admin-btn admin-btn--ghost admin-btn--compact" href={getContentPaginationHref(pageData.pagination.page + 1)}>下一页</a>
+                ) : (
+                  <span class="admin-btn admin-btn--ghost admin-btn--compact is-disabled" aria-disabled="true">下一页</span>
+                )}
+              </nav>
+            ) : null
+          }
+
+          {adminContentFilterMenusScriptHref ? (
+            <script is:inline type="module" src={adminContentFilterMenusScriptHref}></script>
+          ) : null}
         </section>
       ) : (
         <AdminReadonlyNotice>
-          后台文章管理与可视化写作正在开发中。
+          若需查看或编辑内容索引，请在本地运行 <code translate="no">npm run dev</code> 后从此入口进入。
         </AdminReadonlyNotice>
       )
     }

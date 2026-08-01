@@ -6,29 +6,34 @@ const {
   currentRoute,
   title,
   subtitle,
-  showNav = true
+  showNav = true,
+  showHeader = true
 } = Astro.props as {
   currentRoute: AdminRouteId;
   title: string;
   subtitle: string;
   showNav?: boolean;
+  showHeader?: boolean;
 };
 ---
 
 <section
   class="admin-console admin-console--shell"
   data-admin-route={currentRoute}
+  data-admin-header-visible={showHeader ? 'true' : 'false'}
   data-admin-nav-visible={showNav ? 'true' : 'false'}
 >
-  <header class="page-header page-header--admin">
-    <div class="admin-heading">
-      <div class="admin-heading__copy">
-        <h1 class="page-title">{title}</h1>
-        <span class="page-subtitle">{subtitle}</span>
+  {showHeader ? (
+    <header class="page-header page-header--admin">
+      <div class="admin-heading">
+        <div class="admin-heading__copy">
+          <h1 class="page-title">{title}</h1>
+          <span class="page-subtitle">{subtitle}</span>
+        </div>
       </div>
-    </div>
-    <slot name="status" />
-  </header>
+      <slot name="status" />
+    </header>
+  ) : null}
 
   {showNav ? <AdminNav currentRoute={currentRoute} /> : null}
 

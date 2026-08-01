@@ -8,6 +8,7 @@ const {
   title,
   excerpt,
   date,
+  updatedAt = null,
   visibleTags = [],
   badge = '随笔',
   slug = '',
@@ -17,6 +18,7 @@ const {
   title: string;
   excerpt?: string | null;
   date: Date;
+  updatedAt?: Date | null;
   visibleTags?: string[];
   badge?: string;
   slug?: string;
@@ -25,6 +27,8 @@ const {
 const displayBadge = badge.trim() ? badge : '随笔';
 const shouldShowMetaLine = articleMetaSettings.showDate || (articleMetaSettings.showTags && visibleTags.length > 0);
 const excerptHtml = excerpt ? excerptMarkdownToHtml(excerpt) : null;
+const displayDate = updatedAt ?? date;
+const displayDateLabel = updatedAt ? '更新于：' : (articleMetaSettings.dateLabel ?? '');
 ---
 
 <a
@@ -34,9 +38,9 @@ const excerptHtml = excerpt ? excerptMarkdownToHtml(excerpt) : null;
   data-slug={slug || undefined}
 >
   <div class="list-item__row">
-    <div style="display:flex; align-items:center; gap:10px;">
+    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
       <span class="badge">{displayBadge}</span>
-      <h2 class="list-item__title" style="margin:0;">{title}</h2>
+      <h2 class="list-item__title" style="margin:0; min-width:0;">{title}</h2>
     </div>
   </div>
   {excerptHtml ? <p class="list-item__excerpt" set:html={excerptHtml} /> : null}
@@ -44,12 +48,12 @@ const excerptHtml = excerpt ? excerptMarkdownToHtml(excerpt) : null;
     <div class="meta-line meta-line--items">
       {articleMetaSettings.showDate ? (
         <span class="meta-line__item">
-          {articleMetaSettings.dateLabel ? `${articleMetaSettings.dateLabel}` : ''}{formatISODateUtc(date)}
+          <time datetime={displayDate.toISOString()}>{`${displayDateLabel}${formatISODateUtc(displayDate)}`}</time>
         </span>
       ) : null}
       {articleMetaSettings.showTags && visibleTags.length ? (
         <span class="meta-line__item meta-line__item--tags">
-          {visibleTags.map((tag) => <span class="tag">#{tag}</span>)}
+          {visibleTags.map((tag) => (<span class="tag">#{tag}</span>))}
         </span>
       ) : null}
     </div>

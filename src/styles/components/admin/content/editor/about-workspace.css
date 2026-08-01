@@ -1,0 +1,13 @@
+/* Admin Content Editor About Workspace
+   about 是固定单页 body-only 工作台，正文与预览骨架复用 shared editor shell。
+*/
+
+.admin-about-editor.admin-editor-shell {
+  --admin-editor-body-max-inline-size: 860px;
+  --admin-editor-preview-content-max-inline-size: var(--article-readable-inline-size);
+  --admin-editor-single-pane-max-inline-size: 1160px;
+
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}

@@ -1,6 +1,8 @@
 /* Markdown 排版 */
 .prose {
+  font-family: var(--font-readable);
   font-size: 15px;
+  line-height: 1.75;
   color: var(--text);
   min-width: 0;
   overflow-wrap: anywhere;

@@ -4,7 +4,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/cxro/astro-whono/ci.yml?style=flat&label=CI&labelColor=2E3440&color=A3BE8C&logo=githubactions&logoColor=ECEFF4)](https://github.com/cxro/astro-whono/actions/workflows/ci.yml)  [![Node](https://img.shields.io/badge/Node-%3E%3D22.12.0-81A1C1?style=flat&labelColor=2E3440&logo=nodedotjs&logoColor=ECEFF4)](README.en.md#requirements)  [![Astro](https://img.shields.io/github/package-json/dependency-version/cxro/astro-whono/astro?branch=main&style=flat&label=Astro&labelColor=2E3440&color=BC52EE&logo=astro&logoColor=ECEFF4)](https://docs.astro.build/)  [![License](https://img.shields.io/badge/License-MIT-4C566A?style=flat&labelColor=2E3440&logo=opensourceinitiative&logoColor=ECEFF4)](LICENSE)
 
-**✨ astro-whono is now upgraded to Astro v6**
+**✨ astro-whono now supports visual writing and live preview in the local admin console**
 
 A minimal two-column Astro theme for personal writing and lightweight publishing.
 
@@ -26,8 +26,8 @@ A minimal two-column Astro theme for personal writing and lightweight publishing
 
 - Two-column layout (sidebar navigation + content area)
 - Responsive design for mobile devices
-- Content collections: essay / bits / memo (archive is generated from essay)
-- Built-in local Admin Console (`/admin`): use Theme / Images / Checks / Data Console in development to manage site settings and assets, and take over the theme after forking or cloning
+- Content collections: essay / bits / memo / about (archive is generated from essay)
+- Built-in local Admin Console (`/admin`): use Theme / Content / Images / Checks / Data Console in development to manage site settings, content, and assets, and take over the theme after forking or cloning
 - Bits draft generator on `/bits/`: one-click Markdown output (copy/download), with multi-image support and automatic image dimension detection
 - RSS: default archive feed + section feeds
 - Light / dark theme + reading mode
@@ -43,11 +43,11 @@ A minimal two-column Astro theme for personal writing and lightweight publishing
 ### Quick Start
 
 ```bash
-npm i
+npm install
 # Repeatable install (recommended for CI/troubleshooting)
 # npm ci
 npm run dev
-npm run build && npm run preview
+npm run build
 ```
 
 <details>
@@ -62,32 +62,34 @@ If execution policy blocks `npm.ps1`, use one of the following:
 
 ### Common Commands
 
-  - npm run dev
-  - npm run build
-  - npm run ci
-  - npm run new:bit
+  - `npm run dev`: start the local dev server
+  - `npm run build`: generate the static site
+  - `npm run preview`: preview the production build
+  - `npm run new:bit`: create a bits draft
 
 <details>
-  <summary>Check and regression commands</summary>
+  <summary>Maintainer checks</summary>
 
-Use them depending on the situation:
+These commands are for maintaining the theme itself. Regular writing and deployment usually do not require them.
 
 ```bash
-# Default regression entry (GitHub Actions)
-npm run ci
+# Baseline verification: Astro check, Vitest, build
+npm run verify
 
-# Manual release verification for absolute links / sitemap / RSS (requires the final production domain)
+# Markdown rendering contract: run after changing rendering, article styles, or the code block toolbar
+npm run build
+npm run check:markdown-smoke
+
+# Release artifact check: requires the final production domain
 SITE_URL=https://your-domain npm run build
 SITE_URL=https://your-domain npm run check:prod-artifacts
 
-# Only when changing Admin Console subroutes, /api/admin/** static boundaries, or dev/prod read-only boundaries
+# Admin boundary check: only when changing /admin/** or /api/admin/**
 npm run check:preview-admin
-```
 
-- `npm test` mainly covers tag utilities, shared Theme Console validation rules, and core pure-logic regressions around theme settings `revision`.
-- `npm run ci` is the default regression entry; `npm run ci:core` is kept only as a maintainer compatibility alias.
-- `npm run build` still works without `SITE_URL`, but SEO-related outputs will be incomplete.
-- Before release, if you need to verify absolute-link artifacts, set a real `SITE_URL` and run `npm run check:prod-artifacts`.
+# Production dependency audit: run before release or after dependency changes
+npm run audit:prod
+```
 </details>
 
 
@@ -112,11 +114,9 @@ npm run check:preview-admin
 - This project includes `.nvmrc`, and Cloudflare Pages reads it automatically.
 - If you need to set it manually, add `NODE_VERSION=22.22.0` in environment variables.
 
-**Environment variables (strongly recommended for production)**
+**Environment variables (set for production)**
 - In Pages project -> Settings -> Environment variables, add: `SITE_URL=https://your-domain` (for example `https://astro.whono.me`, without a trailing `/`).
-
-**Why set `SITE_URL`?**
-- Astro uses it to generate canonical, Open Graph `og:url`, RSS links, sitemap, and other fields that require absolute URLs. Without `SITE_URL`, deployment still works, but these links may fall back to relative paths or placeholder domains, which can hurt share previews and search indexing.
+- `SITE_URL` is used to generate absolute links for canonical, Open Graph `og:url`, RSS, and sitemap; without it these links fall back to a placeholder domain, hurting share previews and search indexing.
 
 **About sitemap / robots**
 - `sitemap` is generated only when `SITE_URL` is set, and `/robots.txt` includes a `Sitemap:` line only in that case (to avoid pointing to the wrong domain).
@@ -142,7 +142,7 @@ npm run check:preview-admin
 - Content collections: `src/content.config.ts`
 - Shared style entry: `src/styles/global.css`
 - Page / scene style entries: `src/styles/home.css`, `src/styles/about.css`, `src/styles/memo.css`, `src/styles/article.css`, `src/styles/bits-page.css`
-- Admin style entry: `src/styles/components/admin-shell.css` + route-specific Admin styles; the full `admin.css` aggregate is no longer provided
+- Admin style entry: `src/styles/components/admin/shell.css` + route-specific styles under `src/styles/components/admin/**`; the full `admin.css` aggregate is no longer provided
 
 ### Admin Console (`/admin`)
 
@@ -169,7 +169,9 @@ Then open `http://localhost:4321/admin/` in your browser.
 | `/admin/images/` | Available | Image resource browser and path helper |
 | `/admin/checks/` | Available | Structured diagnostics and pre-release checks |
 | `/admin/data/` | Available | Settings snapshot export / dry-run import / confirmed write |
-| `/admin/content/` | In progress | Placeholder for content management and visual writing |
+| `/admin/content/` | Available | Content management, essay / bits draft creation, local editing for essay / bits / memo / about page, and source export |
+
+> Guides: [Admin Console](https://astro.whono.me/archive/admin-console-guide/) · [Theme Console](https://astro.whono.me/archive/theme-console-guide/) · [Content Console](https://astro.whono.me/archive/content-console-guide/)
 
 
 <details>
@@ -198,12 +200,10 @@ For more details, see the [Theme Console configuration guide](https://astro.whon
 
 #### Production behavior
 
-- Theme Console / Data Console provide write capabilities only in local development; Content Console is still a placeholder.
-- `/admin/content/` and `/admin/content/:collection/` currently only show the work-in-progress notice; collection overview, details, and frontmatter editing are not exposed.
+- Admin Console write capabilities are available only in local development, including theme settings, content editing, settings import/export, and supported content image uploads.
+- `/admin/content/` provides the content list, filters, search, essay / bits draft creation, and row-level actions. In development, edit pages support local editing and preview for essay, bits, memo, and about content.
 - Production builds remain static output. `/admin/` can show a read-only public Overview or a hidden-state message based on Theme settings; production does not show Admin tabs, and other Admin subroutes only keep a local-development notice.
-- `/api/admin/settings/` is for local development only and should not be treated as a production API
-- `/api/admin/content/entry/` is for local development frontmatter writes only and should not be treated as a production API
-- `/api/admin/data/settings/` is for local development settings export only and should not be treated as a production API
+- `/api/admin/**` is for local development only and should not be treated as a production API
 
 #### Compatibility for existing forks
 
@@ -219,6 +219,7 @@ Content Collections:
 - Essay: `src/content/essay`
 - Bits: `src/content/bits`
 - Memo: `src/content/memo/index.md`
+- About: `src/content/about/index.md` (fixed single page)
 - Archive: generated from essay entries via the `archive` field
 
 Main routes:
@@ -244,6 +245,7 @@ draft: false        # Draft: hidden from list/RSS in production (visible in loca
 archive: true       # Archive switch: false excludes it from /archive and /archive/rss.xml (default true; detail page and /essay remain available)
 slug: optional      # Custom URL slug (defaults to the flattened content path, e.g. 2024/my-post -> 2024-my-post)
 badge: optional     # List badge; if omitted, list shows "Essay"
+updatedAt: 2026-01-02 # Optional update date; replaces the visible article date when set
 ```
 
 `essay.date` should use the `YYYY-MM-DD` format for archive grouping, ordering, and page date display.
@@ -256,7 +258,15 @@ If you need to keep a precise publish time, you can add:
 publishedAt: 2026-01-01T12:00:00+08:00
 ```
 
-`publishedAt` does not need to be added to existing content in bulk. Public lists, archives, RSS, and page date display still use `date`.
+`publishedAt` does not need to be added to existing content in bulk. It only keeps a more precise publish time; archive ordering and RSS publish time continue to read `date` / `publishedAt` as before.
+
+If the article has a revision date, add:
+
+```yaml
+updatedAt: 2026-01-02
+```
+
+`updatedAt` is an optional update date. Prefer `YYYY-MM-DD`. When set, the home index, essay list, and article detail page replace the original visible date with an update label such as `更新于：YYYY-MM-DD`; when omitted, pages keep the existing date display.
 
 Unquoted YAML datetimes are also accepted. In rare UTC-boundary cases, the parser may have already lost the original timezone text; in that case the parsed UTC date is used.
 
@@ -302,8 +312,9 @@ author:
 ### Writing Conventions (Content Blocks)
 
 - Callout: recommended directive syntax `:::note[title] ... :::` (`note` / `tip` / `info` / `warning`); in HTML form use `.callout-title`, and use `data-icon="none"` to hide icon
-- Figure: `figure > (img|picture) + figcaption?`
-- Gallery: `ul.gallery > li > figure > (img|picture) + figcaption?` (optional `cols-2` / `cols-3`)
+- Figure: `figure.figure > (img|picture) + figcaption.figure-caption?`; optional `figure--sm/md/lg/full` and `figure--left/center/right`
+- Gallery: `ul.gallery > li > figure > (img|picture) + figcaption?`; optional `cols-2` / `cols-3`
+- Math: double-dollar syntax is supported, with inline `$$x$$` and block `$$ ... $$`; single-dollar `$x$` is not parsed as math
 - Quote: standard `blockquote`, optional `cite` for source
 - Pullquote: `blockquote.pullquote`
 - Code Block: toolbar / copy button / line numbers are enhanced at build time (no extra author-side syntax needed)
@@ -364,6 +375,16 @@ Source files (not tracked in repository):
 </details>
 
 Font license: SIL Open Font License 1.1 (see `public/fonts/OFL-LXGW-WenKai-Lite.txt` and `public/fonts/OFL-NotoSerifSC.txt`).
+
+### Typography settings
+
+In development, open the Theme Console (`/admin/theme/` → "Typography") to configure the body text, copy, monospace, and brand fonts independently. Changes apply on the next build; the brand font is used for the sidebar site title and quote.
+
+Font cards show previews and source information. Options include system fonts, self-hosted fonts, and online fonts downloaded and self-hosted at build time. Browsers do not contact third-party font services when loading pages. To add a font beyond the built-in options, register it in `src/lib/fonts/registry.ts`.
+
+For source details, size trade-offs, and custom font setup, see the [Theme Console guide → "Typography"](https://astro.whono.me/archive/theme-console-guide/).
+
+Run `npm run check:font-charset` to verify that the charset and font subsets match the site content. If it fails, follow the prompt to run `npm run font:build`.
 
 
 ## RSS

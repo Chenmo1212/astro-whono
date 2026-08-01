@@ -1,20 +1,18 @@
-// Load environment variables from .env file
-import { config } from 'dotenv';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { getThemeSettings } from './theme-settings';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load .env file from project root
-config({ path: join(__dirname, '../../.env') });
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const getQiniuConfig = () => {
+  const settings = getThemeSettings();
+  const qiniuConfig = settings.settings.ui.imageProvider?.qiniu;
+
   return {
-    accessKey: process.env.QINIU_ACCESS_KEY || '',
-    secretKey: process.env.QINIU_SECRET_KEY || '',
-    bucket: process.env.QINIU_BUCKET || '',
-    domain: process.env.QINIU_DOMAIN || ''
+    accessKey: isRecord(qiniuConfig) && typeof qiniuConfig.accessKey === 'string' ? qiniuConfig.accessKey : '',
+    secretKey: isRecord(qiniuConfig) && typeof qiniuConfig.secretKey === 'string' ? qiniuConfig.secretKey : '',
+    bucket: isRecord(qiniuConfig) && typeof qiniuConfig.bucket === 'string' ? qiniuConfig.bucket : '',
+    domain: isRecord(qiniuConfig) && typeof qiniuConfig.domain === 'string' ? qiniuConfig.domain : '',
+    path: isRecord(qiniuConfig) && typeof qiniuConfig.path === 'string' ? qiniuConfig.path : '/'
   };
 };
 

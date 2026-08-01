@@ -109,4 +109,55 @@ describe('theme-settings revision semantics', () => {
       expect(state.diagnostics).toEqual(diagnostics);
     }
   });
+
+  it('keeps the console unlocked when ui.json lacks the typography block', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    const uiPath = path.join(settingsDir, 'ui.json');
+    const uiJson = JSON.parse(await readFile(uiPath, 'utf8')) as Record<string, unknown>;
+    delete uiJson.typography;
+    await writeFile(uiPath, `${JSON.stringify(uiJson, null, 2)}\n`, 'utf8');
+
+    const resolved = getThemeSettings();
+    const state = getEditableThemeSettingsState(resolved);
+
+    expect(resolved.settings.ui.typography).toEqual({
+      readable: 'noto-serif-sc',
+      copy: 'lxgw-wenkai-lite',
+      mono: 'system-mono',
+      brand: 'serif-georgia'
+    });
+    expect(getThemeSettingsReadDiagnostics(resolved)).toEqual([]);
+    expect(state.ok).toBe(true);
+  });
+
+  it('locks the console when ui.json carries an invalid typography font id', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    const uiPath = path.join(settingsDir, 'ui.json');
+    const uiJson = JSON.parse(await readFile(uiPath, 'utf8')) as Record<string, any>;
+    uiJson.typography.readable = 'bogus-font';
+    await writeFile(uiPath, `${JSON.stringify(uiJson, null, 2)}\n`, 'utf8');
+
+    const resolved = getThemeSettings();
+    const diagnostics = getThemeSettingsReadDiagnostics(resolved);
+    const state = getEditableThemeSettingsState(resolved);
+
+    expect(resolved.settings.ui.typography.readable).toBe('noto-serif-sc');
+    expect(diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          group: 'ui',
+          code: 'schema-mismatch'
+        })
+      ])
+    );
+    expect(state.ok).toBe(false);
+  });
+
+  it('changes revision when typography settings change', () => {
+    const resolved = getThemeSettings();
+    const mutated = structuredClone(resolved);
+    mutated.settings.ui.typography.readable = 'lxgw-wenkai-lite';
+
+    expect(getThemeSettingsRevision(mutated)).not.toBe(getThemeSettingsRevision(resolved));
+  });
 });

@@ -4,7 +4,10 @@ import type {
   SidebarNavId,
   SiteSocialIconKey,
   SiteSocialPresetId,
-  ThemeSettingsEditablePayload
+  ThemeFontId,
+  ThemeSettingsEditablePayload,
+  TypographyRole,
+  TypographySettings
 } from '@/lib/theme-settings';
 import { normalizeHeroImageSrc as normalizeHeroImageSrcValue } from '@/utils/format';
 import {
@@ -18,9 +21,11 @@ import {
   ADMIN_OVERVIEW_HIDDEN_MESSAGE_DEFAULT,
   ADMIN_SIDEBAR_DIVIDER_DEFAULT,
   ADMIN_SOCIAL_PRESET_ORDER_DEFAULT,
+  ADMIN_TYPOGRAPHY_DEFAULT,
   canonicalizeAdminThemeSettings,
   isAdminHomeIntroLinkKey,
   isAdminNavId,
+  isAdminTypographyFontId,
   normalizeAdminSocialIconKey
 } from '@/lib/admin-console/theme-shared';
 
@@ -98,6 +103,16 @@ type FormCodecContext = {
   inputSidebarDividerDefault: HTMLInputElement;
   inputSidebarDividerSubtle: HTMLInputElement;
   inputSidebarDividerNone: HTMLInputElement;
+  inputQiniuAccessKey: HTMLInputElement;
+  inputQiniuSecretKey: HTMLInputElement;
+  inputQiniuBucket: HTMLInputElement;
+  inputQiniuDomain: HTMLInputElement;
+  inputQiniuPath: HTMLInputElement;
+  inputQiniuAutoReplace: HTMLInputElement;
+  inputTypographyReadable: HTMLElement;
+  inputTypographyCopy: HTMLElement;
+  inputTypographyMono: HTMLElement;
+  inputTypographyBrand: HTMLElement;
 };
 
 const normalizeMultiline = (value: string): string => value.replace(/\r\n/g, '\n');
@@ -204,7 +219,17 @@ export const createFormCodec = ({
   sidebarAdminEntryRowEl,
   inputSidebarDividerDefault,
   inputSidebarDividerSubtle,
-  inputSidebarDividerNone
+  inputSidebarDividerNone,
+  inputQiniuAccessKey,
+  inputQiniuSecretKey,
+  inputQiniuBucket,
+  inputQiniuDomain,
+  inputQiniuPath,
+  inputQiniuAutoReplace,
+  inputTypographyReadable,
+  inputTypographyCopy,
+  inputTypographyMono,
+  inputTypographyBrand
 }: FormCodecContext) => {
   const defaultHomeIntroLinks = [...ADMIN_HOME_INTRO_LINK_DEFAULT] as HomeIntroLinkKey[];
   const defaultPrimaryHomeIntroLink: HomeIntroLinkKey = ADMIN_HOME_INTRO_LINK_DEFAULT[0];
@@ -357,6 +382,30 @@ export const createFormCodec = ({
     inputSidebarDividerDefault.checked = value === 'default';
     inputSidebarDividerSubtle.checked = value === 'subtle';
     inputSidebarDividerNone.checked = value === 'none';
+  };
+
+  const typographyGroups: Record<TypographyRole, HTMLElement> = {
+    readable: inputTypographyReadable,
+    copy: inputTypographyCopy,
+    mono: inputTypographyMono,
+    brand: inputTypographyBrand
+  };
+
+  const getCheckedTypographyRadio = (role: TypographyRole): HTMLInputElement | null =>
+    query<HTMLInputElement>(typographyGroups[role], 'input[type="radio"]:checked');
+
+  const getSelectedTypographyFontId = (role: TypographyRole): ThemeFontId => {
+    const rawValue = getCheckedTypographyRadio(role)?.value.trim() ?? '';
+    return isAdminTypographyFontId(role, rawValue) ? rawValue : ADMIN_TYPOGRAPHY_DEFAULT[role];
+  };
+
+  const applyTypographySettings = (typography: TypographySettings | undefined): void => {
+    (Object.keys(typographyGroups) as TypographyRole[]).forEach((role) => {
+      const rawValue = typography?.[role] ?? '';
+      const nextValue = isAdminTypographyFontId(role, rawValue) ? rawValue : ADMIN_TYPOGRAPHY_DEFAULT[role];
+      const radio = query<HTMLInputElement>(typographyGroups[role], `input[type="radio"][value="${nextValue}"]`);
+      if (radio) radio.checked = true;
+    });
   };
 
   const getFooterPreviewText = (): string => {
@@ -514,12 +563,19 @@ export const createFormCodec = ({
         },
         imageProvider: {
           qiniu: {
-            accessKey: "",
-            secretKey: "",
-            bucket: "",
-            domain: "",
-            autoReplace: false
+            accessKey: normalizeTrimmed(inputQiniuAccessKey.value),
+            secretKey: normalizeTrimmed(inputQiniuSecretKey.value),
+            bucket: normalizeTrimmed(inputQiniuBucket.value),
+            domain: normalizeTrimmed(inputQiniuDomain.value),
+            path: normalizeTrimmed(inputQiniuPath.value),
+            autoReplace: Boolean(inputQiniuAutoReplace.checked)
           }
+        },
+        typography: {
+          readable: getSelectedTypographyFontId('readable'),
+          copy: getSelectedTypographyFontId('copy'),
+          mono: getSelectedTypographyFontId('mono'),
+          brand: getSelectedTypographyFontId('brand')
         }
       }
     };
@@ -593,6 +649,13 @@ export const createFormCodec = ({
     inputArticleMetaShowWordCount.checked = settings.ui?.articleMeta?.showWordCount !== false;
     inputArticleMetaShowReadingTime.checked = settings.ui?.articleMeta?.showReadingTime !== false;
     applySidebarDividerVariant(settings.ui?.layout?.sidebarDivider || ADMIN_SIDEBAR_DIVIDER_DEFAULT);
+    inputQiniuAccessKey.value = settings.ui?.imageProvider?.qiniu?.accessKey || '';
+    inputQiniuSecretKey.value = settings.ui?.imageProvider?.qiniu?.secretKey || '';
+    inputQiniuBucket.value = settings.ui?.imageProvider?.qiniu?.bucket || '';
+    inputQiniuDomain.value = settings.ui?.imageProvider?.qiniu?.domain || '';
+    inputQiniuPath.value = settings.ui?.imageProvider?.qiniu?.path || '';
+    inputQiniuAutoReplace.checked = Boolean(settings.ui?.imageProvider?.qiniu?.autoReplace);
+    applyTypographySettings(settings.ui?.typography);
     refreshFooterPreview();
     refreshArticleMetaPreview();
 

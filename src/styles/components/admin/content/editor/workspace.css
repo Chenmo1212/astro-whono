@@ -1,0 +1,269 @@
+/* Admin Content Editor Workspace
+   承载 workspace 默认 grid、pane surface、预览状态栏和滚动操作；不承载 toolbar tooltip 或 preview 正文排版。
+*/
+
+.admin-editor-shell__workspace {
+  display: grid;
+  inline-size: 100%;
+  grid-template-areas:
+    "body"
+    "status"
+    "preview";
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.admin-editor-shell__pane {
+  min-height: 0;
+  min-width: 0;
+}
+
+.admin-editor-shell .admin-editor-shell__pane[hidden] {
+  display: none;
+}
+
+.admin-editor-body__field {
+  height: 100%;
+  min-width: 0;
+}
+
+.admin-editor-body,
+.admin-editor-preview {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.admin-editor-preview {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.admin-editor-shell__pane--body {
+  grid-area: body;
+  padding: 0 var(--admin-editor-shell-edge-gap) 10px;
+  border-radius: 6px 6px 0 0;
+  background: var(--admin-editor-body-surface);
+  transition: background-color 160ms ease;
+}
+
+.admin-editor-shell__pane--body[data-line-numbers='true'] {
+  padding-inline-start: 0;
+}
+
+.admin-editor-shell__pane--body:hover {
+  background: var(--admin-editor-body-surface-hover);
+}
+
+.admin-editor-shell__pane--body:focus-within {
+  background: var(--admin-editor-body-surface-focus);
+}
+
+.admin-editor-shell__preview-bar {
+  grid-area: status;
+  gap: 5px 12px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  padding: 7px var(--admin-editor-shell-edge-gap);
+  border-block: 1px solid var(--admin-editor-shell-divider);
+  color: var(--faint);
+  font-size: var(--admin-text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+  transition: border-color 160ms ease;
+}
+
+.admin-editor-shell__preview-bar-counts {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 5px 12px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.admin-editor-shell__preview-stats {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.admin-editor-shell__preview-stat {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-editor-shell__preview-separator {
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--faint) 42%, transparent);
+  line-height: 1;
+  user-select: none;
+}
+
+.admin-editor-shell__preview-bar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+
+.admin-editor-shell__preview-detail {
+  --admin-editor-preview-detail-panel-start: 0;
+  --admin-editor-preview-detail-panel-end: auto;
+
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  line-height: 0;
+}
+
+.admin-editor-shell__preview-detail-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+  padding: 1px 3px;
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.admin-editor-shell__preview-detail-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.admin-editor-shell__preview-detail-trigger:hover,
+.admin-editor-shell__preview-detail-trigger:focus-visible,
+.admin-editor-shell__preview-detail[open] .admin-editor-shell__preview-detail-trigger {
+  background: var(--admin-row-hover-bg);
+  color: var(--text);
+}
+
+.admin-editor-shell__preview-detail-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--admin-focus-shadow);
+}
+
+.admin-editor-shell__preview-detail-trigger .admin-icon {
+  flex: 0 0 auto;
+}
+
+.admin-editor-shell__preview-detail--error .admin-editor-shell__preview-detail-trigger {
+  color: var(--admin-status-danger-text);
+}
+
+.admin-editor-shell__preview-detail--warning .admin-editor-shell__preview-detail-trigger {
+  color: var(--admin-status-warning-text);
+}
+
+.admin-editor-shell__preview-detail--ok .admin-editor-shell__preview-detail-trigger {
+  color: var(--admin-status-success-text);
+}
+
+.admin-editor-shell__preview-detail-panel {
+  position: absolute;
+  inset-block-start: calc(100% + 7px);
+  inset-inline-start: var(--admin-editor-preview-detail-panel-start);
+  inset-inline-end: var(--admin-editor-preview-detail-panel-end);
+  z-index: 28;
+  display: grid;
+  gap: 7px;
+  width: min(var(--admin-content-preview-detail-panel-inline-size), calc(100vw - 40px));
+  max-height: min(260px, 48dvh);
+  padding: 10px 11px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg) 92%, var(--panel) 8%);
+  box-shadow: 0 14px 34px color-mix(in srgb, #000 15%, transparent);
+  color: var(--text);
+  font-variant-numeric: normal;
+  line-height: var(--admin-leading-body);
+}
+
+.admin-editor-shell__preview-detail-label,
+.admin-editor-shell__preview-detail-copy,
+.admin-editor-shell__preview-detail-list {
+  margin: 0;
+}
+
+.admin-editor-shell__preview-detail-label {
+  color: var(--muted);
+  font-size: var(--admin-text-2xs);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.admin-editor-shell__preview-detail-copy,
+.admin-editor-shell__preview-detail-list {
+  color: var(--text);
+  font-size: var(--admin-text-xs);
+  line-height: 1.55;
+}
+
+.admin-editor-shell__preview-detail-list {
+  display: grid;
+  gap: 5px;
+  padding-left: 16px;
+}
+
+.admin-editor-shell__preview-detail-list li {
+  overflow-wrap: anywhere;
+}
+
+.admin-editor-shell__preview-detail-path {
+  display: inline-block;
+  margin-inline-end: 6px;
+  color: var(--faint);
+  font-family: var(--admin-font-mono);
+  font-size: 0.92em;
+}
+
+.admin-editor-shell__preview-action {
+  flex: 0 0 auto;
+  gap: 4px;
+  min-height: 20px;
+  padding: 1px 3px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--faint);
+  font-size: inherit;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.admin-editor-shell__preview-action[data-active='true'] {
+  color: var(--muted);
+  background: transparent;
+}
+
+.admin-editor-shell__preview-action:disabled {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-shell__preview-action:hover:not(:disabled),
+.admin-editor-shell__preview-action:focus-visible:not(:disabled) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+}

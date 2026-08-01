@@ -1,0 +1,39 @@
+/* Admin Content Editor Shared Form Surfaces
+   保留只读详情，以及当前 workspace 仍复用的字段与错误文本。
+*/
+
+.admin-content-readonly {
+  gap: 16px;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+}
+
+.admin-content-readonly {
+  max-inline-size: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+
+.admin-content-readonly > :where(.admin-content-section-head, .admin-data-meta) {
+  min-inline-size: var(--admin-content-editor-min-inline-size);
+}
+
+.admin-content-editor__field {
+  min-width: 0;
+}
+
+.admin-content-editor__error {
+  margin: 0;
+  min-height: 18px;
+  color: var(--admin-error-accent);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-content-editor--workspace {
+  gap: 0;
+  padding-top: 0;
+  border-top: 0;
+  overflow: hidden;
+}

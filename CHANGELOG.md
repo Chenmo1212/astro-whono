@@ -7,8 +7,44 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+### Added
+- 主题切换新增「跟随系统」模式：站点外观可随系统浅色/深色设置自动切换（[PR #35](https://github.com/cxro/astro-whono/pull/35)，by [@ZephyrCICD](https://github.com/ZephyrCICD)）。
+- Theme Console 新增「排版字体」配置：正文、文案、等宽、品牌四类字体可独立选择，支持系统字体栈与自托管字体（含构建期下载的中文子集），页面不请求任何第三方字体服务
+
+### Fixed
+- 修复本地后台编辑 figure 图片块时，含转义文本或富文本说明的图片可能被错误回显，以及本地图片缺失检查可能漏检的问题。
+- 修复子路径部署时，`/robots.txt` 中的 `Sitemap` 链接遗漏部署路径、指向错误地址的问题。
+- 修复依赖更新后 `package-lock.json` 重新写入第三方镜像地址的问题，默认安装不再依赖该镜像。
+
+
+## [0.5.0] - 2026-06-16
+
+### Added
+- `/about/` 新增友链区块，支持展示友链列表、申请入口和说明文案。
+- 新增本地文章管理与写作 Content Console，可在开发环境中浏览、新增 essay / bits 草稿、编辑、导出和删除内容。
+- Content Console 支持对当前可见文件执行批量发布、改草稿、下载和删除操作。
+- `essay` 内容支持可选 `updatedAt` 更新日期；前台存在时显示“更新于”，本地后台可编辑并会在保存时校验日期一致性（[PR #36](https://github.com/cxro/astro-whono/pull/36)，by [@ZephyrCICD](https://github.com/ZephyrCICD)）。
+- 文章编辑器引入 CodeMirror 编辑区，内置5种语法高亮主题，提升长文编辑体验。
+- 文章编辑器支持编辑 / 预览布局切换、目录与语法侧栏、编辑器语法高亮、行号选项，以及常用 Markdown、数学公式、emoji、图片与画廊写作辅助。
+- 新增 bits 编辑工作台，可在本地后台编辑正文、基础信息和配图，并查看卡片预览。
+- 新增 memo 编辑工作台，可在本地后台编辑 `src/content/memo/index.md` 正文、插入正文图片并预览页面内容。
+- 新增 about 编辑工作台，可在本地后台编辑 `src/content/about/index.md` 正文并预览完整关于页。
+- 本地后台新增侧栏收起、窄窗口 rail 导航和界面偏好，便于在桌面与窄桌面窗口中释放工作区空间。
+
+### Changed
+- 默认关于页调整为站点介绍页，不再默认展示主题说明、技术栈和部署问答。
+- 优化本地后台在窄桌面窗口下的布局表现，减少横向滚动、控件遮挡和工作区挤压。
+- Content Console 改为直接基于源文件展示内容列表，提升开发环境中新建、保存和删除文章后的刷新稳定性。
+- Content Console 现在统一展示 essay、bits、memo 和 about 内容入口；memo 与 about 仍是固定单页内容，不支持创建或删除。
+- `/memo/` 页面顶部引言现在可在本地后台的 memo 编辑页中维护；建议将旧版引言迁移到 `src/content/memo/index.md` 正文开头（第一个 H2 前），未迁移的站点仍保留兼容显示。
+- `/about/` 页面现在可在正文中用 `::contact-links` 指定联系链接的位置；移除该占位后不再显示联系列表，链接内容仍来自 Theme Console 的个人链接配置。
+
 ### Fixed
 - 修复后台图片预览在遇到无效地址时仍可能尝试加载图片的问题，地址不合法时会隐藏预览并清空图片源。
+- 修复 Content Console 在本地新增、保存或删除内容后，刷新时可能因 Astro content store 同步窗口出现整页空列表的问题。
+- 修复在 Content Console 新增中文标题 essay 时，未填写公开 URL 别名会导致创建失败的问题。
+- 修复列表标题过长时 badge 可能被挤压换行的问题（[PR #32](https://github.com/cxro/astro-whono/pull/32)，by [@dodola](https://github.com/dodolalorc)）。
+
 
 ## [0.4.1] - 2026-05-03
 
@@ -236,3 +272,14 @@ node ".\export-astro-whono-settings.mjs" --include-legacy
 - 修复早期类型检查、文档路径与引用样式问题。
 - 修复深色模式下代码块背景与高亮异常。
 - 修复部分未使用样式与细节遗留问题。
+
+
+[Unreleased]: https://github.com/cxro/astro-whono/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/cxro/astro-whono/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/cxro/astro-whono/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/cxro/astro-whono/compare/v0.3.1...v0.4.0
+[0.3.1]: https://github.com/cxro/astro-whono/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/cxro/astro-whono/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/cxro/astro-whono/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/cxro/astro-whono/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/cxro/astro-whono/releases/tag/v0.1.0

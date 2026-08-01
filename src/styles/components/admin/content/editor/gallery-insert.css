@@ -1,0 +1,429 @@
+/* Admin Content Editor Gallery Insert
+   承载正文图片画廊弹窗；复用正文图片上传接口，不承载单图编辑状态。
+*/
+
+.admin-editor-gallery-insert {
+  --admin-modal-width: 640px;
+  --admin-modal-max-height: calc(100vh - 36px);
+  --admin-editor-gallery-outer-gap: var(--admin-modal-panel-padding-inline);
+  --admin-editor-gallery-items-max-block: min(720px, calc(100vh - 180px));
+  --admin-editor-gallery-add-bg: color-mix(in srgb, var(--admin-surface-muted) 22%, var(--bg) 78%);
+  --admin-editor-gallery-add-border: color-mix(in srgb, var(--admin-row-border) 82%, var(--text) 18%);
+  --admin-editor-gallery-add-hover-bg: color-mix(in srgb, var(--admin-surface-muted) 34%, var(--bg) 66%);
+  --admin-editor-gallery-remove-hover-border: #991b1b;
+  --admin-editor-gallery-remove-hover-color: #991b1b;
+}
+
+:root[data-theme='dark'] .admin-editor-gallery-insert {
+  --admin-editor-gallery-add-bg: color-mix(in srgb, var(--admin-surface-muted) 24%, var(--bg) 76%);
+  --admin-editor-gallery-add-border: color-mix(in srgb, var(--admin-row-border) 78%, var(--text) 22%);
+  --admin-editor-gallery-add-hover-bg: color-mix(in srgb, var(--admin-surface-muted) 38%, var(--bg) 62%);
+  --admin-editor-gallery-remove-hover-border: #ef4444;
+  --admin-editor-gallery-remove-hover-color: #ef4444;
+}
+
+.admin-editor-gallery-insert__panel {
+  background: var(--bg);
+  box-shadow: 0 28px 64px -34px var(--overlay-35);
+}
+
+.admin-editor-gallery-insert__form {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0;
+  grid-row: 1 / -1;
+  max-height: var(--admin-modal-max-height);
+  min-width: 0;
+}
+
+.admin-editor-gallery-insert__title-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.admin-editor-gallery-insert__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--admin-row-border);
+  border-radius: 7px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--bg) 86%, var(--panel) 14%);
+}
+
+.admin-editor-gallery-insert__close {
+  flex: 0 0 auto;
+}
+
+.admin-editor-gallery-insert__head-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-editor-gallery-insert__body {
+  display: grid;
+  gap: var(--admin-editor-gallery-outer-gap);
+  min-height: 0;
+  overflow: hidden;
+  padding-block: var(--admin-editor-gallery-outer-gap);
+}
+
+.admin-editor-gallery-insert__columns {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex: 0 0 auto;
+  gap: 3px;
+  inline-size: 206px;
+  block-size: var(--admin-control-height-compact);
+  min-width: 0;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--admin-row-border) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 84%, var(--bg) 16%);
+}
+
+.admin-editor-gallery-insert__option-button {
+  min-width: 0;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: var(--admin-text-xs);
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.admin-editor-gallery-insert__option-button:hover:not(:disabled) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 72%, var(--panel) 28%);
+}
+
+.admin-editor-gallery-insert__option-button:focus-visible {
+  outline: none;
+  border-color: var(--admin-focus-border);
+  box-shadow: var(--admin-focus-shadow);
+}
+
+.admin-editor-gallery-insert__option-button.is-active {
+  border-color: color-mix(in srgb, var(--admin-row-border) 88%, var(--text) 12%);
+  color: var(--text);
+  background: var(--bg);
+  box-shadow: 0 3px 9px color-mix(in srgb, #000 5%, transparent);
+}
+
+.admin-editor-gallery-insert__option-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.admin-editor-gallery-insert__items {
+  display: grid;
+  gap: var(--admin-editor-gallery-outer-gap);
+  max-block-size: var(--admin-editor-gallery-items-max-block);
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline-end: 4px;
+  scrollbar-gutter: stable;
+  background: transparent;
+}
+
+.admin-editor-gallery-insert__item {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--admin-surface-muted) 12%, transparent);
+}
+
+.admin-editor-gallery-insert__item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-editor-gallery-insert__sort-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-editor-gallery-insert__source-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+}
+
+.admin-editor-gallery-insert__item-index {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 30px;
+  block-size: 20px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--bg);
+  background: color-mix(in srgb, var(--text) 52%, var(--muted) 48%);
+  font-family: var(--admin-font-mono);
+  font-size: var(--admin-text-2xs);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.admin-editor-gallery-insert__item-action {
+  --admin-btn-icon-glyph-size: 13px;
+
+  width: 24px;
+  min-width: 24px;
+  min-height: 22px;
+  block-size: 22px;
+  border-color: transparent;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+}
+
+.admin-editor-gallery-insert__item-action:hover:not(:disabled) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 52%, transparent);
+}
+
+.admin-editor-gallery-insert__source-control {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--admin-control-border);
+  border-radius: var(--admin-control-radius);
+  background: color-mix(in srgb, var(--bg) 92%, var(--admin-surface-muted) 8%);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.admin-editor-gallery-insert__source-control:hover {
+  border-color: var(--admin-control-border-hover);
+}
+
+.admin-editor-gallery-insert__source-control:focus-within {
+  border-color: var(--admin-focus-border);
+  box-shadow: var(--admin-focus-shadow);
+}
+
+.admin-editor-gallery-insert__source-control.is-disabled {
+  background: var(--admin-control-bg-disabled);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.admin-editor-gallery-insert__source-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-gallery-insert__source-input:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-gallery-insert__source-input:disabled {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-gallery-insert__source-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  border-left: 0;
+}
+
+.admin-editor-gallery-insert__source-actions--leading {
+  padding-inline: 5px 0;
+}
+
+.admin-editor-gallery-insert__source-actions--trailing {
+  padding-inline: 0 5px;
+}
+
+.admin-editor-gallery-insert__source-action.admin-btn {
+  width: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  border-color: transparent;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-gallery-insert__source-action.admin-btn:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--text);
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-gallery-insert__source-action--danger.admin-btn:hover:not(:disabled) {
+  color: var(--admin-error-accent);
+}
+
+.admin-editor-gallery-insert__source-action.admin-btn:disabled {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-editor-gallery-insert__field {
+  min-width: 0;
+}
+
+.admin-editor-gallery-insert__meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-editor-gallery-insert__left-actions {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-editor-gallery-insert__add {
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.admin-editor-gallery-insert__add.admin-btn:not(:disabled) {
+  border-color: var(--admin-editor-gallery-add-border);
+  background: var(--admin-editor-gallery-add-bg);
+  color: var(--text);
+}
+
+.admin-editor-gallery-insert__add.admin-btn:hover:not(:disabled) {
+  border-color: var(--admin-button-ghost-hover-border);
+  background: var(--admin-editor-gallery-add-hover-bg);
+  color: var(--text);
+}
+
+.admin-editor-gallery-insert__remove {
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.admin-editor-gallery-insert__remove.admin-btn {
+  background: transparent;
+}
+
+.admin-editor-gallery-insert__remove.admin-btn:hover:not(:disabled) {
+  border-color: var(--admin-editor-gallery-remove-hover-border);
+  background: transparent;
+  color: var(--admin-editor-gallery-remove-hover-color);
+  text-decoration: none;
+}
+
+.admin-editor-gallery-insert__action-buttons {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+.admin-editor-gallery-insert__error {
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--admin-error-accent) 36%, transparent);
+  border-radius: 8px;
+  color: var(--admin-error-accent);
+  background: color-mix(in srgb, var(--admin-error-accent) 8%, var(--bg) 92%);
+  font-size: var(--admin-text-sm);
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .admin-editor-gallery-insert__head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-editor-gallery-insert__head-controls {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  .admin-editor-gallery-insert__columns {
+    flex: 1 1 220px;
+    inline-size: auto;
+  }
+
+  .admin-editor-gallery-insert__meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-editor-gallery-insert__source-control {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .admin-editor-gallery-insert__source-input {
+    flex-basis: auto;
+  }
+
+  .admin-editor-gallery-insert__source-actions {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    padding-block: 0;
+    border-top: 0;
+    border-left: 0;
+  }
+
+  .admin-editor-gallery-insert__actions,
+  .admin-editor-gallery-insert__left-actions,
+  .admin-editor-gallery-insert__action-buttons {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .admin-editor-gallery-insert__action-buttons {
+    margin-inline-start: 0;
+  }
+}

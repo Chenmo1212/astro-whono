@@ -1,5 +1,6 @@
 ---
 import AdminIcon from './AdminIcon.astro';
+import AdminHelpTip from './AdminHelpTip.astro';
 import {
   ADMIN_HERO_IMAGE_ALT_DEFAULT,
   ADMIN_HERO_IMAGE_ALT_MAX_LENGTH,
@@ -31,7 +32,11 @@ const { homeIntroMaxLength } = Astro.props;
             <div class="admin-label admin-label--split">
               <span class="admin-label__copy">
                 <label class="admin-label__main" for="home-hero-image-src">Hero 图片地址</label>
-                <span class="admin-label__hint">（地址留空时回退内置默认图）</span>
+                <AdminHelpTip
+                  id="home-hero-image-src-tip"
+                  label="Hero 图片地址说明"
+                  text="支持 src/assets/**、public/** 或 https:// 图床链接；地址留空时回退内置默认图。"
+                />
               </span>
               <label class="admin-label__toggle" for="home-show-hero">
                 <input id="home-show-hero" type="checkbox" checked />
@@ -47,6 +52,7 @@ const { homeIntroMaxLength } = Astro.props;
                 spellcheck="false"
                 placeholder="当前使用：src/assets/hero.png"
                 aria-label="Hero 图片地址"
+                aria-describedby="home-hero-image-src-tip"
               />
               <button
                 class="admin-btn admin-btn--ghost"
@@ -57,7 +63,6 @@ const { homeIntroMaxLength } = Astro.props;
                 选择
               </button>
             </div>
-            <p class="admin-help">注：支持 src/assets/**、public/** 或 https:// 图床链接</p>
             <p class="admin-help admin-help--inline" data-admin-images-meta="home.heroImageSrc" hidden></p>
           </div>
           <div class="admin-field">
@@ -170,4 +175,3 @@ const { homeIntroMaxLength } = Astro.props;
     </div>
   </div>
 </fieldset>
-

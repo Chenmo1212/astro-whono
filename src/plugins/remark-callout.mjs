@@ -1,6 +1,7 @@
 import { visit } from 'unist-util-visit';
 
 const CALLOUT_TYPES = new Set(['note', 'tip', 'info', 'warning']);
+const NON_CALLOUT_DIRECTIVES = new Set(['friend', 'faq']);
 
 const getText = (node) => {
   if (!node) return '';
@@ -21,9 +22,12 @@ const restoreDirectiveText = (parent, index, node) => {
 
 export default function remarkCallout() {
   return (tree) => {
-    visit(tree, (node) => {
+    visit(tree, 'containerDirective', (node) => {
       return node.type === 'textDirective' || node.type === 'leafDirective' || node.type === 'containerDirective';
     }, (node, index, parent) => {
+      if (NON_CALLOUT_DIRECTIVES.has(node.name)) return;
+      const type = CALLOUT_TYPES.has(node.name) ? node.name : 'note';
+
       if (node.type !== 'containerDirective') {
         restoreDirectiveText(parent, index, node);
         return;

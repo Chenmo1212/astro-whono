@@ -1,4 +1,5 @@
 ---
+import AdminHelpTip from './AdminHelpTip.astro';
 import AdminIcon from './AdminIcon.astro';
 import UiIcon from '../UiIcon.astro';
 import type { SidebarNavId } from '../../lib/theme-settings';
@@ -131,9 +132,11 @@ const { navIdOrder } = Astro.props;
     <div class="admin-subgroup admin-subgroup--sidebar-nav">
       <p class="admin-subtitle">
         <span class="admin-subtitle__main">侧栏导航</span>
-        <span id="admin-nav-ornament-hint" class="admin-subtitle__hint">
-          （后缀支持短文本/符号；留空隐藏，输入 {ADMIN_NAV_ORNAMENT_DEFAULT} 还原默认。）
-        </span>
+        <AdminHelpTip
+          id="admin-nav-ornament-hint"
+          label="侧栏导航后缀说明"
+          text={`后缀支持短文本/符号；留空隐藏，输入 ${ADMIN_NAV_ORNAMENT_DEFAULT} 还原默认。`}
+        />
       </p>
       <div class="admin-nav-grid admin-nav-grid--compact">
         <div class="admin-nav-header" aria-hidden="true">

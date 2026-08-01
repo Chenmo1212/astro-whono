@@ -1,9 +1,0 @@
-/* Admin Images
-   负责 Images Console 私有浏览器。
-*/
-
-@import "./admin-images-base.css";
-@import "./admin-images-toolbar.css";
-@import "./admin-images-results.css";
-@import "./admin-images-detail.css";
-@import "./admin-images-responsive.css";

@@ -14,6 +14,10 @@ import {
   normalizeHeroImageSrc,
   toSafeHttpUrl
 } from '../../utils/format';
+import {
+  normalizeBitsImageSource,
+  normalizeBitsLocalImageSource
+} from '../bits-image-source';
 
 export type AdminImageFieldContext =
   | 'bits.images'
@@ -67,7 +71,6 @@ type AdminImageFieldConfig = {
 };
 
 const IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
-const DATA_URL_RE = /^data:/i;
 
 const FIELD_CONFIG: Record<AdminImageFieldContext, AdminImageFieldConfig> = {
   'bits.images': {
@@ -204,30 +207,9 @@ export const getAdminImageCompatibleFieldValues = (
     )
   );
 
-export const normalizeAdminLocalImageSource = (value: string): string | null => {
-  const normalized = value.trim().replace(/\\/g, '/').replace(/^\.\/+/, '');
-  if (
-    !normalized
-    || normalized.startsWith('/')
-    || normalized.startsWith('//')
-    || normalized.startsWith('public/')
-    || /^[A-Za-z]+:\/\//.test(normalized)
-    || DATA_URL_RE.test(normalized)
-    || /(^|\/)\.\.(?:\/|$)/.test(normalized)
-    || normalized.includes('?')
-    || normalized.includes('#')
-  ) {
-    return null;
-  }
+export const normalizeAdminLocalImageSource = normalizeBitsLocalImageSource;
 
-  return IMAGE_LOCAL_EXT_RE.test(normalized) ? normalized : null;
-};
-
-export const normalizeAdminBitsImageSource = (value: string): string | null => {
-  const safeRemoteUrl = toSafeHttpUrl(value);
-  if (safeRemoteUrl && safeRemoteUrl.startsWith('https://')) return safeRemoteUrl;
-  return normalizeAdminLocalImageSource(value);
-};
+export const normalizeAdminBitsImageSource = normalizeBitsImageSource;
 
 const withAdminPreviewBase = (base: string, path: string): string => {
   const normalizedBase = base.trim().replace(/\/+$/, '');

@@ -2,6 +2,7 @@ import YAML from 'yaml';
 
 export type MarkdownFrontmatterSection = {
   hasFrontmatter: boolean;
+  frontmatterBlock: string;
   frontmatterText: string | null;
   bodyText: string;
   lineEnding: '\n' | '\r\n';
@@ -26,6 +27,7 @@ export const splitMarkdownFrontmatter = (sourceText: string): MarkdownFrontmatte
   if (!sourceText.startsWith(openingMarker) && sourceText !== '---') {
     return {
       hasFrontmatter: false,
+      frontmatterBlock: '',
       frontmatterText: null,
       bodyText: sourceText,
       lineEnding
@@ -43,6 +45,7 @@ export const splitMarkdownFrontmatter = (sourceText: string): MarkdownFrontmatte
     if (line === '---' || line === '...') {
       return {
         hasFrontmatter: true,
+        frontmatterBlock: lineEnd === -1 ? sourceText : sourceText.slice(0, lineEnd + 1),
         frontmatterText: sourceText.slice(frontmatterStart, index),
         bodyText: lineEnd === -1 ? '' : sourceText.slice(lineEnd + 1),
         lineEnding
@@ -113,4 +116,9 @@ export const patchMarkdownFrontmatter = (
   }
 
   return `${stringifyFrontmatterBlock(document, section.lineEnding)}${section.bodyText}`;
+};
+
+export const replaceMarkdownBody = (sourceText: string, bodyText: string): string => {
+  const section = splitMarkdownFrontmatter(sourceText);
+  return section.hasFrontmatter ? `${section.frontmatterBlock}${bodyText}` : bodyText;
 };
