@@ -5,8 +5,9 @@ export const GET: APIRoute = () => {
   const lines = ['User-agent: *', 'Allow: /'];
 
   if (hasSiteUrl) {
-    const sitemap = new URL('sitemap-index.xml', `${siteUrl}/`).href;
-    lines.push(`Sitemap: ${sitemap}`);
+    const basePath = import.meta.env.BASE_URL.replace(/\/+$/, '');
+    // 直接拼接（siteUrl 无尾随斜杠）：保留 SITE_URL 自带的路径段，new URL 的根绝对路径会把它剥掉。
+    lines.push(`Sitemap: ${siteUrl}${basePath}/sitemap-index.xml`);
   }
 
   return new Response(lines.join('\n'), {

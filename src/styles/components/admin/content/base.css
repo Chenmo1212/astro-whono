@@ -1,0 +1,181 @@
+/* Admin Content Base
+   Content Console 与编辑页共享的页面壳层、标题和基础排版。
+*/
+
+.admin-content-console {
+  --admin-content-panel-inline-size: 320px;
+  --admin-content-status-inline-size: 360px;
+
+  display: grid;
+  gap: 18px;
+  font-family: var(--admin-font-ui);
+}
+
+.admin-content-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+  min-width: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+}
+
+.admin-content-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.admin-content-page-head__copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.admin-content-kicker {
+  margin: 0;
+  color: var(--faint);
+  font-size: var(--admin-text-xs);
+  letter-spacing: var(--admin-tracking-wide);
+  text-transform: uppercase;
+}
+
+.admin-content-heading,
+.admin-content-section-title {
+  margin: 0;
+  color: var(--text);
+  letter-spacing: 0;
+}
+
+.admin-content-heading {
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.admin-content-section-title {
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.admin-content-copy,
+.admin-content-muted,
+.admin-content-empty {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.admin-content-copy {
+  font-size: var(--admin-text-base);
+}
+
+.admin-content-muted,
+.admin-content-empty {
+  font-size: var(--admin-text-sm);
+}
+
+.admin-content-copy code {
+  font-family: var(--admin-font-mono);
+}
+
+.admin-content-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px 8px;
+}
+
+.admin-content-menu-panel,
+.admin-content-more-panel,
+.admin-content-filter-menu__panel,
+.admin-content-bulk-menu__panel {
+  display: grid;
+  gap: 2px;
+  width: 102px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg) 92%, var(--panel) 8%);
+  box-shadow: 0 14px 34px color-mix(in srgb, #000 15%, transparent);
+}
+
+.admin-content-menu-panel,
+.admin-content-more-panel {
+  position: absolute;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 20;
+}
+
+.admin-content-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: stretch;
+  min-width: 0;
+  min-height: 30px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  color: var(--text);
+  font-size: var(--admin-text-xs);
+  line-height: 1.25;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+button.admin-content-menu-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+button.admin-content-menu-item:disabled {
+  color: var(--admin-control-text-disabled);
+  cursor: not-allowed;
+}
+
+.admin-content-menu-item:not(.is-disabled):not(:disabled):hover,
+.admin-content-menu-item:not(.is-disabled):not(:disabled):focus-visible {
+  background: var(--admin-row-hover-bg);
+}
+
+.admin-content-menu-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.admin-content-menu-item--danger:not(.is-disabled):not(:disabled) {
+  color: var(--admin-error-accent);
+}
+
+.admin-content-menu-item .admin-icon {
+  flex: 0 0 auto;
+  color: var(--faint);
+}
+
+.admin-content-menu-item.is-disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
+.admin-content-menu-item.is-disabled:hover {
+  background: transparent;
+}
+
+.admin-content-section-head,
+.admin-content-toolbar__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 18px;
+}

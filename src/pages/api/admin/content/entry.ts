@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro';
 import {
   ADMIN_JSON_HEADERS,
-  createAdminWriteQueue,
   isAdminDryRunRequest,
   persistAdminFileTransaction,
   readAdminJsonRequestBody,
@@ -9,22 +8,32 @@ import {
 } from '../../../../lib/admin-console/admin-api';
 import {
   ADMIN_CONTENT_COLLECTION_KEYS,
-  AdminContentEntryResolutionError,
-  applyAdminContentWritePlan,
-  buildAdminContentWritePlan,
-  getAdminContentReadOnlyReason,
   isAdminContentCollectionKey,
-  isAdminContentWriteCollectionKey,
-  readAdminContentEntryEditorPayload,
-  type AdminContentValidationIssue,
-  type AdminContentWriteCollectionKey
-} from '../../../../lib/admin-console/content-shared';
+  isAdminContentEntryWriteCollectionKey,
+  type AdminContentEntryWriteCollectionKey
+} from '../../../../lib/admin-console/content-collections';
+import type { AdminContentValidationIssue } from '../../../../lib/admin-console/content-entry-contract';
+import {
+  AdminContentEntryResolutionError,
+  getAdminContentReadOnlyReason,
+  loadAdminContentSourceState
+} from '../../../../lib/admin-console/content-entry-source';
+import {
+  buildAdminContentEntryEditorPayloadFromState,
+  readAdminContentEntryEditorPayload
+} from '../../../../lib/admin-console/content-editor-payload';
+import {
+  applyAdminContentWritePlan,
+  buildAdminContentWritePlanFromState
+} from '../../../../lib/admin-console/content-write-plan';
+import { withAdminContentWriteLock } from '../../../../lib/admin-console/content-write-lock';
 
 type WriteInput = {
-  collection?: AdminContentWriteCollectionKey;
+  collection?: AdminContentEntryWriteCollectionKey;
   entryId?: string;
   revision?: string;
   frontmatterInput?: unknown;
+  bodyInput?: string;
   errors: string[];
   issues: AdminContentValidationIssue[];
 };
@@ -53,19 +62,15 @@ const createJsonErrorResponse = (
   );
 
 const DEV_ONLY_NOT_FOUND_RESPONSE = new Response('Not Found', { status: 404 });
-const METHOD_NOT_ALLOWED_RESPONSE = new Response('Method Not Allowed', {
-  status: 405,
-  headers: {
-    allow: 'POST',
-    'cache-control': 'no-store'
-  }
-});
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const hasOwn = (value: Record<string, unknown>, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(value, key);
+
+const isFrontmatterWriteCollection = (collection: string): collection is 'essay' | 'bits' =>
+  collection === 'essay' || collection === 'bits';
 
 const extractWriteInput = (body: unknown): WriteInput => {
   if (!isRecord(body)) {
@@ -77,11 +82,12 @@ const extractWriteInput = (body: unknown): WriteInput => {
 
   const errors: string[] = [];
   const issues: AdminContentValidationIssue[] = [];
-  let collection: AdminContentWriteCollectionKey | undefined;
+  let collection: AdminContentEntryWriteCollectionKey | undefined;
   const rawCollection = typeof body.collection === 'string' ? body.collection.trim() : '';
   const entryId = typeof body.entryId === 'string' ? body.entryId.trim() : undefined;
   const revision = typeof body.revision === 'string' ? body.revision.trim() : undefined;
   const hasFrontmatter = hasOwn(body, 'frontmatter');
+  const hasBody = hasOwn(body, 'body');
 
   if (!rawCollection) {
     const message = '请求体缺少 collection';
@@ -91,7 +97,7 @@ const extractWriteInput = (body: unknown): WriteInput => {
     const message = `不支持的 content collection：${rawCollection}；仅支持 ${ADMIN_CONTENT_COLLECTION_KEYS.join(' / ')}`;
     errors.push(message);
     issues.push({ path: 'collection', message });
-  } else if (!isAdminContentWriteCollectionKey(rawCollection)) {
+  } else if (!isAdminContentEntryWriteCollectionKey(rawCollection)) {
     const message = getAdminContentReadOnlyReason(rawCollection) ?? `当前 collection 暂不支持写盘：${rawCollection}`;
     errors.push(message);
     issues.push({ path: 'collection', message });
@@ -111,14 +117,32 @@ const extractWriteInput = (body: unknown): WriteInput => {
     issues.push({ path: 'revision', message });
   }
 
-  if (!hasFrontmatter) {
+  if (rawCollection === 'about' && !hasBody) {
+    const message = 'about 保存请求缺少 body 字段';
+    errors.push(message);
+    issues.push({ path: 'body', message });
+  }
+
+  if (rawCollection === 'memo' && !hasBody) {
+    const message = 'memo 保存请求缺少 body 字段';
+    errors.push(message);
+    issues.push({ path: 'body', message });
+  }
+
+  if (isFrontmatterWriteCollection(rawCollection) && !hasFrontmatter) {
     const message = '请求体缺少 frontmatter 字段';
     errors.push(message);
     issues.push({ path: 'frontmatter', message });
-  } else if (!isRecord(body.frontmatter)) {
+  } else if (isFrontmatterWriteCollection(rawCollection) && !isRecord(body.frontmatter)) {
     const message = 'frontmatter 必须是对象';
     errors.push(message);
     issues.push({ path: 'frontmatter', message });
+  }
+
+  if (hasBody && typeof body.body !== 'string') {
+    const message = 'body 必须是 Markdown 字符串';
+    errors.push(message);
+    issues.push({ path: 'body', message });
   }
 
   return {
@@ -126,6 +150,7 @@ const extractWriteInput = (body: unknown): WriteInput => {
     ...(entryId ? { entryId } : {}),
     ...(revision ? { revision } : {}),
     ...(hasFrontmatter ? { frontmatterInput: body.frontmatter } : {}),
+    ...(hasBody && typeof body.body === 'string' ? { bodyInput: body.body } : {}),
     errors,
     issues
   };
@@ -141,14 +166,74 @@ const createEntryResolutionErrorResponse = (error: unknown): Response | null => 
   );
 };
 
-const withAdminContentWriteLock = createAdminWriteQueue();
+class AdminContentRevisionConflictError extends Error {
+  latestPayload: Awaited<ReturnType<typeof readAdminContentEntryEditorPayload>>;
 
-export const GET: APIRoute = async () => {
+  constructor(latestPayload: Awaited<ReturnType<typeof readAdminContentEntryEditorPayload>>) {
+    super('Admin content entry revision conflict');
+    this.latestPayload = latestPayload;
+  }
+}
+
+const createRevisionConflictResponse = (
+  payload: Awaited<ReturnType<typeof readAdminContentEntryEditorPayload>>
+): Response =>
+  new Response(
+    JSON.stringify(
+      {
+        ok: false,
+        errors: ['检测到内容文件已在外部更新，已拒绝覆盖，请刷新当前条目后再保存'],
+        payload
+      },
+      null,
+      2
+    ),
+    { status: 409, headers: JSON_HEADERS }
+  );
+
+export const GET: APIRoute = async ({ url }) => {
   if (!import.meta.env.DEV && !process.env.VITEST) {
     return DEV_ONLY_NOT_FOUND_RESPONSE.clone();
   }
 
-  return METHOD_NOT_ALLOWED_RESPONSE.clone();
+  const collection = url.searchParams.get('collection')?.trim() ?? '';
+  const entryId = url.searchParams.get('entryId')?.trim() ?? '';
+
+  if (!collection) {
+    return createJsonErrorResponse(400, ['查询参数缺少 collection'], [{ path: 'collection', message: '查询参数缺少 collection' }]);
+  }
+
+  if (!isAdminContentCollectionKey(collection)) {
+    return createJsonErrorResponse(
+      400,
+      [`不支持的 content collection：${collection}；仅支持 ${ADMIN_CONTENT_COLLECTION_KEYS.join(' / ')}`],
+      [{ path: 'collection', message: `不支持的 content collection：${collection}` }]
+    );
+  }
+
+  if (!isAdminContentEntryWriteCollectionKey(collection)) {
+    const message = getAdminContentReadOnlyReason(collection) ?? `当前 collection 暂不支持写盘：${collection}`;
+    return createJsonErrorResponse(
+      400,
+      [message],
+      [{ path: 'collection', message }]
+    );
+  }
+
+  if (!entryId) {
+    return createJsonErrorResponse(400, ['查询参数缺少 entryId'], [{ path: 'entryId', message: '查询参数缺少 entryId' }]);
+  }
+
+  try {
+    const payload = await readAdminContentEntryEditorPayload(collection, entryId);
+    return new Response(JSON.stringify({ ok: true, payload }, null, 2), {
+      headers: JSON_HEADERS
+    });
+  } catch (error) {
+    const errorResponse = createEntryResolutionErrorResponse(error);
+    if (errorResponse) return errorResponse;
+    throw error;
+  }
 };
 
 export const POST: APIRoute = async ({ request, url }) => {
@@ -156,7 +241,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     return DEV_ONLY_NOT_FOUND_RESPONSE.clone();
   }
 
-  const requestError = validateAdminJsonWriteRequest(request, url, 'Content Console frontmatter');
+  const requestError = validateAdminJsonWriteRequest(request, url, 'Content Console entry');
   if (requestError) {
     return createJsonErrorResponse(requestError.status, [requestError.error]);
   }
@@ -168,7 +253,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     return createJsonErrorResponse(bodyResult.status, [bodyResult.error]);
   }
 
-  const { collection, entryId, revision, frontmatterInput, errors, issues } = extractWriteInput(bodyResult.body);
+  const { collection, entryId, revision, frontmatterInput, bodyInput, errors, issues } = extractWriteInput(bodyResult.body);
   if (errors.length > 0 || !collection || !entryId || !revision) {
     return createJsonErrorResponse(400, errors, issues);
   }
@@ -177,8 +262,10 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   return withAdminContentWriteLock(async () => {
     let currentPayload: Awaited<ReturnType<typeof readAdminContentEntryEditorPayload>>;
+    let currentState: Awaited<ReturnType<typeof loadAdminContentSourceState>>;
     try {
-      currentPayload = await readAdminContentEntryEditorPayload(collection, entryId);
+      currentState = await loadAdminContentSourceState(collection, entryId);
+      currentPayload = buildAdminContentEntryEditorPayloadFromState(currentState);
     } catch (error) {
       const errorResponse = createEntryResolutionErrorResponse(error);
       if (errorResponse) return errorResponse;
@@ -186,23 +273,12 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     if (currentPayload.revision !== revision) {
-      return new Response(
-        JSON.stringify(
-          {
-            ok: false,
-            errors: ['检测到内容文件已在外部更新，已拒绝覆盖，请刷新当前条目后再保存'],
-            payload: currentPayload
-          },
-          null,
-          2
-        ),
-        { status: 409, headers: JSON_HEADERS }
-      );
+      return createRevisionConflictResponse(currentPayload);
     }
 
-    let plan: Awaited<ReturnType<typeof buildAdminContentWritePlan>>;
+    let plan: Awaited<ReturnType<typeof buildAdminContentWritePlanFromState>>;
     try {
-      plan = await buildAdminContentWritePlan(collection, entryId, frontmatterInput);
+      plan = await buildAdminContentWritePlanFromState(currentState, frontmatterInput, bodyInput);
     } catch (error) {
       const errorResponse = createEntryResolutionErrorResponse(error);
       if (errorResponse) return errorResponse;
@@ -233,14 +309,21 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     try {
-      const nextSourceText = applyAdminContentWritePlan(plan.state, plan.patches);
+      const nextSourceText = applyAdminContentWritePlan(plan.state, plan.patches, plan.bodyText);
       await persistAdminFileTransaction([
         {
           id: 'entry',
           filePath: plan.state.sourcePath,
           content: nextSourceText
         }
-      ]);
+      ], {
+        beforeWrite: async () => {
+          const latestPayloadBeforeWrite = await readAdminContentEntryEditorPayload(collection, entryId);
+          if (latestPayloadBeforeWrite.revision !== revision) {
+            throw new AdminContentRevisionConflictError(latestPayloadBeforeWrite);
+          }
+        }
+      });
       const latestPayload = await readAdminContentEntryEditorPayload(collection, entryId);
 
       return new Response(
@@ -259,7 +342,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         { headers: JSON_HEADERS }
       );
     } catch (error) {
-      console.error('[astro-whono] Failed to persist admin content frontmatter:', error);
+      if (error instanceof AdminContentRevisionConflictError) {
+        return createRevisionConflictResponse(error.latestPayload);
+      }
+
+      console.error('[astro-whono] Failed to persist admin content entry:', error);
       return new Response(
         JSON.stringify(
           {

@@ -34,6 +34,40 @@ type LightboxController = {
 const IMAGE_EXT = /\.(avif|webp|png|jpe?g|gif|svg)(?:$|[?#&])/i;
 const toSafeDocumentImageUrl = (value: string) => toSafeHttpUrl(value, window.location.href);
 let codeCopyInitialized = false;
+let aboutSiteInfoCopyInitialized = false;
+
+const legacyCopy = (value: string) => {
+  const helper = document.createElement('textarea');
+  helper.value = value;
+  helper.setAttribute('readonly', '');
+  helper.style.position = 'fixed';
+  helper.style.opacity = '0';
+  document.body.appendChild(helper);
+  helper.select();
+  const execCommand = Reflect.get(document, 'execCommand');
+  const ok = typeof execCommand === 'function' ? Boolean(execCommand.call(document, 'copy')) : false;
+  helper.remove();
+  return ok;
+};
+
+const copyTextToClipboard = async (value: string) => {
+  const canClipboard = Boolean(
+    navigator.clipboard
+    && typeof navigator.clipboard.writeText === 'function'
+    && window.isSecureContext
+  );
+
+  if (canClipboard) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return legacyCopy(value);
+};
 
 const createLightboxController = (options: LightboxOptions): LightboxController | null => {
   const merged: Required<LightboxOptions> = {
@@ -507,20 +541,6 @@ export const initCodeCopyButtons = () => {
     button.disabled = false;
   });
 
-  const legacyCopy = (value: string) => {
-    const helper = document.createElement('textarea');
-    helper.value = value;
-    helper.setAttribute('readonly', '');
-    helper.style.position = 'fixed';
-    helper.style.opacity = '0';
-    document.body.appendChild(helper);
-    helper.select();
-    const execCommand = Reflect.get(document, 'execCommand');
-    const ok = typeof execCommand === 'function' ? Boolean(execCommand.call(document, 'copy')) : false;
-    helper.remove();
-    return ok;
-  };
-
   document.addEventListener('click', async (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -532,24 +552,7 @@ export const initCodeCopyButtons = () => {
     const text = code?.textContent ?? '';
     if (!text) return;
 
-    const canClipboard = Boolean(
-      navigator.clipboard
-      && typeof navigator.clipboard.writeText === 'function'
-      && window.isSecureContext
-    );
-
-    let copied = false;
-    if (canClipboard) {
-      try {
-        await navigator.clipboard.writeText(text);
-        copied = true;
-      } catch {
-        copied = false;
-      }
-    } else {
-      copied = legacyCopy(text);
-    }
-
+    const copied = await copyTextToClipboard(text);
     if (!copied) return;
 
     button.dataset.state = 'copied';
@@ -560,6 +563,41 @@ export const initCodeCopyButtons = () => {
       button.setAttribute('aria-label', '复制代码');
       button.setAttribute('title', '复制代码');
     }, 1200);
+  });
+};
+
+export const initAboutSiteInfoCopyButtons = () => {
+  if (aboutSiteInfoCopyInitialized) return;
+
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-about-site-info-copy]');
+  if (!buttons.length) return;
+
+  aboutSiteInfoCopyInitialized = true;
+  buttons.forEach((button) => {
+    button.disabled = false;
+  });
+
+  document.addEventListener('click', async (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const button = target.closest<HTMLButtonElement>('[data-about-site-info-copy]');
+    if (!button) return;
+
+    const text = button.dataset.aboutCopyText ?? '';
+    if (!text) return;
+
+    const copied = await copyTextToClipboard(text);
+    if (!copied) return;
+
+    button.dataset.state = 'copied';
+    button.setAttribute('aria-label', '已复制友链信息');
+    button.setAttribute('title', '已复制友链信息');
+    window.setTimeout(() => {
+      button.dataset.state = 'idle';
+      button.setAttribute('aria-label', '复制友链信息');
+      button.setAttribute('title', '复制友链信息');
+    }, 2000);
   });
 };
 

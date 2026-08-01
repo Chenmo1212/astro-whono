@@ -1,0 +1,14 @@
+/* Admin Content Editor Memo Workspace
+   memo 只承载固定单页工作台的局部提示，不改变 shared editor shell。
+*/
+
+.admin-memo-editor.admin-editor-shell {
+  --admin-editor-body-max-inline-size: 820px;
+  --admin-editor-preview-content-max-inline-size: var(--article-readable-inline-size);
+  --admin-editor-single-pane-max-inline-size: 1120px;
+  --memo-section-heading-mt: 28px;
+
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}

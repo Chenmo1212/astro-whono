@@ -41,6 +41,12 @@ import {
 export type { AdminImageBrowseGroup, AdminImageOrigin, AdminImageScopeKey } from './image-contract';
 export type { AdminImageScopeIndex } from './image-browse';
 export {
+  ADMIN_IMAGE_LIST_API_PATH,
+  ADMIN_IMAGE_META_API_PATH,
+  ADMIN_IMAGE_UPLOAD_API_PATH,
+  ADMIN_IMAGE_GET_TOKEN_API_PATH
+} from './admin-api-paths';
+export {
   ADMIN_IMAGE_DIRECTORY_OPTIONS,
   AdminImageError,
   getAdminImageFieldAllowedOrigins,
@@ -182,10 +188,6 @@ type AdminImageShortCacheEntry<T> = {
   expiresAt: number;
   value: T;
 };
-
-export const ADMIN_IMAGE_LIST_API_PATH = '/api/admin/images/list/' as const;
-export const ADMIN_IMAGE_META_API_PATH = '/api/admin/images/meta/' as const;
-export const ADMIN_IMAGE_GET_TOKEN_API_PATH = '/api/admin/images/get-token/' as const;
 
 const IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
 const MARKDOWN_EXT_RE = /\.(?:md|mdx)$/i;
@@ -775,7 +777,7 @@ const toAdminImageListItem = async (
   item: AdminImageAssetRecord & { value: string },
   browseMeta: AdminImageAssetBrowseMeta = resolveBrowseMeta(item)
 ): Promise<AdminImageListItem> => {
-  const meta = await readLocalInspectionMeta(item.path);
+  const meta = await readAdminLocalImageInspectionMeta(item.path);
 
   return {
     path: item.path,
@@ -915,7 +917,7 @@ const readWebpSize = (buffer: Buffer): { width: number; height: number } | null 
   return null;
 };
 
-const readLocalInspectionMeta = async (assetPath: string): Promise<AdminImageInspectionMeta> => {
+export const readAdminLocalImageInspectionMeta = async (assetPath: string): Promise<AdminImageInspectionMeta> => {
   const absolutePath = toAbsoluteAssetPath(assetPath);
   if (!existsSync(absolutePath)) {
     throw new AdminImageError(`图片文件不存在：${assetPath}`, 404);
@@ -955,7 +957,7 @@ const readLocalInspectionMeta = async (assetPath: string): Promise<AdminImageIns
 };
 
 const readLocalImageMeta = async (target: LocalImageTarget): Promise<AdminImageMetaResult> => {
-  const inspectionMeta = await readLocalInspectionMeta(target.path);
+  const inspectionMeta = await readAdminLocalImageInspectionMeta(target.path);
 
   return {
     kind: 'local',

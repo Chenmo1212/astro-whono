@@ -1,0 +1,122 @@
+/* Admin Content Editor Layout Modes
+   承载 data-layout/data-effective-view 覆盖与底部 actions；必须在 workspace、toolbar 和 pane-content 后导入。
+*/
+
+.admin-editor-shell[data-effective-view='edit'] .admin-editor-shell__workspace,
+.admin-editor-shell[data-effective-view='preview'] .admin-editor-shell__workspace {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, min(100%, var(--admin-editor-single-pane-max-inline-size)))
+    minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-content: stretch;
+  align-items: stretch;
+}
+
+.admin-editor-shell[data-effective-view='edit'] .admin-editor-shell__workspace {
+  grid-template-areas:
+    ". body ."
+    "status status status";
+}
+
+.admin-editor-shell[data-effective-view='preview'] .admin-editor-shell__workspace {
+  grid-template-areas:
+    ". preview ."
+    "status status status";
+}
+
+.admin-editor-shell[data-layout='stacked'][data-effective-view='both'] .admin-editor-shell__workspace {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, min(100%, var(--admin-editor-stacked-pane-max-inline-size)))
+    minmax(0, 1fr);
+  grid-template-areas:
+    ". body ."
+    ". status ."
+    ". preview .";
+}
+
+.admin-editor-shell[data-layout='split'][data-effective-view='both'] .admin-editor-shell__workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "body preview"
+    "status status";
+  align-items: stretch;
+}
+
+.admin-editor-shell[data-layout='split'][data-effective-view='both'] .admin-editor-shell__pane--body {
+  padding-inline-end: 0;
+  padding-bottom: 0;
+  border-inline-end: 1px solid var(--admin-editor-shell-divider);
+  border-radius: 6px 0 0 0;
+}
+
+.admin-editor-shell[data-layout='split'][data-effective-view='both'] .admin-editor-shell__pane--preview {
+  padding-block-start: 0;
+  border-radius: 0 6px 0 0;
+}
+
+.admin-editor-shell:is(
+    [data-layout='split'][data-effective-view='both'],
+    [data-layout='stacked'][data-effective-view='both'],
+    [data-effective-view='edit']
+  )
+  .admin-editor-body__field {
+  inline-size: 100%;
+  max-inline-size: none;
+  margin-inline: 0;
+}
+
+.admin-editor-shell:is(
+    [data-layout='split'][data-effective-view='both'],
+    [data-layout='stacked'][data-effective-view='both'],
+    [data-effective-view='edit']
+  )
+  .admin-editor-body__codemirror .cm-content {
+  padding-inline: max(
+    var(--admin-field-padding-inline),
+    calc((100% - var(--admin-editor-body-max-inline-size)) / 2)
+  );
+}
+
+.admin-editor-shell:is(
+    [data-layout='split'][data-effective-view='both'],
+    [data-layout='stacked'][data-effective-view='both'],
+    [data-effective-view='edit']
+  )
+  .admin-editor-shell__pane--body[data-line-numbers='true']
+  .admin-editor-body__codemirror .cm-content {
+  padding-inline: 14px var(--admin-field-padding-inline);
+}
+
+.admin-editor-shell[data-effective-view='preview'] .admin-editor-shell__pane--preview {
+  padding-block-start: 0;
+  border-radius: 6px 6px 0 0;
+}
+
+.admin-editor-shell[data-layout='split'][data-effective-view='both'] .admin-editor-shell__preview-bar {
+  border-block-start-color: var(--admin-editor-shell-divider);
+}
+
+.admin-editor-shell:is(
+    [data-layout='split'][data-effective-view='both'],
+    [data-effective-view='edit'],
+    [data-effective-view='preview']
+  )
+  .admin-editor-shell__preview-detail-panel {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + 7px);
+}
+
+.admin-editor-shell__actions {
+  margin-top: var(--admin-editor-shell-section-gap);
+  padding-top: 12px;
+  border-top: 1px solid var(--admin-row-divider);
+}
+
+.admin-editor-shell__footer-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}

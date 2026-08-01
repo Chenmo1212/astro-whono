@@ -1,4 +1,5 @@
 import type { SidebarNavId } from '@/lib/theme-settings';
+import { ADMIN_SETTINGS_API_PATH } from '@/lib/admin-console/admin-api-paths';
 import {
   ADMIN_NAV_IDS,
   getAdminFooterStartYearMax
@@ -32,7 +33,7 @@ if (!root) {
   if (!controls) {
     // Required controls are missing.
   } else {
-    const endpoint = root.getAttribute('data-settings-endpoint') || '/api/admin/settings/';
+    const endpoint = root.getAttribute('data-settings-endpoint') || ADMIN_SETTINGS_API_PATH;
     const footerStartYearMax = getAdminFooterStartYearMax();
     const getNavRows = (): HTMLElement[] => queryAll<HTMLElement>(root, '[data-nav-id]');
 
@@ -121,7 +122,11 @@ if (!root) {
       inputQiniuBucket: controls.inputQiniuBucket,
       inputQiniuDomain: controls.inputQiniuDomain,
       inputQiniuPath: controls.inputQiniuPath,
-      inputQiniuAutoReplace: controls.inputQiniuAutoReplace
+      inputQiniuAutoReplace: controls.inputQiniuAutoReplace,
+      inputTypographyReadable: controls.inputTypographyReadable,
+      inputTypographyCopy: controls.inputTypographyCopy,
+      inputTypographyMono: controls.inputTypographyMono,
+      inputTypographyBrand: controls.inputTypographyBrand
     });
 
     const getNavFieldTarget = (
@@ -184,6 +189,10 @@ if (!root) {
       inputPageBitsAuthorName: controls.inputPageBitsAuthorName,
       inputPageBitsAuthorAvatar: controls.inputPageBitsAuthorAvatar,
       inputSidebarDividerDefault: controls.inputSidebarDividerDefault,
+      inputTypographyReadable: controls.inputTypographyReadable,
+      inputTypographyCopy: controls.inputTypographyCopy,
+      inputTypographyMono: controls.inputTypographyMono,
+      inputTypographyBrand: controls.inputTypographyBrand,
       getPresetFieldTarget: socialLinks.getPresetFieldTarget,
       getCustomFieldTarget: socialLinks.getCustomFieldTarget,
       getCustomVisibilityTarget: socialLinks.getCustomVisibilityTarget,

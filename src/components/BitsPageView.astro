@@ -5,6 +5,12 @@ import BitCard from './BitCard.astro';
 import Lightbox from './Lightbox.astro';
 import '../styles/bits-page.css';
 import { MAX_PRIMARY_BITS_FILTER_YEARS, getBitsDerivedText, type BitsEntry, type BitsYearOption } from '../lib/bits';
+import { containsMarkdownMath } from '../lib/markdown-math';
+import {
+  MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
+  MARKDOWN_MATH_STYLESHEET_HREF,
+  MARKDOWN_MATH_STYLESHEET_ID
+} from '../lib/markdown-math-styles';
 import { createWithBase } from '../utils/format';
 import { getThemeSettings } from '../lib/theme-settings';
 import { joinPageSubtitleText } from '../utils/format';
@@ -56,18 +62,29 @@ const priorityMediaBitId = items.find((bit) => (bit.data.images?.length ?? 0) > 
 const cards = await Promise.all(
   items.map(async (bit) => {
     const derivedText = getBitsDerivedText(bit);
-    const { Content } = await render(bit);
-    return {
-      bit,
-      excerpt: derivedText.excerpt,
-      Content,
-      shouldRenderFull: derivedText.shouldRenderFull
-    };
+
+    if (derivedText.shouldRenderFull) {
+      const { Content } = await render(bit);
+      return { bit, excerpt: '', Content, hasMath: containsMarkdownMath(bit.body ?? '') };
+    }
+    return { bit, excerpt: derivedText.excerpt, Content: null, hasMath: false };
   })
 );
+const hasRenderedMath = cards.some((card) => card.hasMath);
+const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 ---
 
 <BaseLayout title={pageTitle} description={pageDescription}>
+  {hasRenderedMath ? (
+    <link
+      slot="head"
+      id={MARKDOWN_MATH_STYLESHEET_ID}
+      rel="stylesheet"
+      href={MARKDOWN_MATH_STYLESHEET_HREF}
+      {...katexStylesheetAttrs}
+    />
+  ) : null}
+
   <div class="page-header page-header--bits">
     <div class="page-heading">
       <h1 class="page-title">{pageTitleText}</h1>

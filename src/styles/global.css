@@ -4,7 +4,7 @@
    - home.css / about.css / memo.css：页面私有规则
    - article.css：正文页专用（prose / figure / callout / lightbox / code-block）
    - bits-page.css：/bits/ 专用（bits / lightbox）
-   - admin-shell.css + Admin 路由私有样式：/admin 页面按需引入
+   - admin/shell.css + Admin 路由私有样式：/admin 页面按需引入
    断点变量覆盖仅保留共享层变量与跨页面公共规则。 */
 @import "./components/layout.css";
 @import "./components/lists.css";
@@ -122,11 +122,26 @@
   --code-bg: var(--code-content-bg);
   --code-action-hover-bg: #e8e8e6;
   --panel: var(--code-header-bg);
+  --font-readable: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
+  --font-copy: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
   --font-mono: "Sarasa Mono SC", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-brand: Georgia, serif;
   --max: 900px;
   --sidebar: 320px;
+  --layout-shell-max-inline-size: 1100px;
+  --layout-divider-inline-size: 1px;
+  --public-sidebar-inline-size: 320px;
+  --public-content-padding-inline: 48px;
+  --article-readable-inline-size: min(
+    var(--max),
+    calc(
+      var(--layout-shell-max-inline-size) - var(--public-sidebar-inline-size) -
+        var(--layout-divider-inline-size) - var(--public-content-padding-inline) -
+        var(--public-content-padding-inline)
+    )
+  );
   --tap-min-h: 44px;
-  --pad-x: 48px;
+  --pad-x: var(--public-content-padding-inline);
   --card-pad: 12px 14px;
   --quote-pad: 1rem;
   --header-gap: 12px;
@@ -164,7 +179,7 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
+  font-family: var(--font-readable);
   line-height: 1.75;
   font-size: 16px;
 }
@@ -181,7 +196,7 @@ time,
 .archive-date,
 .bit-meta,
 .meta-line {
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
 }
 
 .page-subtitle,
@@ -193,7 +208,7 @@ time,
 .prose blockquote p,
 cite,
 q {
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
 }
 
 pre,
@@ -296,8 +311,9 @@ hr {
 /* ===============================
    响应式
 ================================ */
+/* 公开站点窄屏变量；AdminLayout 输出 body.admin-page 时不进入公开移动端壳层。 */
 @media (max-width: 900px) {
-  :root {
+  body:not(.admin-page) {
     color-scheme: light;
     --sidebar: 1fr;
     --tap-min-h: 44px;
@@ -307,7 +323,7 @@ hr {
     --header-gap: 4px;
   }
 
-  :root[data-theme="dark"] {
+  :root[data-theme="dark"] body:not(.admin-page) {
     color-scheme: dark;
     --bg: #1a1a1a;
     --text: #e5e5e5;
@@ -318,25 +334,25 @@ hr {
     --code-content-bg: #222222;
   }
 
-  .intro {
+  body:not(.admin-page) .intro {
     margin: 16px 0 22px;
   }
 
 }
 
 @media (min-width: 641px) and (max-width: 900px) {
-  :root {
+  body:not(.admin-page) {
     --pad-x: 28px;
   }
 
 }
 
 @media (max-width: 640px) {
-  :root {
+  body:not(.admin-page) {
     --pad-x: 18px;
   }
 
-  .intro {
+  body:not(.admin-page) .intro {
     margin: 12px 0 18px;
   }
 }

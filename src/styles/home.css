@@ -49,11 +49,11 @@
 }
 
 .intro--serif {
-  font-family: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
+  font-family: var(--font-readable);
 }
 
 .intro--serif a {
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
 }
 
 .section-title--index {

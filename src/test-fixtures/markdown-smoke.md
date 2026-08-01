@@ -17,9 +17,17 @@ export const smoke = 'ok';
 console.log(smoke);
 ```
 
+## Math
+
+Inline math $$x + y$$ should render as KaTeX.
+
+$$
+x^2 + y^2 = z^2
+$$
+
 ## Figure
 
-<figure class="figure">
+<figure class="figure figure--md figure--left">
   <picture>
     <source srcset="/images/archive/demo-archive-03.webp" type="image/webp" />
     <img src="/images/archive/demo-archive-02.webp" alt="Smoke fixture standalone figure" />
@@ -29,7 +37,7 @@ console.log(smoke);
 
 ## Gallery
 
-<ul class="gallery">
+<ul class="gallery cols-2">
   <li>
     <figure>
       <img src="/images/archive/demo-archive-01.webp" alt="Smoke fixture gallery item 1" />

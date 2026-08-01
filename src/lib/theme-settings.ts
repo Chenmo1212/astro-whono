@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { site as legacySite } from '../../site.config.mjs';
+import { asThemeFontIdForRole, type ThemeFontId } from './fonts/registry';
 import {
   getHeroImageLocalFilePath,
   normalizeBitsAvatarPath,
@@ -36,6 +37,7 @@ import {
   getAdminThemeSettingsMismatchPaths,
   getAdminSocialOrderIssues,
   ADMIN_SIDEBAR_DIVIDER_DEFAULT,
+  ADMIN_TYPOGRAPHY_DEFAULT,
   isAdminNavOrderValue,
   isAdminSocialOrderValue,
   isAdminSidebarDividerVariant,
@@ -48,6 +50,9 @@ export type SidebarNavId = 'essay' | 'bits' | 'memo' | 'archive' | 'about' | 'se
 export type PageId = 'essay' | 'archive' | 'bits' | 'memo' | 'about' | 'search';
 export type HeroPresetId = 'default' | 'none';
 export type SidebarDividerVariant = 'default' | 'subtle' | 'none';
+// ThemeFontId 从字体注册表条目 id 派生：添加字体只需在 registry.ts 增加条目，无需改这里。
+export type { ThemeFontId } from './fonts/registry';
+export type TypographyRole = 'readable' | 'copy' | 'mono' | 'brand';
 export type HomeIntroLinkKey = 'archive' | 'essay' | 'bits' | 'memo' | 'about' | 'tag';
 export type SiteSocialPresetId = 'github' | 'x' | 'email';
 export type SiteSocialKind = 'preset' | 'custom';
@@ -196,6 +201,12 @@ export interface ImageProviderQiniuSettings {
 export interface ImageProviderSettings {
   qiniu: ImageProviderQiniuSettings;
 }
+export interface TypographySettings {
+  readable: ThemeFontId;
+  copy: ThemeFontId;
+  mono: ThemeFontId;
+  brand: ThemeFontId;
+}
 
 export interface UiSettings {
   codeBlock: {
@@ -210,6 +221,7 @@ export interface UiSettings {
     sidebarDivider: SidebarDividerVariant;
   };
   imageProvider: ImageProviderSettings;
+  typography: TypographySettings;
 }
 
 export interface ThemeSettings {
@@ -279,6 +291,10 @@ export interface ThemeSettingsSources {
     articleMetaShowWordCount: SettingSource;
     articleMetaShowReadingTime: SettingSource;
     layoutSidebarDivider: SettingSource;
+    typographyReadable: SettingSource;
+    typographyCopy: SettingSource;
+    typographyMono: SettingSource;
+    typographyBrand: SettingSource;
   };
 }
 
@@ -536,6 +552,9 @@ const DEFAULT_UI: UiSettings = {
       path: '',
       autoReplace: false
     }
+  },
+  typography: {
+    ...ADMIN_TYPOGRAPHY_DEFAULT
   }
 };
 
@@ -686,6 +705,9 @@ const asSidebarDividerVariant = (value: unknown): SidebarDividerVariant | undefi
   if (typeof value !== 'string') return undefined;
   return isAdminSidebarDividerVariant(value) ? value : undefined;
 };
+
+const asTypographyFontId = (role: TypographyRole, value: unknown): ThemeFontId | undefined =>
+  asThemeFontIdForRole(role, value);
 
 const asHeroImageSrc = (value: unknown): string | null | undefined => {
   const normalized = normalizeHeroImageSrc(value);
@@ -1339,6 +1361,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const uiLayout = isRecord(uiJson?.layout) ? uiJson.layout : undefined;
   const uiImageProvider = isRecord(uiJson?.imageProvider) ? uiJson.imageProvider : undefined;
   const uiImageProviderQiniu = isRecord(uiImageProvider?.qiniu) ? uiImageProvider.qiniu : undefined;
+  const uiTypography = isRecord(uiJson?.typography) ? uiJson.typography : undefined;
 
   const showLineNumbers = resolveValue(
     asBoolean(uiCodeBlock?.showLineNumbers),
@@ -1394,6 +1417,26 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     asSidebarDividerVariant(uiLayout?.sidebarDivider),
     undefined,
     DEFAULT_UI.layout.sidebarDivider
+  );
+  const typographyReadable = resolveValue(
+    asTypographyFontId('readable', uiTypography?.readable),
+    undefined,
+    DEFAULT_UI.typography.readable
+  );
+  const typographyCopy = resolveValue(
+    asTypographyFontId('copy', uiTypography?.copy),
+    undefined,
+    DEFAULT_UI.typography.copy
+  );
+  const typographyMono = resolveValue(
+    asTypographyFontId('mono', uiTypography?.mono),
+    undefined,
+    DEFAULT_UI.typography.mono
+  );
+  const typographyBrand = resolveValue(
+    asTypographyFontId('brand', uiTypography?.brand),
+    undefined,
+    DEFAULT_UI.typography.brand
   );
 
   const qiniuAccessKey = resolveValue(
@@ -1544,6 +1587,12 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
             path: qiniuPath.value,
             autoReplace: qiniuAutoReplace.value
           }
+        },
+        typography: {
+          readable: typographyReadable.value,
+          copy: typographyCopy.value,
+          mono: typographyMono.value,
+          brand: typographyBrand.value
         }
       }
     },
@@ -1605,7 +1654,11 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         articleMetaShowTags: showArticleTags.source,
         articleMetaShowWordCount: showArticleWordCount.source,
         articleMetaShowReadingTime: showArticleReadingTime.source,
-        layoutSidebarDivider: sidebarDivider.source
+        layoutSidebarDivider: sidebarDivider.source,
+        typographyReadable: typographyReadable.source,
+        typographyCopy: typographyCopy.source,
+        typographyMono: typographyMono.source,
+        typographyBrand: typographyBrand.source
       }
     }
   };
@@ -1688,7 +1741,8 @@ const buildEditableThemeSettingsSnapshot = (
       layout: { ...resolved.settings.ui.layout },
       imageProvider: {
         qiniu: { ...resolved.settings.ui.imageProvider.qiniu }
-      }
+      },
+      typography: { ...resolved.settings.ui.typography }
     }
   });
 

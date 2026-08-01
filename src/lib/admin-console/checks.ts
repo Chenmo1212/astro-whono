@@ -7,6 +7,7 @@ import {
 import {
   ESSAY_PUBLIC_SLUG_RE,
   RESERVED_ESSAY_SLUGS,
+  contentSourceEntryIdToPublicEntryId,
   flattenEntryIdToSlug
 } from '../../utils/slug-rules';
 import { isRoutableTagKey, normalizeTagLabel, toTagKey } from '../tags';
@@ -17,9 +18,12 @@ import {
 import {
   listAdminCollectionSourceFiles,
   readAdminSourceFrontmatterRecord,
-  resolveAdminContentEntryIdFromSourcePath,
+  resolveAdminContentEntryIdFromSourcePath
+} from './content-entry-source';
+import {
   type AdminContentCollectionKey
-} from './content-shared';
+} from './content-collections';
+import { getAdminContentEntryListHref } from './content-routes';
 import { normalizeAdminBitsImageSource } from './image-shared';
 
 export type AdminChecksCategoryId = 'settings' | 'essay-slug' | 'bits-images' | 'tag';
@@ -114,16 +118,9 @@ const getProjectRoot = (): string =>
 const toRelativeProjectPath = (filePath: string): string =>
   path.relative(getProjectRoot(), filePath).replace(/\\/g, '/');
 
-const resolveContentHref = (
-  collection: AdminContentCollectionKey,
-  entryId: string
-): string => {
-  const params = new URLSearchParams({
-    q: entryId,
-    entry: entryId
-  });
-  return `/admin/content/${collection}/?${params.toString()}`;
-};
+// Checks 只生成轻量定位 URL，不依赖 Content Console 的重数据层。
+const resolveContentHref = (collection: AdminContentCollectionKey, entryId: string): string =>
+  getAdminContentEntryListHref(collection, { entryId });
 
 const createIssueId = (
   category: AdminChecksCategoryId,
@@ -237,7 +234,8 @@ const createEssaySlugIssues = (sources: readonly AdminContentSourceRecord[]): Ad
       typeof source.frontmatter.slug === 'string' && source.frontmatter.slug.trim()
         ? source.frontmatter.slug.trim()
         : '';
-    const publicSlug = explicitSlug || flattenEntryIdToSlug(source.entryId);
+    const publicEntryId = contentSourceEntryIdToPublicEntryId(source.entryId) || source.entryId;
+    const publicSlug = explicitSlug || flattenEntryIdToSlug(publicEntryId);
 
     if (!ESSAY_PUBLIC_SLUG_RE.test(publicSlug)) {
       issues.push(
@@ -246,7 +244,7 @@ const createEssaySlugIssues = (sources: readonly AdminContentSourceRecord[]): Ad
           'essay public slug 非法',
           explicitSlug
             ? `frontmatter.slug "${explicitSlug}" 不是合法的小写 kebab-case。`
-            : `由 entry.id 拍平得到的公开 slug "${publicSlug}" 不合法，请调整路径或显式设置 slug。`,
+            : `由内容源路径得到的默认公开 slug "${publicSlug}" 不合法，请调整路径或显式设置 slug。`,
           {
             relativePath: source.relativePath,
             fieldPath: 'slug',

@@ -1,0 +1,10 @@
+---
+import MemoEditorWorkspace from './MemoEditorWorkspace.svelte';
+import type { MemoEditorIslandProps } from './memo-editor-island-props';
+
+const props = Astro.props as MemoEditorIslandProps;
+---
+
+<div data-admin-content-editor-island data-admin-memo-editor-island>
+  <MemoEditorWorkspace client:only="svelte" {...props} />
+</div>

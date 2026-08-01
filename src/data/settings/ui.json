@@ -29,5 +29,11 @@
       "path": "/blog",
       "autoReplace": true
     }
+  },
+  "typography": {
+    "readable": "noto-serif-sc",
+    "copy": "lxgw-wenkai-lite",
+    "mono": "system-mono",
+    "brand": "serif-georgia"
   }
 }

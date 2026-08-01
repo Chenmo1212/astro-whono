@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import YAML from 'yaml';
-import { patchMarkdownFrontmatter, splitMarkdownFrontmatter } from '../src/lib/admin-console/frontmatter';
+import { patchMarkdownFrontmatter, replaceMarkdownBody, splitMarkdownFrontmatter } from '../src/lib/admin-console/frontmatter';
 
 const getFrontmatter = (source: string): Record<string, unknown> => {
   const section = splitMarkdownFrontmatter(source);
@@ -30,6 +30,25 @@ describe('admin-console/frontmatter', () => {
 
     expect(after.bodyText).toBe(before.bodyText);
     expect(getFrontmatter(next).title).toBe('New Title');
+  });
+
+  it('replaces markdown body while keeping the frontmatter block byte-identical', () => {
+    const source = [
+      '---',
+      'title: Old Title',
+      'description: "A&B: #hash"',
+      'date: 2026-03-18',
+      '---',
+      '',
+      '# Old body',
+      ''
+    ].join('\n');
+
+    const nextBody = ['# New body', '', '正文已更新。', ''].join('\n');
+    const next = replaceMarkdownBody(source, nextBody);
+
+    expect(splitMarkdownFrontmatter(next).frontmatterBlock).toBe(splitMarkdownFrontmatter(source).frontmatterBlock);
+    expect(splitMarkdownFrontmatter(next).bodyText).toBe(nextBody);
   });
 
   it('round-trips Chinese text without corrupting YAML', () => {

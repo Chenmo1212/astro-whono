@@ -1,0 +1,319 @@
+/* Admin Images Detail
+   负责详情区、badge、代码块与复制反馈。
+*/
+
+.admin-images-browser__detail {
+  padding: 0;
+  overflow: hidden;
+  background: var(--admin-images-browser-controls-bg);
+}
+
+.admin-images-browser__detail-layout {
+  display: grid;
+  grid-template-columns: minmax(244px, 0.8fr) minmax(340px, 0.8fr);
+  gap: 0;
+  align-items: stretch;
+}
+
+.admin-images-browser__detail-media {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent 30%);
+  border-block-start: 0;
+  border-inline-start: 0;
+  border-radius: var(--admin-control-radius) 0 0 var(--admin-control-radius);
+  overflow: hidden;
+  background-color: var(--panel);
+}
+
+.admin-images-browser__detail-media img {
+  max-width: 100%;
+  max-height: 440px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.admin-images-browser__detail-body {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px;
+}
+
+.admin-images-browser__detail-header {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-images-browser__detail-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--text);
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1.28;
+  word-break: break-word;
+}
+
+.admin-images-browser__detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.admin-images-browser__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--code-bg) 60%, transparent 40%);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent 40%);
+  color: var(--muted);
+  font-family: var(--admin-font-ui);
+  font-size: 0.76rem;
+  line-height: 1;
+}
+
+.admin-images-browser__origin-badge[data-origin='public'] {
+  background: var(--admin-images-origin-public-bg);
+  border-color: var(--admin-images-origin-public-border);
+  color: var(--admin-images-origin-public-text);
+}
+
+.admin-images-browser__origin-badge[data-origin='src/assets'] {
+  background: var(--admin-images-origin-assets-bg);
+  border-color: var(--admin-images-origin-assets-border);
+  color: var(--admin-images-origin-assets-text);
+}
+
+.admin-images-browser__origin-badge[data-origin='src/content'] {
+  background: var(--admin-images-origin-content-bg);
+  border-color: var(--admin-images-origin-content-border);
+  color: var(--admin-images-origin-content-text);
+}
+/* Status badge variants */
+.admin-images-browser__status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 18px;
+  padding: 2px 6px;
+  margin-left: 8px;
+  border-radius: 4px;
+  font-size: 0;
+  line-height: 1;
+}
+
+.admin-images-browser__status-badge svg {
+  flex-shrink: 0;
+}
+
+.admin-images-browser__status-badge--yellow svg {
+  animation: admin-status-spin 1s linear infinite;
+}
+
+@keyframes admin-status-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-images-browser__status-badge--yellow svg {
+    animation: none;
+  }
+}
+
+.admin-images-browser__status-badge--gray {
+  background: color-mix(in srgb, var(--muted) 12%, transparent 88%);
+  border-color: color-mix(in srgb, var(--muted) 20%, transparent 80%);
+  color: color-mix(in srgb, var(--muted) 70%, var(--text) 30%);
+}
+
+.admin-images-browser__status-badge--gray {
+  background: var(--admin-status-badge-gray-bg);
+  border-color: var(--admin-status-badge-gray-border);
+  color: var(--admin-status-badge-gray-text);
+}
+
+.admin-images-browser__status-badge--yellow {
+  background: var(--admin-status-badge-yellow-bg);
+  border-color: var(--admin-status-badge-yellow-border);
+  color: var(--admin-status-badge-yellow-text);
+}
+
+.admin-images-browser__status-badge--green {
+  background: var(--admin-status-badge-green-bg);
+  border-color: var(--admin-status-badge-green-border);
+  color: var(--admin-status-badge-green-text);
+}
+
+.admin-images-browser__status-badge--red {
+  background: var(--admin-status-badge-red-bg);
+  border-color: var(--admin-status-badge-red-border);
+  color: var(--admin-status-badge-red-text);
+}
+
+.admin-images-browser__provider-upload-time {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+
+/* Semantic DL meta data list */
+.admin-images-browser__detail-meta-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 9px 11px;
+  background: var(--code-content-bg);
+  border-radius: var(--admin-control-radius);
+  border: 1px solid color-mix(in srgb, var(--admin-border) 54%, transparent 46%);
+}
+
+.admin-images-browser__detail-meta-list div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-images-browser__detail-meta-list dt {
+  color: color-mix(in srgb, var(--muted) 76%, var(--panel) 24%);
+  font-size: 0.72rem;
+  line-height: 1.15;
+  letter-spacing: 0.05em;
+}
+
+.admin-images-browser__detail-meta-list dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-family: var(--admin-font-mono);
+  font-weight: 500;
+  line-height: 1.24;
+}
+
+.admin-images-browser__detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-images-browser__detail-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.77rem;
+  font-weight: 500;
+}
+
+.admin-images-browser__detail-label--disabled {
+  opacity: 0.6;
+}
+
+.admin-images-browser__code-wrapper {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: var(--admin-control-height);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--admin-control-radius);
+  background: color-mix(in srgb, var(--code-content-bg) 74%, var(--panel) 26%);
+  transition: background-color 180ms ease;
+}
+
+.admin-images-browser__code-wrapper:hover {
+  background: color-mix(in srgb, var(--code-content-bg) 88%, var(--panel) 12%);
+}
+
+.admin-images-browser__code-wrapper--disabled,
+.admin-images-browser__code-wrapper--disabled:hover {
+  background: color-mix(in srgb, var(--code-content-bg) 68%, var(--panel) 32%);
+}
+
+.admin-images-browser__detail-code {
+  display: block;
+  margin: 0;
+  padding: 6px 36px 6px 10px;
+  color: color-mix(in srgb, var(--text) 82%, var(--muted) 18%);
+  font-family: var(--admin-font-mono);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.admin-images-copy-btn {
+  position: absolute;
+  top: calc(var(--admin-control-height) / 2);
+  right: 4px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+}
+
+.admin-images-copy-btn::after {
+  content: '已复制';
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 6px);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--code-content-bg) 94%, var(--panel) 6%);
+  border: 1px solid color-mix(in srgb, var(--border) 54%, transparent 46%);
+  color: var(--muted);
+  font-family: var(--admin-font-ui);
+  font-size: var(--admin-text-2xs);
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%) translateX(4px);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--overlay-20) 70%, transparent 30%);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.admin-images-copy-btn[data-state='copied'] {
+  color: var(--admin-status-success-text);
+  background: var(--admin-status-success-bg);
+  border-color: var(--admin-status-success-border);
+}
+
+.admin-images-copy-btn[data-state='copied']::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.admin-images-copy-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Action button hierarchy */
+.admin-images-browser__detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.admin-images-browser__detail-fallback {
+  color: var(--muted);
+  font-size: var(--admin-text-sm);
+  letter-spacing: var(--admin-tracking-wide);
+  text-transform: uppercase;
+}

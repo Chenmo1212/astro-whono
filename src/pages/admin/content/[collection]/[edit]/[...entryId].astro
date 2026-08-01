@@ -1,0 +1,57 @@
+---
+import AdminContentEditPage from '../../../../../components/admin/AdminContentEditPage.astro';
+import {
+  ADMIN_CONTENT_WRITE_COLLECTION_KEYS,
+  isAdminContentCollectionKey,
+  isAdminContentWriteCollectionKey,
+  type AdminContentWriteCollectionKey
+} from '../../../../../lib/admin-console/content-collections';
+import {
+  getAdminContentReadOnlyReason,
+  listAdminCollectionSourceFiles,
+  resolveAdminContentEntryIdFromSourcePath
+} from '../../../../../lib/admin-console/content-entry-source';
+
+export const getStaticPaths = async () => {
+  if (!import.meta.env.DEV) {
+    return [];
+  }
+
+  const paths = await Promise.all(
+    ADMIN_CONTENT_WRITE_COLLECTION_KEYS.map(async (collection) => {
+      const files = await listAdminCollectionSourceFiles(collection);
+      return files.map((filePath) => {
+        const entryId = resolveAdminContentEntryIdFromSourcePath(collection, filePath);
+        return {
+          params: { collection, edit: '_edit', entryId }
+        };
+      });
+    })
+  );
+
+  return paths.flat();
+};
+
+const collectionParam = Astro.params.collection;
+if (!isAdminContentCollectionKey(collectionParam ?? '')) {
+  throw new Error(`Unsupported admin content edit collection route: ${collectionParam ?? '(missing)'}`);
+}
+
+if (!isAdminContentWriteCollectionKey(collectionParam ?? '')) {
+  throw new Error(getAdminContentReadOnlyReason(collectionParam) ?? `Admin content collection is readonly: ${collectionParam}`);
+}
+
+if (Astro.params.edit !== '_edit') {
+  throw new Error(`Unsupported admin content edit segment: ${Astro.params.edit ?? '(missing)'}`);
+}
+
+const collection: AdminContentWriteCollectionKey = collectionParam;
+const entryId = Astro.params.entryId;
+if (typeof entryId !== 'string' || entryId.length === 0) {
+  throw new Error(`Missing admin content edit entryId for ${collection}`);
+}
+
+const initialArticleInfoOpen = Astro.url.searchParams.get('panel') === 'info';
+---
+
+<AdminContentEditPage collection={collection} entryId={entryId} initialArticleInfoOpen={initialArticleInfoOpen} />

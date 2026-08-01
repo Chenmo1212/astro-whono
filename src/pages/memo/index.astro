@@ -6,6 +6,17 @@ import '../../styles/article.css';
 import '../../styles/memo.css';
 import { getEntry, render } from 'astro:content';
 import { getThemeSettings } from '../../lib/theme-settings';
+import { containsMarkdownMath } from '../../lib/markdown-math';
+import {
+  buildMemoTocGroups,
+  LEGACY_MEMO_INTRO_LINES,
+  resolveMemoRenderedSections
+} from '../../lib/memo-page';
+import {
+  MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
+  MARKDOWN_MATH_STYLESHEET_HREF,
+  MARKDOWN_MATH_STYLESHEET_ID
+} from '../../lib/markdown-math-styles';
 
 const prod = import.meta.env.PROD;
 const DEFAULT_MEMO_TITLE = '生活小记';
@@ -27,28 +38,33 @@ const {
     page
   }
 } = getThemeSettings();
-const { Content, headings } = await render(entry);
+const { headings } = await render(entry);
 const memoTitle = page.memo.title ?? entry.data.title ?? DEFAULT_MEMO_TITLE;
 const memoSubtitle = page.memo.subtitle ?? entry.data.subtitle ?? DEFAULT_MEMO_SUBTITLE;
-
-// Build a grouped TOC: H2 as section titles, H3 as items.
-type TocItem = { text: string; slug: string };
-type TocGroup = { title: string; items: TocItem[] };
-
-const groups: TocGroup[] = [];
-let current: TocGroup | null = null;
-for (const h of headings) {
-  if (h.depth === 2) {
-    current = { title: h.text, items: [] };
-    groups.push(current);
-  } else if (h.depth === 3) {
-    if (!current) {
-      current = { title: '目录', items: [] };
-      groups.push(current);
+const hasMath = containsMarkdownMath(entry.body ?? '');
+const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
+const memoRenderedSections = resolveMemoRenderedSections({
+  markdownBody: entry.body ?? '',
+  renderedHtml: entry.rendered?.html ?? '',
+  headings
+});
+const MemoIntroContent = memoRenderedSections.introHtml
+  ? (await render({
+    ...entry,
+    rendered: {
+      ...entry.rendered,
+      html: memoRenderedSections.introHtml
     }
-    current.items.push({ text: h.text, slug: h.slug });
+  })).Content
+  : null;
+const MemoBodyContent = (await render({
+  ...entry,
+  rendered: {
+    ...entry.rendered,
+    html: memoRenderedSections.contentHtml
   }
-}
+})).Content;
+const groups = buildMemoTocGroups(headings);
 ---
 
 <BaseLayout
@@ -56,6 +72,16 @@ for (const h of headings) {
   description="整理一些值得留存的片刻与回忆。"
   bodyClass="memo-page immersive-page"
 >
+  {hasMath ? (
+    <link
+      slot="head"
+      id={MARKDOWN_MATH_STYLESHEET_ID}
+      rel="stylesheet"
+      href={MARKDOWN_MATH_STYLESHEET_HREF}
+      {...katexStylesheetAttrs}
+    />
+  ) : null}
+
   <div class="page-header reader-exit-anchor">
     <h1 class="page-title">{memoTitle}</h1>
     {memoSubtitle ? <span class="page-subtitle">{memoSubtitle}</span> : null}
@@ -72,11 +98,17 @@ for (const h of headings) {
     </button>
   </div>
 
-  <div class="intro">
-    时间流经我们，如同风穿过回廊。
-    <br />总有一些瞬间，携带着特别的气息或光亮，短暂停留后便消散。
-    <br />有些感受，无法被镜头承载，有些记忆难以被影像收藏。
-    <br />也许，为瞬间的感受留下一份文字备份，正是抵抗遗忘最温柔却最有效的方式。
+  <div class="intro prose">
+    {MemoIntroContent ? (
+      <MemoIntroContent />
+    ) : (
+      LEGACY_MEMO_INTRO_LINES.map((line, index) => (
+        <>
+          {index > 0 ? <br /> : null}
+          {line}
+        </>
+      ))
+    )}
   </div>
 
   <nav class="memo-toc" aria-label="目录">
@@ -98,7 +130,7 @@ for (const h of headings) {
   </nav>
 
   <div class="memo-content prose">
-    <Content />
+    <MemoBodyContent />
   </div>
 
   <script is:inline>
@@ -117,22 +149,6 @@ for (const h of headings) {
       };
       sync();
       mq.addEventListener('change', sync);
-
-      const content = document.querySelector('.memo-content');
-      if (content) {
-        const nodes = content.querySelectorAll('h2, h3');
-        let count = 0;
-        nodes.forEach((node) => {
-          if (node.tagName === 'H2') {
-            count = 0;
-            return;
-          }
-          if (node.tagName === 'H3') {
-            count += 1;
-            node.setAttribute('data-num', String(count));
-          }
-        });
-      }
     })();
   </script>
 
@@ -146,11 +162,13 @@ for (const h of headings) {
 
   <script>
     import { initArticleLightbox, initCodeCopyButtons } from '../../scripts/lightbox';
+    import { applyMemoHeadingNumbers } from '../../scripts/memo-heading-numbers';
 
+    applyMemoHeadingNumbers(document.querySelector('.memo-content'));
     initCodeCopyButtons();
     initArticleLightbox({
       dialogId: 'lightbox',
-      containerSelector: '.memo-content.prose',
+      containerSelector: '.memo-page .content__inner',
       enableZoom: false,
       enablePan: false,
       enableSwipeDownClose: false

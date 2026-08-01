@@ -15,6 +15,30 @@ const getOriginBadgeLabel = (origin: AdminImageBrowseItem['origin']): string => 
   return '内容附件';
 };
 
+// 正文图片引用：仅 public 图可作为根绝对路径写入 Markdown 正文（与现有 /images/... 约定一致）。
+// src/assets 需在代码中 import 后交由打包器处理；src/content 附件应在所属内容里用相对路径引用，
+// 且本面板无「当前编辑文件」上下文，二者均不在此生成，仅给出禁用原因。
+// encodeURI 不转义 ( ) # ?，但它们会破坏 Markdown 目标解析（括号截断、# 当 fragment、? 当 query），需手动补全。
+const encodeMarkdownImageDestination = (value: string): string =>
+  encodeURI(value)
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29')
+    .replace(/#/g, '%23')
+    .replace(/\?/g, '%3F');
+
+const getMarkdownReference = (
+  item: AdminImageBrowseItem
+): { value: string } | { disabledReason: string } => {
+  if (item.origin === 'public' && item.path.startsWith('public/')) {
+    const webPath = `/${item.path.slice('public/'.length)}`;
+    return { value: `![](${encodeMarkdownImageDestination(webPath)})` };
+  }
+  if (item.origin === 'src/content') {
+    return { disabledReason: '该图需在所属文章中使用相对路径引用' };
+  }
+  return { disabledReason: '站点素材需在代码中导入，暂不支持正文引用' };
+};
+
 const getCardOverlayMetaText = (
   item: AdminImageBrowseItem,
   detailMetaCache: ReadonlyMap<string, AdminImageClientMeta>
@@ -495,6 +519,7 @@ export const renderDetail = ({
   const fieldValue = hasPreferredValue ? item.preferredValue! : item.path;
   const fieldLabel = hasPreferredValue ? '可用值 (field-compatible)' : '文件路径';
   const fieldCopyLabel = hasPreferredValue ? '可用值' : '文件路径';
+  const markdownRef = getMarkdownReference(item);
   const previewSrc = detailMeta?.previewSrc ?? item.previewSrc;
 
   detailEl.hidden = false;
@@ -537,10 +562,24 @@ export const renderDetail = ({
         ${renderProviderStatusSection(item, detailMeta, uploadIcon, copyIcon, statusIcons)}
 
         <div class="admin-images-browser__detail-field">
-          <h4 class="admin-images-browser__detail-label admin-images-browser__detail-label--disabled">Markdown 引用（待开发）</h4>
+          ${'value' in markdownRef
+        ? `<h4 class="admin-images-browser__detail-label">Markdown 引用</h4>
+          <div class="admin-images-browser__code-wrapper">
+            <code class="admin-images-browser__detail-code">${escapeHtml(markdownRef.value)}</code>
+            <button
+              class="admin-btn admin-btn--tool admin-btn--compact admin-btn--icon admin-images-copy-btn"
+              type="button"
+              data-copy-value="${escapeHtml(markdownRef.value)}"
+              data-copy-label="Markdown 引用"
+              data-inline-feedback="true"
+              title="点击复制"
+              aria-label="复制 Markdown 引用"
+            >${copyIcon}</button>
+          </div>`
+        : `<h4 class="admin-images-browser__detail-label admin-images-browser__detail-label--disabled">Markdown 引用</h4>
           <div class="admin-images-browser__code-wrapper admin-images-browser__code-wrapper--disabled" aria-disabled="true">
-            <code class="admin-images-browser__detail-code">—</code>
-          </div>
+            <code class="admin-images-browser__detail-code">${escapeHtml(markdownRef.disabledReason)}</code>
+          </div>`}
         </div>
 
         <div class="admin-images-browser__detail-actions">

@@ -9,6 +9,22 @@ const ADMIN_OVERVIEW_HEADER_PATTERN = new RegExp([
   '<span\\b(?=[^>]*\\bclass="[^"]*\\bpage-subtitle\\b[^"]*")[^>]*>\\s*站点概览\\s*</span>'
 ].join('\\s*'));
 const ADMIN_ROUTE_NAV_PATTERN = /<nav\b(?=[^>]*\bclass=(["'])[^"']*\badmin-route-nav\b[^"']*\1)[^>]*>/;
+export const DEV_ADMIN_UI_PREFERENCE_MARKERS = [
+  'data-admin-sidebar-nav',
+  'data-admin-nav-switcher',
+  'data-admin-nav-mode',
+  'data-admin-show-top-nav',
+  'data-admin-ui-prefs-root',
+  'astro-whono:admin-sidebar:nav-mode',
+  'astro-whono:admin-sidebar:default-nav-mode',
+  'astro-whono:admin:show-top-nav',
+  'astro-whono:admin-editor:defaults',
+  'astro-whono:admin-editor:layout',
+  'astro-whono:admin-editor:outline-state',
+  'astro-whono:admin-sidebar:state',
+  'AdminUiPrefsCard',
+  'admin-sidebar-toggle'
+];
 
 export const expect = (condition, message) => {
   if (!condition) {
@@ -77,6 +93,15 @@ export const assertHasAdminRouteNav = (label, body) => {
   );
 };
 
+export const assertNoDevAdminUiPreferenceChrome = (label, body) => {
+  for (const marker of DEV_ADMIN_UI_PREFERENCE_MARKERS) {
+    expect(
+      !body.includes(marker),
+      `${label} should not expose DEV-only admin UI preference marker: ${marker}`
+    );
+  }
+};
+
 export const assertAdminOverviewSectionOrder = (label, body) => {
   const recentIndex = body.indexOf('id="admin-overview-recent"');
   const activityIndex = body.indexOf('id="admin-overview-activity"');
@@ -129,6 +154,29 @@ export const assertAdminImageStaticShell = (label, body, expectedPath) => {
   ]);
 };
 
+export const assertAdminImageUploadStaticShell = (
+  label,
+  body,
+  expectedPath = '/api/admin/images/upload/'
+) => {
+  assertAdminApiStaticShell(label, body, expectedPath, [
+    '"result"',
+    '"src"',
+    '"path"',
+    '"fileName"',
+    '"mimeType"'
+  ]);
+};
+
+export const assertAdminPreviewStaticShell = (label, body, expectedPath = '/api/admin/preview/') => {
+  assertAdminApiStaticShell(label, body, expectedPath, [
+    '"html"',
+    '"source"',
+    '"codeHighlight"',
+    '"elapsedMs"'
+  ]);
+};
+
 export const assertAdminSettingsStaticResponse = (label, response, expectedPath = '/api/admin/settings/') => {
   expect(
     !response.contentType.toLowerCase().includes('application/json'),
@@ -155,6 +203,26 @@ export const assertAdminImageStaticResponse = (label, response, expectedPath) =>
     `${label} unexpectedly returned JSON in production preview`
   );
   assertAdminImageStaticShell(label, response.body, expectedPath);
+};
+
+export const assertAdminImageUploadStaticResponse = (
+  label,
+  response,
+  expectedPath = '/api/admin/images/upload/'
+) => {
+  expect(
+    !response.contentType.toLowerCase().includes('application/json'),
+    `${label} unexpectedly returned JSON in production preview`
+  );
+  assertAdminImageUploadStaticShell(label, response.body, expectedPath);
+};
+
+export const assertAdminPreviewStaticResponse = (label, response, expectedPath = '/api/admin/preview/') => {
+  expect(
+    !response.contentType.toLowerCase().includes('application/json'),
+    `${label} unexpectedly returned JSON in production preview`
+  );
+  assertAdminPreviewStaticShell(label, response.body, expectedPath);
 };
 
 export const waitForHttpReady = async (url, options = {}) => {

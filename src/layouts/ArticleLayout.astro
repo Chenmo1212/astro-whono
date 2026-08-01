@@ -6,6 +6,12 @@ import TableOfContents from '../components/TableOfContents.astro';
 import '../styles/article.css';
 import '../styles/components/table-of-contents.css';
 import { getEssayDerivedText, type EssayEntry } from '../lib/content';
+import { containsMarkdownMath } from '../lib/markdown-math';
+import {
+  MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
+  MARKDOWN_MATH_STYLESHEET_HREF,
+  MARKDOWN_MATH_STYLESHEET_ID
+} from '../lib/markdown-math-styles';
 import type { ArticleMetaSettings, SidebarNavId } from '../lib/theme-settings';
 import { formatISODateUtc } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
@@ -40,6 +46,11 @@ const derivedText = getEssayDerivedText(entry);
 const rawDescription = entry?.data?.description?.trim?.() ?? '';
 const description = rawDescription || truncateText(derivedText.excerpt, 90);
 const activeNavId: SidebarNavId = entry?.data?.archive === false ? 'essay' : 'archive';
+const hasMath = containsMarkdownMath(entry.body ?? '');
+const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
+const updatedAt = entry.data.updatedAt ?? null;
+const displayDate = updatedAt ?? entry.data.date;
+const displayDateLabel = updatedAt ? '更新于：' : (articleMetaSettings.dateLabel ?? '');
 const articleReadingStats = articleMetaSettings.showWordCount || articleMetaSettings.showReadingTime
   ? (() => {
       const wordCount = derivedText.plainText.replace(/\s+/g, '').length;
@@ -67,9 +78,18 @@ const shouldShowMetaLine = articleMetaSettings.showDate
 >
   <Fragment slot="head">
     <meta property="article:published_time" content={entry.data.date.toISOString()} />
+    {updatedAt ? <meta property="article:modified_time" content={updatedAt.toISOString()} /> : null}
     {entryTags.map((tag: string) => (
       <meta property="article:tag" content={tag} />
     ))}
+    {hasMath ? (
+      <link
+        id={MARKDOWN_MATH_STYLESHEET_ID}
+        rel="stylesheet"
+        href={MARKDOWN_MATH_STYLESHEET_HREF}
+        {...katexStylesheetAttrs}
+      />
+    ) : null}
   </Fragment>
   <div class="article-header reader-exit-anchor">
     <h1 class="page-title">{entry.data.title}</h1>
@@ -88,7 +108,7 @@ const shouldShowMetaLine = articleMetaSettings.showDate
       <div class="meta-line meta-line--items">
         {articleMetaSettings.showDate ? (
           <span class="meta-line__item">
-            {articleMetaSettings.dateLabel ? `${articleMetaSettings.dateLabel}` : ''}{formatISODateUtc(entry.data.date)}
+            <time datetime={displayDate.toISOString()}>{`${displayDateLabel}${formatISODateUtc(displayDate)}`}</time>
           </span>
         ) : null}
         {articleMetaSettings.showTags && visibleTags.length ? (

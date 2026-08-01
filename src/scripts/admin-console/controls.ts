@@ -101,6 +101,11 @@ export type AdminThemeControls = RequiredElements<{
   inputQiniuDomain: HTMLInputElement | null;
   inputQiniuPath: HTMLInputElement | null;
   inputQiniuAutoReplace: HTMLInputElement | null;
+  /* 排版字体是 radio 卡片组：控件引用的是 radiogroup 容器（id 与旧 select 一致），值经 :checked 读写。 */
+  inputTypographyReadable: HTMLElement | null;
+  inputTypographyCopy: HTMLElement | null;
+  inputTypographyMono: HTMLElement | null;
+  inputTypographyBrand: HTMLElement | null;
 }> & {
   statusEl: HTMLElement | null;
   statusLiveEl: HTMLElement | null;
@@ -192,7 +197,11 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputQiniuBucket: byId<HTMLInputElement>('qiniu-bucket'),
     inputQiniuDomain: byId<HTMLInputElement>('qiniu-domain'),
     inputQiniuPath: byId<HTMLInputElement>('qiniu-path'),
-    inputQiniuAutoReplace: byId<HTMLInputElement>('qiniu-auto-replace')
+    inputQiniuAutoReplace: byId<HTMLInputElement>('qiniu-auto-replace'),
+    inputTypographyReadable: byId<HTMLElement>('ui-typography-readable'),
+    inputTypographyCopy: byId<HTMLElement>('ui-typography-copy'),
+    inputTypographyMono: byId<HTMLElement>('ui-typography-mono'),
+    inputTypographyBrand: byId<HTMLElement>('ui-typography-brand')
   });
 
   if (!controls) return null;

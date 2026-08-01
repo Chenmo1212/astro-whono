@@ -210,7 +210,8 @@ describe('admin-console/checks', () => {
       expect.arrayContaining([
         expect.objectContaining({
           relativePath: 'src/content/essay/reserved.md',
-          fieldPath: 'slug'
+          fieldPath: 'slug',
+          href: '/admin/content/?collection=essay&entryId=reserved'
         }),
         expect.objectContaining({
           relativePath: 'src/content/essay/duplicate-one.md',
@@ -218,11 +219,15 @@ describe('admin-console/checks', () => {
         })
       ])
     );
+    expect(
+      allIssues.some((issue) => issue.href?.startsWith('/admin/content/essay/?') || issue.href?.startsWith('/admin/content/bits/?'))
+    ).toBe(false);
     expect(bitsImagesCategory.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           relativePath: 'src/content/bits/images.md',
-          fieldPath: 'author.avatar'
+          fieldPath: 'author.avatar',
+          href: '/admin/content/?collection=bits&entryId=images'
         }),
         expect.objectContaining({
           relativePath: 'src/content/bits/images.md',

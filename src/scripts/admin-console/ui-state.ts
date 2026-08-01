@@ -30,7 +30,7 @@ type AdminConsoleUiStateContext = {
 };
 
 const STATUS_WAITING_SAVE = '等待保存';
-const STATUS_CLEAN = '当前配置无未保存更改';
+const STATUS_CLEAN = '无需保存';
 
 export const createAdminConsoleUiState = ({
   root,

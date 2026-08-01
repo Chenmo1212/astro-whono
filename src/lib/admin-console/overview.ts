@@ -1,12 +1,11 @@
 import { PAGE_SIZE_BITS } from '../../../site.config.mjs';
 import {
-  getBitAnchorId,
-  getBitsPagePath,
   getBitSlug,
   getBitsDerivedText,
   getSortedBits,
   type BitsEntry
 } from '../bits';
+import { buildPublishedBitsHrefMap, type BitPublicOrderItem } from '../bits-public-routing';
 import {
   getEssayDerivedText,
   getEssaySlug,
@@ -237,11 +236,13 @@ const getPercentage = (count: number, total: number): number => {
 };
 
 export const buildAdminOverviewBitsHrefById = (bits: readonly BitsEntry[]): Map<string, string> =>
-  new Map(
-    bits.map((entry, index) => {
-      const page = Math.floor(index / PAGE_SIZE_BITS) + 1;
-      return [entry.id, `${getBitsPagePath(page)}#${getBitAnchorId(entry.id)}`];
-    })
+  buildPublishedBitsHrefMap(
+    bits.map((entry): BitPublicOrderItem => ({
+      id: entry.id,
+      date: entry.data.date,
+      draft: entry.data.draft === true
+    })),
+    PAGE_SIZE_BITS
   );
 
 const getRecentEssayPublication = (entry: EssayEntry): AdminOverviewRecentPublication => {
@@ -283,10 +284,13 @@ const getRecentBitsPublication = (
 
 const getRecentMemoPublication = (entry: MemoEntry): AdminOverviewRecentPublication => {
   const isDraft = entry.data.draft === true;
+  const title = entry.data.title?.trim()
+    || getMemoDerivedText(entry).excerptText
+    || '小记';
   return {
     collection: 'memo',
     collectionLabel: COLLECTION_LABELS.memo,
-    title: entry.data.title,
+    title,
     href: isDraft ? null : '/memo/',
     isDraft,
     date: entry.data.date ?? null,

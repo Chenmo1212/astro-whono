@@ -9,13 +9,17 @@ import {
   ADMIN_SETTINGS_EXPORT_SCHEMA_VERSION,
   ADMIN_SETTINGS_EXPORT_SCOPE
 } from '../../../lib/admin-console/settings-data';
+import {
+  ADMIN_DATA_SETTINGS_API_PATH,
+  ADMIN_SETTINGS_API_PATH
+} from '../../../lib/admin-console/admin-api-paths';
 import { createWithBase } from '../../../utils/format';
 
 const isDev = import.meta.env.DEV;
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
 const exportIncludedScopesLabel = `['${ADMIN_SETTINGS_EXPORT_SCOPE}']`;
-const { default: adminShellStylesHref } = await import('../../../styles/components/admin-shell.css?url');
+const { default: adminShellStylesHref } = await import('../../../styles/components/admin/shell.css?url');
 
 const loadDataDevState = async () => {
   const [
@@ -23,7 +27,7 @@ const loadDataDevState = async () => {
     { default: adminDataStylesHref }
   ] = await Promise.all([
     import('../../../scripts/admin-data/index.ts?url'),
-    import('../../../styles/components/admin-data.css?url')
+    import('../../../styles/components/admin/data.css?url')
   ]);
 
   return {
@@ -39,8 +43,8 @@ const bootstrapText =
   editableState && editableState.ok
     ? JSON.stringify({
         revision: editableState.payload.revision,
-        exportEndpoint: withBase('/api/admin/data/settings/'),
-        importEndpoint: withBase('/api/admin/settings/')
+        exportEndpoint: withBase(ADMIN_DATA_SETTINGS_API_PATH),
+        importEndpoint: withBase(ADMIN_SETTINGS_API_PATH)
       })
     : null;
 ---

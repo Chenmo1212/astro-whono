@@ -1,12 +1,61 @@
 .prose figure {
+  --figure-media-max-width: 100%;
+  --figure-media-margin-left: auto;
+  --figure-media-margin-right: auto;
+  --figure-caption-max-width: min(100%, 32rem);
+  --figure-caption-text-align: center;
+
   margin: 18px 0;
+}
+
+.prose figure.figure--sm {
+  --figure-media-max-width: 18rem;
+  --figure-caption-max-width: 18rem;
+}
+
+.prose figure.figure--md {
+  --figure-media-max-width: 28rem;
+  --figure-caption-max-width: 28rem;
+}
+
+.prose figure.figure--lg {
+  --figure-media-max-width: 42rem;
+  --figure-caption-max-width: 42rem;
+}
+
+.prose figure.figure--full {
+  --figure-media-max-width: 100%;
+  --figure-caption-max-width: 100%;
+}
+
+.prose figure.figure--left {
+  --figure-media-margin-left: 0;
+  --figure-media-margin-right: auto;
+  --figure-caption-text-align: left;
+}
+
+.prose figure.figure--center {
+  --figure-media-margin-left: auto;
+  --figure-media-margin-right: auto;
+  --figure-caption-text-align: center;
+}
+
+.prose figure.figure--right {
+  --figure-media-margin-left: auto;
+  --figure-media-margin-right: 0;
+  --figure-caption-text-align: right;
 }
 
 .prose figure > :is(img, picture) {
   display: block;
-  max-width: 100%;
+  max-width: min(100%, var(--figure-media-max-width));
   height: auto;
-  margin: 0 auto;
+  margin-left: var(--figure-media-margin-left);
+  margin-right: var(--figure-media-margin-right);
+}
+
+.prose figure.figure--full > :is(img, picture) {
+  width: 100%;
 }
 
 .prose figure > picture > img {
@@ -17,23 +66,33 @@
 }
 
 @media (max-width: 900px) {
+  .prose figure {
+    --figure-media-margin-left: auto;
+    --figure-media-margin-right: auto;
+    --figure-caption-text-align: center;
+  }
+
   .prose figure > :is(img, picture) {
-    max-width: 92%;
+    max-width: min(92%, var(--figure-media-max-width));
+  }
+
+  .prose figure.figure--full > :is(img, picture) {
+    max-width: 100%;
   }
 
   .prose figure > picture > img {
-    max-width: 92%;
+    max-width: 100%;
   }
 }
 
 .prose figure > figcaption {
   margin-top: 6px;
-  text-align: center;
+  text-align: var(--figure-caption-text-align);
   font-size: 0.9em;
-  max-width: min(100%, 32rem);
-  margin-left: auto;
-  margin-right: auto;
-  font-family: "LXGW WenKai Lite","Kaiti SC","STKaiti",serif;
+  max-width: var(--figure-caption-max-width);
+  margin-left: var(--figure-media-margin-left);
+  margin-right: var(--figure-media-margin-right);
+  font-family: var(--font-copy);
   color: var(--muted);
 }
 

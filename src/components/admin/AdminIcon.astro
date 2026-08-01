@@ -6,66 +6,42 @@ import ChevronDown from '@lucide/astro/icons/chevron-down';
 import Circle from '@lucide/astro/icons/circle';
 import CircleCheck from '@lucide/astro/icons/circle-check';
 import CircleX from '@lucide/astro/icons/circle-x';
+import ChevronRight from '@lucide/astro/icons/chevron-right';
 import CodeXml from '@lucide/astro/icons/code-xml';
 import Copy from '@lucide/astro/icons/copy';
+import Database from '@lucide/astro/icons/database';
 import Download from '@lucide/astro/icons/download';
 import Eye from '@lucide/astro/icons/eye';
 import FileText from '@lucide/astro/icons/file-text';
 import Funnel from '@lucide/astro/icons/funnel';
-import GitBranch from '@lucide/astro/icons/git-branch';
 import Globe from '@lucide/astro/icons/globe';
 import House from '@lucide/astro/icons/house';
+import Info from '@lucide/astro/icons/info';
 import Images from '@lucide/astro/icons/images';
 import Layers from '@lucide/astro/icons/layers';
 import LayoutGrid from '@lucide/astro/icons/layout-grid';
+import LayoutList from '@lucide/astro/icons/layout-list';
 import Link from '@lucide/astro/icons/link';
 import List from '@lucide/astro/icons/list';
 import LoaderCircle from '@lucide/astro/icons/loader-circle';
 import Monitor from '@lucide/astro/icons/monitor';
+import Palette from '@lucide/astro/icons/palette';
 import PanelLeft from '@lucide/astro/icons/panel-left';
+import PanelsTopLeft from '@lucide/astro/icons/panels-top-left';
+import Plus from '@lucide/astro/icons/plus';
 import RefreshCw from '@lucide/astro/icons/refresh-cw';
 import Scan from '@lucide/astro/icons/scan';
 import Search from '@lucide/astro/icons/search';
+import Settings from '@lucide/astro/icons/settings';
+import ShieldCheck from '@lucide/astro/icons/shield-check';
 import Tags from '@lucide/astro/icons/tags';
 import Terminal from '@lucide/astro/icons/terminal';
+import TriangleAlert from '@lucide/astro/icons/triangle-alert';
 import Trash2 from '@lucide/astro/icons/trash-2';
 import Upload from '@lucide/astro/icons/upload';
 import Waypoints from '@lucide/astro/icons/waypoints';
 import X from '@lucide/astro/icons/x';
-
-type AdminIconName =
-  | 'admin-code'
-  | 'admin-home'
-  | 'admin-page'
-  | 'admin-sidebar'
-  | 'admin-site'
-  | 'activity'
-  | 'branch-nodes'
-  | 'check'
-  | 'chevron-down'
-  | 'circle'
-  | 'circle-check'
-  | 'circle-x'
-  | 'copy'
-  | 'download'
-  | 'eye'
-  | 'funnel'
-  | 'grid-tiles'
-  | 'images'
-  | 'layers'
-  | 'link'
-  | 'list'
-  | 'loader-circle'
-  | 'monitor'
-  | 'refresh'
-  | 'scan'
-  | 'search'
-  | 'tags'
-  | 'terminal'
-  | 'trash'
-  | 'upload'
-  | 'waypoints'
-  | 'x-mark';
+import type { AdminIconName } from '../../lib/admin-console/admin-icon-names';
 
 interface Props {
   name: AdminIconName;
@@ -74,6 +50,8 @@ interface Props {
   class?: string;
   ariaLabel?: string;
 }
+
+type AdminLucideIconName = Exclude<AdminIconName, 'astro-logo' | 'astro-logo-color'>;
 
 const {
   name,
@@ -90,45 +68,104 @@ const adminIconComponents = {
   'admin-sidebar': PanelLeft,
   'admin-site': Globe,
   activity: Activity,
-  'branch-nodes': GitBranch,
   check: Check,
   'chevron-down': ChevronDown,
   circle: Circle,
   'circle-check': CircleCheck,
   'circle-x': CircleX,
+  'chevron-right': ChevronRight,
   copy: Copy,
+  database: Database,
   download: Download,
   eye: Eye,
   funnel: Funnel,
   'grid-tiles': LayoutGrid,
+  info: Info,
   images: Images,
   layers: Layers,
+  'layout-list': LayoutList,
+  'file-text': FileText,
   link: Link,
   list: List,
   'loader-circle': LoaderCircle,
   monitor: Monitor,
+  palette: Palette,
+  'panels-top-left': PanelsTopLeft,
+  plus: Plus,
   refresh: RefreshCw,
   scan: Scan,
   search: Search,
+  settings: Settings,
+  'shield-check': ShieldCheck,
   tags: Tags,
   terminal: Terminal,
+  'triangle-alert': TriangleAlert,
   trash: Trash2,
   upload: Upload,
   waypoints: Waypoints,
   'x-mark': X
-} as const satisfies Record<AdminIconName, AstroComponent>;
+} as const satisfies Record<AdminLucideIconName, AstroComponent>;
 
-const IconComponent = adminIconComponents[name];
+const isAstroLogo = name === 'astro-logo';
+const isAstroLogoColor = name === 'astro-logo-color';
+const isCustomAstroLogo = isAstroLogo || isAstroLogoColor;
+const IconComponent = isCustomAstroLogo ? null : adminIconComponents[name as AdminLucideIconName];
 const ariaHidden = ariaLabel ? undefined : 'true';
 const role = ariaLabel ? 'img' : undefined;
 ---
 
-<IconComponent
-  class:list={['admin-icon', className]}
-  size={size}
-  stroke-width={strokeWidth}
-  aria-hidden={ariaHidden}
-  aria-label={ariaLabel}
-  role={role}
-  focusable="false"
-/>
+{
+  isAstroLogo ? (
+    <svg
+      class:list={['admin-icon', className]}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden={ariaHidden}
+      aria-label={ariaLabel}
+      role={role}
+      focusable="false"
+    >
+      <path
+        fill="currentColor"
+        d="M8.358 20.162c-1.186-1.07-1.532-3.316-1.038-4.944c.856 1.026 2.043 1.352 3.272 1.535c1.897.283 3.76.177 5.522-.678c.202-.098.388-.229.608-.36c.166.473.209.95.151 1.437c-.14 1.185-.738 2.1-1.688 2.794c-.38.277-.782.525-1.175.787c-1.205.804-1.531 1.747-1.078 3.119l.044.148a3.16 3.16 0 0 1-1.407-1.188a3.3 3.3 0 0 1-.544-1.815c-.004-.32-.004-.642-.048-.958c-.106-.769-.472-1.113-1.161-1.133c-.707-.02-1.267.411-1.415 1.09c-.012.053-.028.104-.045.165zm-5.961-4.445s3.24-1.575 6.49-1.575l2.451-7.565c.092-.366.36-.614.662-.614s.57.248.662.614l2.45 7.565c3.85 0 6.491 1.575 6.491 1.575L16.088.727C15.93.285 15.663 0 15.303 0H8.697c-.36 0-.615.285-.784.727z"
+      />
+    </svg>
+  ) : isAstroLogoColor ? (
+    <svg
+      class:list={['admin-icon', className]}
+      width={size}
+      height={size}
+      viewBox="0 0 256 323"
+      aria-hidden={ariaHidden}
+      aria-label={ariaLabel}
+      role={role}
+      focusable="false"
+    >
+      <defs>
+        <linearGradient id="admin-astro-logo-gradient" x1="0%" x2="116.842%" y1="91.269%" y2="41.115%">
+          <stop offset="0%" stop-color="#D83333" />
+          <stop offset="100%" stop-color="#F041FF" />
+        </linearGradient>
+      </defs>
+      <path
+        fill="url(#admin-astro-logo-gradient)"
+        d="M83.261 275.039c-14.588-13.336-18.847-41.355-12.769-61.653c10.539 12.796 25.14 16.852 40.265 19.138c23.35 3.533 46.28 2.212 67.97-8.46c2.482-1.22 4.775-2.848 7.486-4.492c2.035 5.903 2.565 11.864 1.854 17.932c-1.728 14.776-9.082 26.191-20.777 34.842c-4.677 3.461-9.626 6.555-14.456 9.82c-14.839 10.026-18.853 21.786-13.277 38.894c.132.417.25.833.55 1.85c-7.576-3.39-13.11-8.328-17.327-14.818c-4.453-6.852-6.572-14.431-6.684-22.63c-.056-3.99-.056-8.018-.592-11.95c-1.31-9.591-5.813-13.886-14.296-14.134c-8.705-.252-15.591 5.127-17.417 13.604c-.14.649-.342 1.291-.544 2.047z"
+      />
+      <path
+        fill="currentColor"
+        d="M0 210.001s43.197-21.041 86.515-21.041l32.66-101.078c1.224-4.889 4.794-8.21 8.824-8.21s7.601 3.321 8.824 8.21l32.66 101.078C220.787 188.96 256 210 256 210S182.624 10.117 182.481 9.716C180.375 3.806 176.821 0 172.027 0H83.98c-4.793 0-8.204 3.806-10.454 9.716C73.367 10.109 0 210 0 210"
+      />
+    </svg>
+  ) : IconComponent ? (
+    <IconComponent
+      class:list={['admin-icon', className]}
+      size={size}
+      stroke-width={strokeWidth}
+      aria-hidden={ariaHidden}
+      aria-label={ariaLabel}
+      role={role}
+      focusable="false"
+    />
+  ) : null
+}

@@ -19,7 +19,15 @@ const getProp = (props, key) => {
   return null;
 };
 
-const getLangFromPre = (pre) => {
+const getLangFromContext = (context) => {
+  const lang = context?.options?.lang;
+  return typeof lang === 'string' && lang.trim() ? lang.trim() : '';
+};
+
+const getLangFromPre = (pre, context) => {
+  const contextLang = getLangFromContext(context);
+  if (contextLang) return contextLang;
+
   const props = pre?.properties || {};
   const dataLang = getProp(props, 'data-lang') || getProp(props, 'data-language');
   if (dataLang) return String(dataLang);
@@ -196,7 +204,7 @@ export default function shikiToolbar() {
   return {
     name: 'astro-whono-code-toolbar',
     pre(node) {
-      const rawLang = getLangFromPre(node);
+      const rawLang = getLangFromPre(node, this);
       const normalized = normalizeLang(rawLang);
       const lines = countLines(node);
       node.properties = {
@@ -211,7 +219,7 @@ export default function shikiToolbar() {
       if (preIndex === -1) return;
       const pre = node.children[preIndex];
 
-      const rawLang = getLangFromPre(pre);
+      const rawLang = getLangFromPre(pre, this);
       const normalized = normalizeLang(rawLang);
       const lineCount = Math.max(1, countLines(pre));
       const langLabel = getLangLabel(rawLang, normalized);

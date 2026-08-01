@@ -3,6 +3,7 @@
 */
 
 @import "../animations.css";
+@import "./bit-card.css";
 
 /* Bits（絮语） */
 
@@ -285,7 +286,7 @@
 
 .bits-search input::placeholder {
   font-size: 14px;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
   color: var(--muted);
   opacity: 1;
 }
@@ -551,7 +552,7 @@
   border-radius: 10px;
   font-size: 12px;
   line-height: 1.6;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
   color: var(--muted);
   background: color-mix(in srgb, var(--panel) 38%, var(--bg));
 }
@@ -581,40 +582,6 @@
 
   50% {
     opacity: 0.55;
-  }
-}
-
-.bit-card {
-  padding: 18px 18px 14px;
-  border: 0;
-  border-radius: 10px;
-  margin: 16px 0;
-  background: var(--panel);
-  scroll-margin-top: 24px;
-}
-
-@supports (background: color-mix(in srgb, #000 50%, #fff 50%)) {
-  .bit-card {
-    background: color-mix(in srgb, var(--panel) 38%, var(--bg));
-  }
-}
-
-.bit-card:target {
-  outline: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
-  animation: bit-card-target-highlight 2.3s ease-out forwards;
-}
-
-@keyframes bit-card-target-highlight {
-  0%,
-  86.96% {
-    outline-color: color-mix(in srgb, var(--accent) 42%, transparent);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-
-  100% {
-    outline-color: transparent;
-    box-shadow: 0 0 0 0 transparent;
   }
 }
 
@@ -742,7 +709,7 @@
   padding: 0 9px;
   border-radius: 999px;
   font-size: 12px;
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
   color: var(--muted);
   background: color-mix(in srgb, var(--panel) 65%, var(--bg));
   border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
@@ -1402,7 +1369,7 @@
   border-radius: 12px;
   background: var(--bg);
   color: var(--text);
-  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  font-family: var(--font-copy);
   --bits-focus: var(--muted);
   padding: 0;
 }
@@ -1613,7 +1580,7 @@
 }
 
 #bits-draft-content {
-  font-family: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
+  font-family: var(--font-readable);
   min-height: 160px;
 }
 

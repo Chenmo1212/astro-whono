@@ -14,8 +14,8 @@ const isDev = import.meta.env.DEV;
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
 const [{ default: adminShellStylesHref }, { default: adminOverviewStylesHref }] = await Promise.all([
-  import('../../styles/components/admin-shell.css?url'),
-  import('../../styles/components/admin-overview.css?url')
+  import('../../styles/components/admin/shell.css?url'),
+  import('../../styles/components/admin/overview.css?url')
 ]);
 const adminStylesHref = [adminShellStylesHref, adminOverviewStylesHref];
 const themeSettings = getThemeSettings().settings;

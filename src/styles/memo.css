@@ -8,11 +8,20 @@
   --memo-intro-mb: 32px;
   --memo-toc-mt: 18px;
   --memo-toc-mb: 46px;
+  --memo-section-heading-mt: 56px;
 }
 
 .memo-page .intro {
   margin-bottom: var(--memo-intro-mb);
   animation: fadeUp 0.45s ease both 0.07s;
+}
+
+.memo-page .intro > :first-child {
+  margin-top: 0;
+}
+
+.memo-page .intro > :last-child {
+  margin-bottom: 0;
 }
 
 .memo-toc {
@@ -103,7 +112,7 @@
   text-align: center;
   font-size: 16px;
   font-weight: 600;
-  margin: 56px 0 18px;
+  margin: var(--memo-section-heading-mt, 56px) 0 18px;
   color: var(--muted);
 }
 

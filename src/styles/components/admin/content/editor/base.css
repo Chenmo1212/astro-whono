@@ -1,0 +1,13 @@
+/* Admin Content Editor Base
+   承载 _edit 编辑页共享基础规则；不承载 Content Console 列表页基础。
+*/
+
+.admin-content-editor,
+.admin-content-readonly {
+  display: grid;
+  min-width: 0;
+}
+
+.admin-content-detail-meta {
+  gap: 7px 12px;
+}
