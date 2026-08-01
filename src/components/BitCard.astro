@@ -103,7 +103,7 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
     </div>
   ) : null}
 
-  {card.firstImage ? (
+  {!isEncrypted && card.firstImage ? (
     <div class="bit-media bit-media--single">
       <button
         type="button"
@@ -122,7 +122,7 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
         />
       </button>
     </div>
-  ) : card.imageItems.length > 1 ? (
+  ) : !isEncrypted && card.imageItems.length > 1 ? (
     <div class="bit-media bit-media--grid">
       <div class="bit-media-grid">
         {card.visibleImages.map((image, index) => {
@@ -158,7 +158,7 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
     </div>
   ) : null}
 
-  {card.imageItems.length ? (
+  {!isEncrypted && card.imageItems.length ? (
     <div hidden aria-hidden="true">
       {card.imageItems.map((image) => (
         <span
