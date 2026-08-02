@@ -132,10 +132,30 @@ def main():
     parser.add_argument(
         "--run-now", action="store_true", help="立即执行一次爬取，随后进入定时调度"
     )
+    parser.add_argument(
+        "--fetch-mode", choices=["count", "since_date"], default=None,
+        help="爬取模式：count=最新N条，since_date=从指定日期起（覆盖 config.yaml）"
+    )
+    parser.add_argument(
+        "--fetch-count", type=int, default=None,
+        help="fetch_mode=count 时的抓取条数（覆盖 config.yaml）"
+    )
+    parser.add_argument(
+        "--fetch-since-date", default=None,
+        help="fetch_mode=since_date 时的起始日期 YYYY-MM-DD（覆盖 config.yaml）"
+    )
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    
+
+    # CLI 参数覆盖 config.yaml 中的 weibo 爬取配置
+    if args.fetch_mode is not None:
+        cfg.setdefault("weibo", {})["fetch_mode"] = args.fetch_mode
+    if args.fetch_count is not None:
+        cfg.setdefault("weibo", {})["fetch_count"] = args.fetch_count
+    if args.fetch_since_date is not None:
+        cfg.setdefault("weibo", {})["fetch_since_date"] = args.fetch_since_date
+
     # 读取管道配置
     pipeline_cfg = cfg.get("pipeline", {})
     enable_pipeline = pipeline_cfg.get("enabled", True)

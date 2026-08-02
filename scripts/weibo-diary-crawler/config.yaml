@@ -7,10 +7,10 @@ weibo:
   # 爬取模式，二选一：
   #   count       —— 只爬最新 fetch_count 条（默认日常定时使用）
   #   since_date  —— 从 fetch_since_date 起一直爬到当前（历史回溯）
-  fetch_mode: "since_date"
+  fetch_mode: "count"
 
   # fetch_mode=count 时有效：抓取最新几条原创微博
-  fetch_count: 2
+  fetch_count: 3
 
   # fetch_mode=since_date 时有效：爬取该日期（含）之后的所有原创微博
   # 格式 YYYY-MM-DD，如 2026-01-01
