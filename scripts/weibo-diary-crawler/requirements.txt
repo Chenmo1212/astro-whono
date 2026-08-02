@@ -1,0 +1,24 @@
+# 微博个人日记爬取系统依赖
+# 基于原项目 requirements.txt，新增调度/日志/配置解析依赖
+
+# HTTP 请求（原项目已使用）
+requests==2.32.4
+certifi>=2024.2.2
+
+# HTML 解析（原项目已使用）
+lxml==5.3.0
+
+# MongoDB 驱动（原项目已使用）
+pymongo==4.6.3
+
+# 定时任务调度（新增）
+APScheduler==3.10.4
+
+# 配置文件解析（新增）
+PyYAML==6.0.2
+
+# 日志框架（新增，替代原项目的 logging.conf）
+loguru==0.7.3
+
+# 可选：支持从 .env 文件读取环境变量（如 MONGO_URI）
+python-dotenv==1.0.1

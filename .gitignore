@@ -34,3 +34,4 @@ tools/fonts-src/
 data/**/*.md
 data/**/*.jpg
 data/scripts
+scripts/**/__pycache__
