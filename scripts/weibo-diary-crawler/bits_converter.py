@@ -206,9 +206,12 @@ def post_to_bits_markdown(
         if tag not in tag_list and any(kw in body_clean for kw in keywords):
             tag_list.append(tag)
 
-    # 构建 tags 块
-    tags_block = "tags:\n" + "\n".join(f"  - {t}" for t in tag_list)
-    
+    # 构建 tags 块（空列表用 [] 避免 YAML 解析为 null/object）
+    if tag_list:
+        tags_block = "tags:\n" + "\n".join(f"  - {t}" for t in tag_list)
+    else:
+        tags_block = "tags: []"
+
     # 优先使用步骤3实际上传后的 CDN URL，否则降级到本地路径推算
     cdn_urls = post.get("processed_images", {}).get("cdn_urls", [])
     if cdn_urls:
