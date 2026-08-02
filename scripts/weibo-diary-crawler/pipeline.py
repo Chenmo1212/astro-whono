@@ -153,7 +153,6 @@ def run_full_pipeline(
     try:
         logger.info("【步骤 4/5】生成 bits markdown 文件...")
         
-        from pathlib import Path
         if bits_output_dir is None:
             from bits_converter import OUTPUT_DIR
             bits_output_dir = OUTPUT_DIR
