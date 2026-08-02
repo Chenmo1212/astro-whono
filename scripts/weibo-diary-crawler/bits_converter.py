@@ -21,6 +21,7 @@ bits_converter.py —— 将爬虫数据转换为 bits 格式
         write_bits_file(post, cdn_domain="https://cdn.chenmo1212.cn", write=True)
 """
 
+import json
 import os
 import re
 import sys
