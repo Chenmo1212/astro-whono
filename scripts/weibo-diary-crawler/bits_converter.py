@@ -322,35 +322,23 @@ def batch_write_bits_files(
     cdn_prefix: str = "blog",
     cdn_domain: str = "",
     write: bool = True,
-    posts_json: Path | None = None,
 ) -> list[str]:
     """
     批量将微博转换为 bits 文件。
-    已在 posts.json 中存在的 weibo_id 视为已处理，跳过生成。
     
     Args:
-        posts: 爬虫返回的微博列表
+        posts: 爬虫返回的微博列表（调用方负责去重）
         output_dir: 输出目录
         cdn_prefix: CDN 前缀
         cdn_domain: CDN 域名
         write: 是否实际写入文件
-        posts_json: posts.json 路径，用于读取已有 weibo_id；None 则不做去重
     
     Returns:
         生成的文件路径列表
     """
-    existing_ids: set[str] = set()
-    if write and posts_json is not None:
-        existing_ids = _load_existing_weibo_ids(posts_json)
-        if existing_ids:
-            print(f"[INFO] posts.json 中已有 {len(existing_ids)} 条记录，将跳过已处理的微博")
-
     results = []
     for post in posts:
         weibo_id = str(post.get("weibo_id", ""))
-        if write and weibo_id and weibo_id in existing_ids:
-            print(f"[SKIP] weibo_id={weibo_id} 已在 posts.json 中，跳过生成")
-            continue
         try:
             output_path = write_bits_file(post, output_dir, cdn_prefix, cdn_domain, write)
             results.append(output_path)

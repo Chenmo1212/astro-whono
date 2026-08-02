@@ -71,6 +71,25 @@ def run_full_pipeline(
         logger.exception("爬取失败：{}", e)
         return []
 
+    # ── 去重：过滤掉已在 posts.json 中存在的微博 ──
+    try:
+        from bits_converter import _load_existing_weibo_ids
+        storage_cfg = cfg.get("storage", {}) if isinstance(cfg, dict) else {}
+        if storage_cfg.get("mode", "json") == "json" and storage_cfg.get("json_path"):
+            json_path = Path(storage_cfg["json_path"])
+            existing_ids = _load_existing_weibo_ids(json_path)
+            if existing_ids:
+                before = len(posts)
+                posts = [p for p in posts if str(p.get("weibo_id", "")) not in existing_ids]
+                skipped = before - len(posts)
+                if skipped:
+                    logger.info("去重：跳过 {} 条已存在于 posts.json 的微博，剩余 {} 条待处理", skipped, len(posts))
+            if not posts:
+                logger.info("所有微博均已处理，管道结束")
+                return []
+    except Exception as e:
+        logger.warning("去重检查失败，继续处理全部微博：{}", e)
+
     # ── 步骤2：下载和压缩图片 ──
     try:
         logger.info("【步骤 2/4】下载并压缩图片...")
@@ -141,16 +160,12 @@ def run_full_pipeline(
         else:
             bits_output_dir = Path(bits_output_dir)
         
-        storage_cfg = cfg.get("storage", {}) if isinstance(cfg, dict) else {}
-        json_path = Path(storage_cfg.get("json_path", "")) if storage_cfg.get("mode", "json") == "json" else None
-
         output_paths = batch_write_bits_files(
             posts,
             output_dir=bits_output_dir,
             cdn_prefix=cdn_prefix,
             cdn_domain=cdn_domain,
             write=bits_write,
-            posts_json=json_path,
         )
         logger.info("✓ bits 文件生成完成：{} 个文件", len(output_paths))
     except Exception as e:
