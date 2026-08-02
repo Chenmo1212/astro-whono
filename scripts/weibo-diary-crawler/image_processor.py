@@ -37,6 +37,9 @@ except ImportError:
     print("ERROR: qiniu SDK is not installed.  Run: pip install qiniu")
     sys.exit(1)
 
+# ── Paths ───────────────────────────────────────────────────────────────────────
+SCRIPT_DIR = Path(__file__).resolve().parent
+
 # ── Config ──────────────────────────────────────────────────────────────────────
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 MAX_DIMENSION = 1080      # resize if either side exceeds this (px)
