@@ -209,9 +209,13 @@ def post_to_bits_markdown(
     # 构建 tags 块
     tags_block = "tags:\n" + "\n".join(f"  - {t}" for t in tag_list)
     
-    # 提取本地图片并转换为 CDN URL
-    local_images = post.get("local_images", [])
-    images = extract_images_from_local_paths(local_images, year, cdn_prefix, cdn_domain)
+    # 优先使用步骤3实际上传后的 CDN URL，否则降级到本地路径推算
+    cdn_urls = post.get("processed_images", {}).get("cdn_urls", [])
+    if cdn_urls:
+        images = cdn_urls
+    else:
+        local_images = post.get("local_images", [])
+        images = extract_images_from_local_paths(local_images, year, cdn_prefix, cdn_domain)
     
     images_block = ""
     if images:
