@@ -25,11 +25,11 @@
         "https://cdn.chenmo1212.cn/blog/2026/20260802_01.jpg"
       ],
       "local_compressed": [
-        "/Users/chandler/Project/Astro_Blog/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260802_01.jpg"
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260802_01.jpg"
       ],
       "errors": []
     },
-    "crawled_at": "2026-08-02 17:45:29"
+    "crawled_at": "2026-08-02 22:42:30"
   },
   {
     "user_id": 7796507396,
@@ -57,11 +57,11 @@
         "https://cdn.chenmo1212.cn/blog/2026/20260801_01.jpg"
       ],
       "local_compressed": [
-        "/Users/chandler/Project/Astro_Blog/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260801_01.jpg"
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260801_01.jpg"
       ],
       "errors": []
     },
-    "crawled_at": "2026-08-02 17:45:29"
+    "crawled_at": "2026-08-02 22:42:30"
   },
   {
     "user_id": 7796507396,
@@ -3180,5 +3180,37 @@
       "errors": []
     },
     "crawled_at": "2026-08-02 17:45:29"
+  },
+  {
+    "user_id": 7796507396,
+    "screen_name": "暮冬十二1212",
+    "bid": "RbAQ8p6nz",
+    "text": "发现四年前写的日记里有着这么一张图。\n人呐，真的是吃一堑，吃一堑，吃一堑，吃一堑。 ",
+    "text_html": "发现四年前写的日记里有着这么一张图。<br /><br />人呐，真的是吃一堑，吃一堑，吃一堑，吃一堑。 ",
+    "pics": [
+      "https://wx4.sinaimg.cn/mw2000/008vDlJigy1ifpz82orm7j30m60nkq4e.jpg"
+    ],
+    "location": "",
+    "topics": "",
+    "created_at": "2026-08-03T00:59:33",
+    "source": "微博轻享版",
+    "attitudes_count": 0,
+    "comments_count": 1,
+    "reposts_count": 0,
+    "full_created_at": "2026-08-03 00:59:33",
+    "weibo_id": "5327632245982725",
+    "local_images": [
+      "./images/2026/20260803_01.jpg"
+    ],
+    "processed_images": {
+      "cdn_urls": [
+        "https://cdn.chenmo1212.cn/blog/2026/20260803_01.jpg"
+      ],
+      "local_compressed": [
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260803_01.jpg"
+      ],
+      "errors": []
+    },
+    "crawled_at": "2026-08-02 22:42:30"
   }
 ]
