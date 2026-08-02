@@ -206,9 +206,12 @@ def post_to_bits_markdown(
         if tag not in tag_list and any(kw in body_clean for kw in keywords):
             tag_list.append(tag)
 
-    # 构建 tags 块
-    tags_block = "tags:\n" + "\n".join(f"  - {t}" for t in tag_list)
-    
+    # 构建 tags 块（空列表用 [] 避免 YAML 解析为 null/object）
+    if tag_list:
+        tags_block = "tags:\n" + "\n".join(f"  - {t}" for t in tag_list)
+    else:
+        tags_block = "tags: []"
+
     # 优先使用步骤3实际上传后的 CDN URL，否则降级到本地路径推算
     cdn_urls = post.get("processed_images", {}).get("cdn_urls", [])
     if cdn_urls:
@@ -295,15 +298,34 @@ def write_bits_file(
         return content
 
 
+def _load_existing_weibo_ids(json_path: Path) -> set[str]:
+    """
+    从 posts.json 读取已持久化的 weibo_id 集合，用于去重判断。
+    文件不存在或解析失败时返回空集合。
+    """
+    if not json_path.exists():
+        return set()
+    try:
+        with open(json_path, encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            return {str(p["weibo_id"]) for p in data if p.get("weibo_id")}
+    except (json.JSONDecodeError, OSError, KeyError):
+        pass
+    return set()
+
+
 def batch_write_bits_files(
     posts: list[dict],
     output_dir: Path = OUTPUT_DIR,
     cdn_prefix: str = "blog",
     cdn_domain: str = "",
     write: bool = True,
+    posts_json: Path | None = None,
 ) -> list[str]:
     """
     批量将微博转换为 bits 文件。
+    已在 posts.json 中存在的 weibo_id 视为已处理，跳过生成。
     
     Args:
         posts: 爬虫返回的微博列表
@@ -311,17 +333,28 @@ def batch_write_bits_files(
         cdn_prefix: CDN 前缀
         cdn_domain: CDN 域名
         write: 是否实际写入文件
+        posts_json: posts.json 路径，用于读取已有 weibo_id；None 则不做去重
     
     Returns:
         生成的文件路径列表
     """
+    existing_ids: set[str] = set()
+    if write and posts_json is not None:
+        existing_ids = _load_existing_weibo_ids(posts_json)
+        if existing_ids:
+            print(f"[INFO] posts.json 中已有 {len(existing_ids)} 条记录，将跳过已处理的微博")
+
     results = []
     for post in posts:
+        weibo_id = str(post.get("weibo_id", ""))
+        if write and weibo_id and weibo_id in existing_ids:
+            print(f"[SKIP] weibo_id={weibo_id} 已在 posts.json 中，跳过生成")
+            continue
         try:
             output_path = write_bits_file(post, output_dir, cdn_prefix, cdn_domain, write)
             results.append(output_path)
         except Exception as e:
-            print(f"[ERROR] 转换失败（weibo_id={post.get('weibo_id')}）：{e}", file=sys.stderr)
+            print(f"[ERROR] 转换失败（weibo_id={weibo_id}）：{e}", file=sys.stderr)
     
     return results
 

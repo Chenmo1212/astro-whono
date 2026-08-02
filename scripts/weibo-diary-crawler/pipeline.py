@@ -141,12 +141,16 @@ def run_full_pipeline(
         else:
             bits_output_dir = Path(bits_output_dir)
         
+        storage_cfg = cfg.get("storage", {}) if isinstance(cfg, dict) else {}
+        json_path = Path(storage_cfg.get("json_path", "")) if storage_cfg.get("mode", "json") == "json" else None
+
         output_paths = batch_write_bits_files(
             posts,
             output_dir=bits_output_dir,
             cdn_prefix=cdn_prefix,
             cdn_domain=cdn_domain,
             write=bits_write,
+            posts_json=json_path,
         )
         logger.info("✓ bits 文件生成完成：{} 个文件", len(output_paths))
     except Exception as e:
