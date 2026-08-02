@@ -25,3 +25,9 @@ python-dotenv==1.0.1
 
 # DeepSeek API（兼容 OpenAI SDK，用于隐私检查）
 openai>=1.54.0
+
+# 图片处理与压缩
+Pillow==12.3.0
+
+# 七牛 CDN 上传
+qiniu==7.18.0

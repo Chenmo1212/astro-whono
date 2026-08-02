@@ -12,6 +12,7 @@ crawler.py —— 微博爬取核心逻辑
 """
 
 import json
+import os
 import re
 from datetime import datetime, date
 from time import sleep
@@ -87,7 +88,8 @@ class DiaryWeiboCrawler:
         else:
             self.fetch_since_date = None
 
-        cookie_str = cfg.get("cookie", "")
+        # 环境变量 WEIBO_COOKIE 优先，其次 config.yaml 中的 cookie 字段
+        cookie_str = os.environ.get("WEIBO_COOKIE") or cfg.get("cookie", "")
         # ---- Cookie 解析（直接复用 weibo.py 逻辑）----
         core_cookies, backup_cookies = parse_cookie_string(cookie_str)
 

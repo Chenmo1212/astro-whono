@@ -1,6 +1,6 @@
 weibo:
-  # 从浏览器开发者工具中复制的完整 Cookie 字符串（获取方法见 README）
-  cookie: "_T_WM=de5ede993b53264cf90a5ce3605a3c1a; SCF=AsfkDSzmpKtQU79WPc7-WPWrMZKcKvDnvTImbpxVMPisG0Ggt3-cIpx73stcrYYdECU8_mvZ9uvYHN6q9Rv-Xzk.; SUB=_2A25Haj08DeRhGeFJ4lQU8CnPwjqIHXVkBjD0rDV6PUJbktAbLRPXkW1NfqZ4bR0mT7yn1ppCUWBQCok3iHYXKofr; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9W57wz6L8IAnSyVaaTnjh1wn5JpX5KMhUgL.FoMN1KqfehM01Kq2dJLoIEnLxKqL1-2LB--LxK-L1hqLB-eLxK-L12BL1h2LxKBLB.2L12epeo2E; SSOLoginState=1785613676; ALF=1788205676"
+  # Cookie 通过环境变量 WEIBO_COOKIE 提供，请勿写入此文件
+  cookie: ""
   # 你自己的微博数字 UID（在个人主页 URL 中可以找到，如 https://weibo.com/u/7796507396）
   uid: "7796507396"
 

@@ -18,7 +18,6 @@ image_processor.py —— 图片压缩与上传集成模块
 
 import os
 import sys
-import json
 import time
 import hashlib
 from pathlib import Path
@@ -39,10 +38,6 @@ except ImportError:
     sys.exit(1)
 
 # ── Config ──────────────────────────────────────────────────────────────────────
-SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent.parent
-SETTINGS_FILE = PROJECT_ROOT / "src" / "data" / "settings" / "ui.json"
-
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 MAX_DIMENSION = 1080      # resize if either side exceeds this (px)
 SKIP_THRESHOLD_KB = 50    # skip compression for files already smaller than this
@@ -73,27 +68,29 @@ class ImageProcessor:
             self._load_qiniu_config()
 
     def _load_qiniu_config(self) -> None:
-        """读取七牛配置"""
-        if not SETTINGS_FILE.exists():
-            print(f"ERROR: settings file not found: {SETTINGS_FILE}")
-            raise FileNotFoundError(str(SETTINGS_FILE))
+        """读取七牛配置（从环境变量读取）"""
+        ak     = os.environ.get("QINIU_ACCESS_KEY", "")
+        sk     = os.environ.get("QINIU_SECRET_KEY", "")
+        bucket = os.environ.get("QINIU_BUCKET", "")
+        domain = os.environ.get("QINIU_DOMAIN", "")
+        path   = os.environ.get("QINIU_PATH", "blog")
 
-        with open(SETTINGS_FILE, encoding="utf-8") as f:
-            data = json.load(f)
-
-        cfg = data.get("imageProvider", {}).get("qiniu", {})
-        required = ("accessKey", "secretKey", "bucket", "domain")
-        missing = [k for k in required if not cfg.get(k)]
+        missing = [k for k, v in {
+            "QINIU_ACCESS_KEY": ak,
+            "QINIU_SECRET_KEY": sk,
+            "QINIU_BUCKET": bucket,
+            "QINIU_DOMAIN": domain,
+        }.items() if not v]
         if missing:
-            print(f"ERROR: missing Qiniu config keys: {', '.join(missing)}")
-            raise ValueError(f"Missing config: {missing}")
+            print(f"ERROR: missing environment variables: {', '.join(missing)}")
+            raise ValueError(f"Missing env vars: {missing}")
 
         self.config = {
-            "access_key": cfg["accessKey"],
-            "secret_key": cfg["secretKey"],
-            "bucket": cfg["bucket"],
-            "domain": cfg["domain"].rstrip("/"),
-            "path": cfg.get("path", "/").strip("/"),
+            "access_key": ak,
+            "secret_key": sk,
+            "bucket": bucket,
+            "domain": domain.rstrip("/"),
+            "path": path.strip("/"),
         }
         self.auth = Auth(self.config["access_key"], self.config["secret_key"])
 
