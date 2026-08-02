@@ -144,11 +144,15 @@ def main():
     def job():
         run_crawl_job(cfg, enable_pipeline=enable_pipeline)
 
-    from scheduler import start_scheduler
+    # --run-now：执行一次后直接退出（供 CI 调用）
+    if args.run_now:
+        job()
+        return
 
+    # 常驻模式：进入 APScheduler 定时循环（本地部署时使用）
+    from scheduler import start_scheduler
     run_time = cfg.get("scheduler", {}).get("run_time", "23:30")
-    # 未传 --run-now 时，首次启动默认也执行一次（方便验证配置）
-    start_scheduler(job_fn=job, run_time=run_time, run_now=True if args.run_now else True)
+    start_scheduler(job_fn=job, run_time=run_time, run_now=False)
 
 
 if __name__ == "__main__":
