@@ -3,8 +3,19 @@ weibo:
   cookie: "_T_WM=de5ede993b53264cf90a5ce3605a3c1a; SCF=AsfkDSzmpKtQU79WPc7-WPWrMZKcKvDnvTImbpxVMPisG0Ggt3-cIpx73stcrYYdECU8_mvZ9uvYHN6q9Rv-Xzk.; SUB=_2A25Haj08DeRhGeFJ4lQU8CnPwjqIHXVkBjD0rDV6PUJbktAbLRPXkW1NfqZ4bR0mT7yn1ppCUWBQCok3iHYXKofr; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9W57wz6L8IAnSyVaaTnjh1wn5JpX5KMhUgL.FoMN1KqfehM01Kq2dJLoIEnLxKqL1-2LB--LxK-L1hqLB-eLxK-L12BL1h2LxKBLB.2L12epeo2E; SSOLoginState=1785613676; ALF=1788205676"
   # 你自己的微博数字 UID（在个人主页 URL 中可以找到，如 https://weibo.com/u/7796507396）
   uid: "7796507396"
-  # 每次爬取最新几条微博（从第1页取，超出页内条数则截取）
+
+  # 爬取模式，二选一：
+  #   count       —— 只爬最新 fetch_count 条（默认日常定时使用）
+  #   since_date  —— 从 fetch_since_date 起一直爬到当前（历史回溯）
+  fetch_mode: "since_date"
+
+  # fetch_mode=count 时有效：抓取最新几条原创微博
   fetch_count: 2
+
+  # fetch_mode=since_date 时有效：爬取该日期（含）之后的所有原创微博
+  # 格式 YYYY-MM-DD，如 2026-01-01
+  fetch_since_date: "2026-01-01"
+
   # 每页请求的微博数量（对应原项目 page_weibo_count）
   page_weibo_count: 10
 
@@ -32,6 +43,18 @@ images:
   timeout: 30
   # 单张图片下载最大重试次数
   max_retries: 3
+
+# 隐私检查配置（使用 DeepSeek API）
+# API 密钥通过环境变量 DEEPSEEK_API_KEY 提供，请勿写入此文件
+privacy:
+  # 是否启用隐私检查
+  enabled: false
+  # 使用的模型（默认 deepseek-chat，更强但更慢可用 deepseek-reasoner）
+  model: "deepseek-chat"
+  # 若为 true，对标记为敏感的文件写入 encrypted: true；false 则仅打印（dry-run）
+  apply: true
+  # 每次 API 调用的超时秒数
+  timeout: 60
 
 # 完整处理管道配置
 pipeline:

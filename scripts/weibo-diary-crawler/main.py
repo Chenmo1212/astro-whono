@@ -8,9 +8,14 @@ import argparse
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 
 import yaml
+from dotenv import load_dotenv
 from loguru import logger
+
+# 自动加载同目录下的 .env 文件
+load_dotenv(Path(__file__).parent / ".env")
 
 # ---- 日志初始化 ----
 os.makedirs("logs", exist_ok=True)

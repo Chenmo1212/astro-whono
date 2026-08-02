@@ -22,3 +22,6 @@ loguru==0.7.3
 
 # 可选：支持从 .env 文件读取环境变量（如 MONGO_URI）
 python-dotenv==1.0.1
+
+# DeepSeek API（兼容 OpenAI SDK，用于隐私检查）
+openai>=1.54.0

@@ -13,7 +13,7 @@ crawler.py —— 微博爬取核心逻辑
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, date
 from time import sleep
 from typing import Optional
 
@@ -72,8 +72,20 @@ class DiaryWeiboCrawler:
           - page_weibo_count : 每页请求条数（默认 10）
         """
         self.uid = str(cfg["uid"])
+        self.fetch_mode = cfg.get("fetch_mode", "count")          # "count" | "since_date"
         self.fetch_count = int(cfg.get("fetch_count", 5))
         self.page_weibo_count = int(cfg.get("page_weibo_count", 10))
+
+        # since_date 模式：解析截止日期
+        since_raw = cfg.get("fetch_since_date", "")
+        if since_raw:
+            try:
+                self.fetch_since_date: Optional[date] = date.fromisoformat(str(since_raw))
+            except ValueError:
+                logger.warning("fetch_since_date 格式错误（{}），忽略", since_raw)
+                self.fetch_since_date = None
+        else:
+            self.fetch_since_date = None
 
         cookie_str = cfg.get("cookie", "")
         # ---- Cookie 解析（直接复用 weibo.py 逻辑）----
@@ -256,11 +268,14 @@ class DiaryWeiboCrawler:
 
     def fetch_latest(self) -> list[dict]:
         """
-        爬取自己账号最新 fetch_count 条原创微博，返回结构化列表。
-        对应 weibo.py Weibo.get_one_page() 简化版：
-          - 只爬第 1 页
-          - 按顺序取前 fetch_count 条原创（card_type=9 且无 retweeted_status）
-          - 不做 since_date 过滤（调用方通过 MongoDB 幂等写入自行去重）
+        爬取自己账号的原创微博，返回结构化列表。根据 fetch_mode 切换两种策略：
+
+        count 模式（默认）：
+          爬取最新 fetch_count 条，仅翻至满足数量为止。
+
+        since_date 模式：
+          从第1页开始逐页翻，收集 created_at >= fetch_since_date 的所有微博，
+          遇到第一条早于 since_date 的微博即停止翻页。
 
         返回字段说明：
           weibo_id      : 微博唯一 ID（字符串）
@@ -271,7 +286,14 @@ class DiaryWeiboCrawler:
           pics          : 图片原始 URL 列表（large 原图）
           local_images  : 下载后的本地路径列表（由 main.py 在下载后写入）
         """
-        logger.info("开始爬取 UID={} 的最新微博（目标条数: {}）", self.uid, self.fetch_count)
+        if self.fetch_mode == "since_date":
+            return self._fetch_since_date()
+        else:
+            return self._fetch_count()
+
+    def _fetch_count(self) -> list[dict]:
+        """爬取最新 fetch_count 条原创微博。"""
+        logger.info("爬取模式: count，目标条数: {}", self.fetch_count)
         results: list[dict] = []
 
         page = 1
@@ -288,31 +310,92 @@ class DiaryWeiboCrawler:
             for card in cards:
                 if len(results) >= self.fetch_count:
                     break
-                # card_type=11 是分组卡片，需展开
-                if card.get("card_type") == 11:
-                    group = card.get("card_group", [])
-                    card = group[0] if group else card
-                # card_type=9 才是微博正文卡片（原项目逻辑）
-                if card.get("card_type") != 9:
-                    continue
-                wb = self._get_one_weibo(card)
+                wb = self._extract_card(card)
                 if wb is None:
                     continue
-                # 为与 MongoDB 文档对齐，统一使用 weibo_id 字段名
-                wb["weibo_id"] = str(wb.pop("id"))
-                wb.setdefault("local_images", [])
                 results.append(wb)
-                logger.info(
-                    "已获取微博 weibo_id={} created_at={}",
-                    wb["weibo_id"],
-                    wb["created_at"],
-                )
+                logger.info("已获取 weibo_id={} created_at={}", wb["weibo_id"], wb["created_at"])
 
-            # 当页不足则停止翻页（避免无意义请求）
             if len(cards) < self.page_weibo_count:
                 break
             page += 1
-            sleep(2)  # 翻页间隔，避免过快被限制
+            sleep(2)
 
         logger.info("爬取完成，共获取 {} 条微博", len(results))
         return results
+
+    def _fetch_since_date(self) -> list[dict]:
+        """
+        从第1页向后翻页，收集 created_at >= fetch_since_date 的所有原创微博。
+        遇到第一条早于 since_date 的微博时立即停止翻页。
+        """
+        since = self.fetch_since_date
+        if since is None:
+            logger.warning("fetch_mode=since_date 但 fetch_since_date 未配置，降级为 count 模式")
+            return self._fetch_count()
+
+        logger.info("爬取模式: since_date，起始日期: {}", since.isoformat())
+        results: list[dict] = []
+
+        page = 1
+        while True:
+            js = self._get_weibo_json(page)
+            if not js or not js.get("ok"):
+                logger.warning("第 {} 页数据为空或请求失败，停止翻页", page)
+                break
+
+            cards = js.get("data", {}).get("cards", [])
+            if not cards:
+                break
+
+            reached_boundary = False
+            for card in cards:
+                wb = self._extract_card(card)
+                if wb is None:
+                    continue
+
+                # 解析微博日期，与 since_date 比较
+                try:
+                    wb_date = datetime.fromisoformat(wb["created_at"]).date()
+                except (ValueError, TypeError):
+                    wb_date = None
+
+                if wb_date is not None and wb_date < since:
+                    logger.info(
+                        "微博 {} 发布于 {}，早于 since_date {}，停止翻页",
+                        wb["weibo_id"], wb_date, since,
+                    )
+                    reached_boundary = True
+                    break
+
+                results.append(wb)
+                logger.info("已获取 weibo_id={} created_at={}", wb["weibo_id"], wb["created_at"])
+
+            if reached_boundary:
+                break
+
+            if len(cards) < self.page_weibo_count:
+                logger.info("第 {} 页不足一页，已到达最早数据，停止翻页", page)
+                break
+
+            page += 1
+            sleep(2)
+
+        logger.info("爬取完成，共获取 {} 条微博（since {}）", len(results), since.isoformat())
+        return results
+
+    def _extract_card(self, card: dict) -> Optional[dict]:
+        """从一张 card 中提取微博，返回标准化字典，失败或跳过则返回 None。"""
+        # card_type=11 是分组卡片，需展开
+        if card.get("card_type") == 11:
+            group = card.get("card_group", [])
+            card = group[0] if group else card
+        # card_type=9 才是微博正文卡片
+        if card.get("card_type") != 9:
+            return None
+        wb = self._get_one_weibo(card)
+        if wb is None:
+            return None
+        wb["weibo_id"] = str(wb.pop("id"))
+        wb.setdefault("local_images", [])
+        return wb

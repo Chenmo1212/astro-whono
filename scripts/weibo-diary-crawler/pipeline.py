@@ -10,9 +10,16 @@ pipeline.py —— 完整爬取 → 压缩 → 上传 → bits转换 的处理�
     posts = run_full_pipeline(cfg, cdn_domain="https://cdn.chenmo1212.cn")
 """
 
+import os
 import sys
 from datetime import datetime
+from pathlib import Path
+
+from dotenv import load_dotenv
 from loguru import logger
+
+# 自动加载同目录下的 .env 文件
+load_dotenv(Path(__file__).parent / ".env")
 
 from crawler import DiaryWeiboCrawler
 from image_downloader import download_weibo_images
@@ -31,7 +38,7 @@ def run_full_pipeline(
     bits_output_dir = None,
 ) -> list[dict]:
     """
-    完整处理管道：爬取 → 下载图片 → 压缩上传 → 生成 bits markdown。
+    完整处理管道：爬取 → 下载图片 → 压缩上传 → 生成 bits markdown → 隐私检查。
     
     Args:
         cfg: 配置字典（config.yaml 内容）
@@ -123,8 +130,9 @@ def run_full_pipeline(
         logger.exception("图片上传失败：{}", e)
 
     # ── 步骤4：生成 bits markdown ──
+    output_paths = []
     try:
-        logger.info("【步骤 4/4】生成 bits markdown 文件...")
+        logger.info("【步骤 4/5】生成 bits markdown 文件...")
         
         from pathlib import Path
         if bits_output_dir is None:
@@ -144,9 +152,41 @@ def run_full_pipeline(
     except Exception as e:
         logger.exception("bits 文件生成失败：{}", e)
 
-    # ── 步骤5：写入存储 ──
+    # ── 步骤5：隐私检查 ──
+    privacy_cfg = cfg.get("privacy", {})
+    privacy_enabled = privacy_cfg.get("enabled", False)
+    if privacy_enabled and bits_write and output_paths:
+        try:
+            logger.info("【步骤 5/6】运行隐私敏感性检查...")
+            from check_privacy import check_and_apply_privacy
+
+            api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+            if not api_key:
+                logger.warning(
+                    "check_privacy: 未设置环境变量 DEEPSEEK_API_KEY，跳过隐私检查"
+                )
+            else:
+                privacy_results = check_and_apply_privacy(
+                    file_paths=output_paths,
+                    api_key=api_key,
+                    model=privacy_cfg.get("model", "deepseek-chat"),
+                    timeout=int(privacy_cfg.get("timeout", 60)),
+                    apply=privacy_cfg.get("apply", True),
+                )
+                flagged = [r for r in privacy_results if r["sensitive"] and not r["error"]]
+                errors  = [r for r in privacy_results if r["error"]]
+                logger.info(
+                    "✓ 隐私检查完成：{} 篇需加密，{} 篇出错",
+                    len(flagged), len(errors),
+                )
+        except Exception as e:
+            logger.exception("隐私检查失败：{}", e)
+    elif privacy_enabled and not bits_write:
+        logger.debug("check_privacy: bits_write=False，跳过隐私检查（无文件写入）")
+
+    # ── 步骤6：写入存储 ──
     try:
-        logger.info("【步骤 5/5】持久化存储...")
+        logger.info("【步骤 6/6】持久化存储...")
         storage = create_storage(cfg)
         crawled_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         for post in posts:
