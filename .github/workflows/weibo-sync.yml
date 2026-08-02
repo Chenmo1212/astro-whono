@@ -58,7 +58,18 @@ jobs:
           QINIU_BUCKET: ${{ vars.QINIU_BUCKET }}
           QINIU_DOMAIN: ${{ vars.QINIU_DOMAIN }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: python main.py --run-now
+        run: |
+          ARGS="--run-now"
+          if [ -n "${{ inputs.fetch_mode }}" ]; then
+            ARGS="$ARGS --fetch-mode ${{ inputs.fetch_mode }}"
+          fi
+          if [ -n "${{ inputs.fetch_count }}" ]; then
+            ARGS="$ARGS --fetch-count ${{ inputs.fetch_count }}"
+          fi
+          if [ -n "${{ inputs.fetch_since_date }}" ]; then
+            ARGS="$ARGS --fetch-since-date ${{ inputs.fetch_since_date }}"
+          fi
+          python main.py $ARGS
 
       # ── 4. commit 新 bits 文件并 push，触发博客 ci.yml 完成部署 ───────────
       - name: Commit & push new bits files
