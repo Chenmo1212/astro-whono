@@ -33,6 +33,20 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "src" / "content" / "bits"
 
+# ── Keyword → tag mapping ──────────────────────────────────────────────────────
+# 正文中出现任意关键词时，自动追加对应 tag（大小写敏感）
+# 格式：{ "tag名称": ["触发关键词", ...] }
+KEYWORD_TAG_MAP: dict[str, list[str]] = {
+    "元宝":     ["元宝", "景儿"],
+    "健身":     ["健身", "撸铁", "跑步", "有氧", "力量训练"],
+    "读书":     ["读书", "在读", "看书", "翻完了", "读完了"],
+    "电影":     ["电影", "观影", "看了场", "影院"],
+    "旅行":     ["旅行", "出发", "机票", "高铁", "入住"],
+    "美食":     ["美食", "吃了", "好吃", "下馆子", "外卖"],
+    "工作":     ["工作", "需求", "上线", "代码", "bug", "开会", "项目", "同事", "经理"],
+    "生活":     ["室友", "房东", "朋友", "邻居", "同学", "聚餐", "串门", "闺蜜", "干饭"],
+}
+
 # ── Regex patterns ─────────────────────────────────────────────────────────────
 
 # HTML hashtag anchor: <a href="...weibo..."><span>...</span></a>
@@ -177,16 +191,23 @@ def post_to_bits_markdown(
     if topics_str:
         tag_list = [t.strip() for t in topics_str.split(",") if t.strip()]
     
-    # 添加固定标签
-    if fixed_tag not in tag_list:
+    # 仅当 topics 中已包含固定标签时才保留，不自动补充
+    if fixed_tag in tag_list:
+        # 确保固定标签排在首位
+        tag_list.remove(fixed_tag)
         tag_list.insert(0, fixed_tag)
-    
-    # 构建 tags 块
-    tags_block = "tags:\n" + "\n".join(f"  - {t}" for t in tag_list)
-    
+
     # 使用 text_html 优先，降级到 text
     body_raw = post.get("text_html") or post.get("text", "")
     body_clean = clean_body(body_raw)
+
+    # 根据关键词映射表自动追加 tag
+    for tag, keywords in KEYWORD_TAG_MAP.items():
+        if tag not in tag_list and any(kw in body_clean for kw in keywords):
+            tag_list.append(tag)
+
+    # 构建 tags 块
+    tags_block = "tags:\n" + "\n".join(f"  - {t}" for t in tag_list)
     
     # 提取本地图片并转换为 CDN URL
     local_images = post.get("local_images", [])
