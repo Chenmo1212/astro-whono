@@ -57,6 +57,7 @@ jobs:
           QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
           QINIU_BUCKET: ${{ vars.QINIU_BUCKET }}
           QINIU_DOMAIN: ${{ vars.QINIU_DOMAIN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python main.py --run-now
 
       # ── 4. commit 新 bits 文件并 push，触发博客 ci.yml 完成部署 ───────────
