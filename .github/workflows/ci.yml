@@ -101,3 +101,21 @@ jobs:
           REMOTE_HOST: ${{ vars.REMOTE_HOST }}
           REMOTE_USER: 'root'
           TARGET: ${{ vars.TARGET }}
+
+      - name: Notify
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          ICON="✅"
+          [ "$STATUS" != "success" ] && ICON="❌"
+          curl -s -X POST https://api.chenmo1212.cn/message/entries \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"type\": \"notification\",
+              \"metadata\": {
+                \"title\": \"${ICON} CI/CD $STATUS\",
+                \"content\": \"Repo: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nTriggered by: ${{ github.actor }}\nDetails: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",
+                \"priority\": \"high\",
+                \"target_user\": \"admin\"
+              }
+            }"
