@@ -100,14 +100,14 @@ def string_to_int(value) -> int:
         return 0
 
 
-def parse_cookie_string(cookie_string: str) -> dict:
+def parse_cookie_string(cookie_string: str) -> tuple[dict, dict]:
     """
     将浏览器复制的原始 Cookie 字符串解析为字典。
     优先提取核心 SUB 字段，保底则全量解析。
     逻辑来自 weibo.py Weibo.__init__() 中的 Cookie 清洗部分。
     """
     if not cookie_string:
-        return {}
+        return {}, {}
 
     core: dict = {}
     backup: dict = {}
