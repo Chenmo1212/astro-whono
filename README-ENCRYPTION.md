@@ -295,7 +295,7 @@ Supported browsers:
 
 1. Create `.env` file:
 ```bash
-ENCRYPTION_PASSWORD=MySecurePassword123!
+ENCRYPTION_PASSWORD=<your-strong-password-here>
 
 # Optional: If API is on a different server
 # PUBLIC_API_BASE_URL=https://api.example.com
