@@ -125,10 +125,12 @@ def run_full_pipeline(
         posts = crawler.fetch_latest()
         if not posts:
             logger.warning("未获取到任何微博，管道结束")
+            _write_pipeline_summary([], [], summary_path)
             return []
         logger.info("✓ 爬取完成：共获取 {} 条微博", len(posts))
     except Exception as e:
         logger.exception("爬取失败：{}", e)
+        _write_pipeline_summary([], [], summary_path)
         return []
 
     # ── 去重：过滤掉已在 posts.json 中存在的微博 ──
@@ -146,6 +148,7 @@ def run_full_pipeline(
                     logger.info("去重：跳过 {} 条已存在于 posts.json 的微博，剩余 {} 条待处理", skipped, len(posts))
             if not posts:
                 logger.info("所有微博均已处理，管道结束")
+                _write_pipeline_summary([], [], summary_path)
                 return []
     except Exception as e:
         logger.warning("去重检查失败，继续处理全部微博：{}", e)
