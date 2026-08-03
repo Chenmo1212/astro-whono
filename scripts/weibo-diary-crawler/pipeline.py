@@ -21,6 +21,9 @@ from loguru import logger
 # 自动加载同目录下的 .env 文件
 load_dotenv(Path(__file__).parent / ".env")
 
+# pipeline.py 所在目录（scripts/weibo-diary-crawler/）
+_SCRIPT_DIR = Path(__file__).resolve().parent
+
 from crawler import DiaryWeiboCrawler
 from image_downloader import download_weibo_images
 from image_processor import process_post_images, print_process_summary
@@ -91,7 +94,7 @@ def run_full_pipeline(
     image_dry_run: bool = False,
     bits_write: bool = True,
     bits_output_dir = None,
-    summary_path: str = "pipeline_summary.json",
+    summary_path: str = str(_SCRIPT_DIR / "pipeline_summary.json"),
 ) -> list[dict]:
     """
     完整处理管道：爬取 → 下载图片 → 压缩上传 → 生成 bits markdown → 隐私检查。
