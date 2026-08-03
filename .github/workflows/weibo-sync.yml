@@ -90,17 +90,10 @@ jobs:
       - name: Notify
         if: always()
         run: |
-          STATUS="${{ job.status }}"
-          ICON="✅"
-          [ "$STATUS" != "success" ] && ICON="❌"
-          curl -s -X POST https://api.chenmo1212.cn/message/entries \
-            -H 'Content-Type: application/json' \
-            -d "{
-              \"type\": \"notification\",
-              \"metadata\": {
-                \"title\": \"${ICON} Weibo Sync $STATUS\",
-                \"content\": \"Repo: ${{ github.repository }}\nDate: $(date -u +'%Y-%m-%d')\nDetails: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",
-                \"priority\": \"high\",
-                \"target_user\": \"admin\"
-              }
-            }"
+          python wechat.py --notify-weibo \
+            "https://api.chenmo1212.cn/message/entries" \
+            "${{ job.status }}" \
+            "${{ github.repository }}" \
+            "${{ github.run_id }}" \
+            "${{ github.server_url }}" \
+            "scripts/weibo-diary-crawler/pipeline_summary.json"

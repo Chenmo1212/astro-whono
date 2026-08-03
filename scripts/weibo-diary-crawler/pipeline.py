@@ -28,6 +28,61 @@ from bits_converter import batch_write_bits_files
 from storage import create_storage
 
 
+def _write_pipeline_summary(posts: list[dict], privacy_results: list[dict], summary_path: str) -> None:
+    """
+    将管道运行结果写入 JSON 摘要文件，供通知脚本读取。
+
+    Args:
+        posts: 处理后的微博列表
+        privacy_results: 隐私检查结果列表（可为空）
+        summary_path: 输出 JSON 文件路径
+    """
+    post_summaries = []
+    for post in posts:
+        processed = post.get("processed_images", {})
+        cdn_urls = processed.get("cdn_urls", [])
+        img_errors = processed.get("errors", [])
+
+        # 是否被隐私检查标记为加密
+        encrypted = False
+        if privacy_results:
+            filename = None
+            created_at = post.get("created_at", "")
+            if created_at:
+                try:
+                    from datetime import datetime as _dt
+                    dt = _dt.fromisoformat(created_at)
+                    filename = f"bits-{dt.strftime('%Y-%m-%d-%H%M')}.md"
+                except (ValueError, TypeError):
+                    pass
+            if filename:
+                for r in privacy_results:
+                    if os.path.basename(r.get("path", "")) == filename and r.get("sensitive"):
+                        encrypted = True
+                        break
+
+        post_summaries.append({
+            "weibo_id":    str(post.get("weibo_id", "")),
+            "created_at":  post.get("created_at", ""),
+            "image_count": len(cdn_urls) if cdn_urls else len(post.get("local_images", [])),
+            "img_errors":  len(img_errors),
+            "encrypted":   encrypted,
+        })
+
+    summary = {
+        "total":         len(posts),
+        "encrypted":     sum(1 for p in post_summaries if p["encrypted"]),
+        "total_images":  sum(p["image_count"] for p in post_summaries),
+        "img_errors":    sum(p["img_errors"] for p in post_summaries),
+        "posts":         post_summaries,
+    }
+
+    with open(summary_path, "w", encoding="utf-8") as f:
+        import json as _json
+        _json.dump(summary, f, ensure_ascii=False, indent=2)
+    logger.info("✓ 管道摘要已写入：{}", summary_path)
+
+
 def run_full_pipeline(
     cfg: dict,
     cdn_domain: str = "",
@@ -36,6 +91,7 @@ def run_full_pipeline(
     image_dry_run: bool = False,
     bits_write: bool = True,
     bits_output_dir = None,
+    summary_path: str = "pipeline_summary.json",
 ) -> list[dict]:
     """
     完整处理管道：爬取 → 下载图片 → 压缩上传 → 生成 bits markdown → 隐私检查。
@@ -48,6 +104,7 @@ def run_full_pipeline(
         image_dry_run: 图片处理是否为干运行（仅压缩，不上传）
         bits_write: 是否实际写入 bits 文件
         bits_output_dir: bits 输出目录（默认 src/content/bits）
+        summary_path: 管道摘要 JSON 输出路径（供通知脚本读取）
     
     Returns:
         处理后的完整微博列表
@@ -171,6 +228,7 @@ def run_full_pipeline(
         logger.exception("bits 文件生成失败：{}", e)
 
     # ── 步骤5：隐私检查 ──
+    pipeline_privacy_results: list[dict] = []
     privacy_cfg = cfg.get("privacy", {})
     privacy_enabled = privacy_cfg.get("enabled", False)
     if privacy_enabled and bits_write and output_paths:
@@ -184,15 +242,15 @@ def run_full_pipeline(
                     "check_privacy: 未设置环境变量 DEEPSEEK_API_KEY，跳过隐私检查"
                 )
             else:
-                privacy_results = check_and_apply_privacy(
+                pipeline_privacy_results = check_and_apply_privacy(
                     file_paths=output_paths,
                     api_key=api_key,
                     model=privacy_cfg.get("model", "deepseek-chat"),
                     timeout=int(privacy_cfg.get("timeout", 60)),
                     apply=privacy_cfg.get("apply", True),
                 )
-                flagged = [r for r in privacy_results if r["sensitive"] and not r["error"]]
-                errors  = [r for r in privacy_results if r["error"]]
+                flagged = [r for r in pipeline_privacy_results if r["sensitive"] and not r["error"]]
+                errors  = [r for r in pipeline_privacy_results if r["error"]]
                 logger.info(
                     "✓ 隐私检查完成：{} 篇需加密，{} 篇出错",
                     len(flagged), len(errors),
@@ -215,6 +273,12 @@ def run_full_pipeline(
         logger.info("✓ 存储写入完成：新增 {} 条，更新 {} 条", new_cnt, upd_cnt)
     except Exception as e:
         logger.exception("存储写入失败：{}", e)
+
+    # ── 写入管道摘要（供通知脚本读取）──
+    try:
+        _write_pipeline_summary(posts, pipeline_privacy_results, summary_path)
+    except Exception as e:
+        logger.warning("管道摘要写入失败（不影响结果）：{}", e)
 
     logger.info("=" * 70)
     logger.info("✓ 完整管道执行完成")
