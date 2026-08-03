@@ -79,7 +79,7 @@ jobs:
           git add src/content/bits/
           git add scripts/weibo-diary-crawler/data/posts.json
           git add scripts/weibo-diary-crawler/images/
-          git add scripts/weibo-diary-crawler/pipeline_summary.json
+          git add --ignore-missing scripts/weibo-diary-crawler/pipeline_summary.json
           if git diff --cached --quiet; then
             echo "✓ No new files today, skipping commit."
           else
