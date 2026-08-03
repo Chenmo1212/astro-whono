@@ -24,6 +24,12 @@ export type BitsYearOption = {
   count: number;
 };
 
+export type BitsEncryptedOption = {
+  encrypted: boolean;
+  count: number;
+  label: string;
+};
+
 export type BitsIndexItem = {
   key: string;
   slug: string;
@@ -37,6 +43,7 @@ export type BitsIndexItem = {
   year: number | null;
   page: number;
   href: string;
+  encrypted: boolean;
   thumbnail?: {
     src: string;
     width?: number;
@@ -102,6 +109,31 @@ const buildBitsYearOptions = (bits: readonly BitsEntry[]): BitsYearOption[] => {
     }));
 };
 
+const buildBitsEncryptedOptions = (bits: readonly BitsEntry[]): BitsEncryptedOption[] => {
+  const encryptedCount = bits.filter((bit) => bit.data.encrypted === true).length;
+  const decryptedCount = bits.length - encryptedCount;
+
+  const options: BitsEncryptedOption[] = [];
+
+  if (decryptedCount > 0) {
+    options.push({
+      encrypted: false,
+      count: decryptedCount,
+      label: '公开'
+    });
+  }
+
+  if (encryptedCount > 0) {
+    options.push({
+      encrypted: true,
+      count: encryptedCount,
+      label: '加密'
+    });
+  }
+
+  return options;
+};
+
 export async function getSortedBits(options: BitsQueryOptions = {}) {
   if (!shouldUseDefaultBitsCache(options.includeDraft)) {
     return loadSortedBits(options);
@@ -119,6 +151,7 @@ export async function getBitsPageData(currentPage: number, pageSize: number) {
   return {
     items: getPageSlice(bits, currentPage, pageSize),
     yearOptions: buildBitsYearOptions(bits),
+    encryptedOptions: buildBitsEncryptedOptions(bits),
     totalCount,
     totalPages
   };
@@ -174,6 +207,7 @@ const buildBitsIndex = async (pageSize: number) => {
       year: bit.data.date ? bit.data.date.getFullYear() : null,
       page,
       href: withBase(hrefPath),
+      encrypted: bit.data.encrypted === true,
       thumbnail: firstImage
         ? {
             src: withBase(firstImage.src),

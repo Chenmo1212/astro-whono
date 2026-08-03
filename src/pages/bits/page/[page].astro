@@ -12,7 +12,7 @@ export async function getStaticPaths() {
 }
 
 const currentPage = Number(Astro.params.page);
-const { items, yearOptions, totalCount, totalPages } = await getBitsPageData(currentPage, PAGE_SIZE_BITS);
+const { items, yearOptions, encryptedOptions, totalCount, totalPages } = await getBitsPageData(currentPage, PAGE_SIZE_BITS);
 
 if (!Number.isInteger(currentPage) || currentPage <= 1 || currentPage > totalPages) {
   throw new Error(`Unknown bits page: ${Astro.params.page ?? ''}`);
@@ -26,6 +26,7 @@ if (!Number.isInteger(currentPage) || currentPage <= 1 || currentPage > totalPag
   currentPage={currentPage}
   totalPages={totalPages}
   yearOptions={yearOptions}
+  encryptedOptions={encryptedOptions}
   prevPath={currentPage === 2 ? getBitsPagePath(1) : getBitsPagePath(currentPage - 1)}
   nextPath={currentPage < totalPages ? getBitsPagePath(currentPage + 1) : null}
 />

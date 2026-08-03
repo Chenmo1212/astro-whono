@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import BitCard from './BitCard.astro';
 import Lightbox from './Lightbox.astro';
 import '../styles/bits-page.css';
-import { MAX_PRIMARY_BITS_FILTER_YEARS, getBitsDerivedText, type BitsEntry, type BitsYearOption } from '../lib/bits';
+import { MAX_PRIMARY_BITS_FILTER_YEARS, getBitsDerivedText, type BitsEntry, type BitsYearOption, type BitsEncryptedOption } from '../lib/bits';
 import { containsMarkdownMath } from '../lib/markdown-math';
 import {
   MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
@@ -22,7 +22,8 @@ const {
   prevPath = null,
   resultCount,
   totalPages,
-  yearOptions = []
+  yearOptions = [],
+  encryptedOptions = []
 } = Astro.props as {
   currentPage: number;
   items: BitsEntry[];
@@ -31,6 +32,7 @@ const {
   resultCount: number;
   totalPages: number;
   yearOptions?: BitsYearOption[];
+  encryptedOptions?: BitsEncryptedOption[];
 };
 
 const base = import.meta.env.BASE_URL ?? '/';
@@ -171,6 +173,55 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
       ) : null}
 
       <div class="bits-controls__actions">
+          {encryptedOptions.length > 0 ? (
+            <div class="bits-encrypted-more" data-bits-encrypted-more data-open="false" data-bits-client-control>
+              <button
+                class="bits-encrypted-trigger"
+                type="button"
+                data-bits-encrypted-trigger
+                aria-label="按加密状态筛选"
+                aria-expanded="false"
+                aria-controls="bits-encrypted-menu"
+              >
+                <span data-bits-encrypted-label>加密</span>
+                <span class="bits-encrypted-caret" aria-hidden="true"></span>
+              </button>
+              <div
+                class="bits-encrypted-menu"
+                id="bits-encrypted-menu"
+                data-bits-encrypted-menu
+                hidden
+                aria-label="加密状态筛选"
+              >
+                <div class="bits-encrypted-menu__list">
+                  <button
+                    class="bits-encrypted-menu__item is-active"
+                    type="button"
+                    data-bits-encrypted-menu-item
+                    data-bits-encrypted=""
+                    aria-label="显示全部絮语"
+                    aria-pressed="true"
+                  >
+                    <span class="bits-encrypted-menu__item-label">全部</span>
+                  </button>
+                  {encryptedOptions.map((option) => (
+                    <button
+                      class="bits-encrypted-menu__item"
+                      type="button"
+                      data-bits-encrypted-menu-item
+                      data-bits-encrypted={option.encrypted ? 'true' : 'false'}
+                      aria-label={`筛选${option.label}絮语，共 ${option.count} 条`}
+                      aria-pressed="false"
+                    >
+                      <span class="bits-encrypted-menu__item-label">{option.label}</span>
+                      <span class="bits-encrypted-menu__item-count">{option.count}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
         <div class="bits-controls__search-cluster" data-has-year-filter={yearOptions.length > 0 ? 'true' : 'false'}>
           <form class="bits-search" role="search" data-bits-search-form data-bits-client-control>
             <label class="sr-only" for="bits-search">搜索絮语</label>

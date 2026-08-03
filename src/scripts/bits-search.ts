@@ -27,6 +27,12 @@ const yearMenuButtons = Array.from(document.querySelectorAll<HTMLButtonElement>(
 const yearSelect = document.querySelector<HTMLSelectElement>('[data-bits-year-select]');
 const yearSelectWrap = yearSelect?.closest<HTMLElement>('.bits-year-select-wrap') ?? null;
 
+const encryptedMoreRoot = document.querySelector<HTMLElement>('[data-bits-encrypted-more]');
+const encryptedTrigger = document.querySelector<HTMLButtonElement>('[data-bits-encrypted-trigger]');
+const encryptedLabel = document.querySelector<HTMLElement>('[data-bits-encrypted-label]');
+const encryptedMenu = document.querySelector<HTMLElement>('[data-bits-encrypted-menu]');
+const encryptedMenuItems = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bits-encrypted-menu-item]'));
+
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
 const indexUrl = withBase('bits/index.json');
@@ -35,6 +41,7 @@ const FILTER_DEBOUNCE_MS = 120;
 const MAX_VISIBLE_RESULTS = 50;
 const QUERY_PARAM_QUERY = 'q';
 const QUERY_PARAM_YEAR = 'year';
+const QUERY_PARAM_ENCRYPTED = 'encrypted';
 
 type IndexItem = {
   key?: string;
@@ -49,6 +56,7 @@ type IndexItem = {
   year?: number | null;
   page?: number;
   href?: string;
+  encrypted?: boolean;
   thumbnail?: {
     src: string;
     width?: number;
@@ -84,6 +92,7 @@ const shouldBypassIndexCache = import.meta.env.DEV;
 let indexHay: Map<string, string> | null = null;
 let filterRunId = 0;
 let activeYear: number | null = null;
+let activeEncrypted: boolean | null = null;
 let isMoreMenuOpen = false;
 let statusTimer: number | null = null;
 const filterRunner = createDebouncedAsyncRunner(() => applyFilter(), FILTER_DEBOUNCE_MS);
@@ -305,6 +314,25 @@ const closeMoreMenu = () => {
   setMoreMenuOpen(false);
 };
 
+const setActiveEncryptedState = (encrypted: boolean | null) => {
+  activeEncrypted = encrypted;
+  encryptedMenuItems.forEach((button) => {
+    const buttonEncrypted = button.dataset.bitsEncrypted;
+    const isActive = buttonEncrypted === '' ? encrypted === null : (encrypted === (buttonEncrypted === 'true'));
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
+  if (encryptedLabel) {
+    if (encrypted === null) {
+      encryptedLabel.textContent = '加密';
+    } else if (encrypted === true) {
+      encryptedLabel.textContent = '加密';
+    } else {
+      encryptedLabel.textContent = '公开';
+    }
+  }
+};
+
 const setActiveYearState = (year: number | null) => {
   activeYear = year;
   yearButtons.forEach((button) => {
@@ -339,7 +367,7 @@ const setActiveYearState = (year: number | null) => {
   window.requestAnimationFrame(updateYearCursor);
 };
 
-const getFilterUrl = (query: string, year: number | null) => {
+const getFilterUrl = (query: string, year: number | null, encrypted: boolean | null = activeEncrypted) => {
   const nextUrl = new URL(window.location.href);
   nextUrl.hash = '';
   if (query) {
@@ -352,12 +380,17 @@ const getFilterUrl = (query: string, year: number | null) => {
   } else {
     nextUrl.searchParams.delete(QUERY_PARAM_YEAR);
   }
+  if (encrypted !== null) {
+    nextUrl.searchParams.set(QUERY_PARAM_ENCRYPTED, String(encrypted));
+  } else {
+    nextUrl.searchParams.delete(QUERY_PARAM_ENCRYPTED);
+  }
   const search = nextUrl.searchParams.toString();
   return `${nextUrl.pathname}${search ? `?${search}` : ''}`;
 };
 
-const syncUrlState = (query = getTrimmedQuery(), year = activeYear) => {
-  const next = getFilterUrl(query, year);
+const syncUrlState = (query = getTrimmedQuery(), year = activeYear, encrypted = activeEncrypted) => {
+  const next = getFilterUrl(query, year, encrypted);
   const current = `${window.location.pathname}${window.location.search}`;
   if (next !== current) {
     window.history.replaceState({}, '', next);
@@ -368,18 +401,25 @@ const readInitialState = () => {
   const url = new URL(window.location.href);
   const query = (url.searchParams.get(QUERY_PARAM_QUERY) ?? '').trim();
   const rawYear = (url.searchParams.get(QUERY_PARAM_YEAR) ?? '').trim();
-  if (!rawYear) {
-    return { query, year: null as number | null };
+  const rawEncrypted = (url.searchParams.get(QUERY_PARAM_ENCRYPTED) ?? '').trim();
+
+  let year: number | null = null;
+  if (rawYear) {
+    const parsedYear = Number(rawYear);
+    if (Number.isFinite(parsedYear) && availableYears.has(parsedYear)) {
+      year = parsedYear;
+    }
   }
 
-  const parsedYear = Number(rawYear);
-  if (!Number.isFinite(parsedYear) || !availableYears.has(parsedYear)) {
-    return { query, year: null as number | null };
+  let encrypted: boolean | null = null;
+  if (rawEncrypted) {
+    encrypted = rawEncrypted === 'true';
   }
 
   return {
     query,
-    year: parsedYear
+    year,
+    encrypted
   };
 };
 
@@ -478,11 +518,12 @@ const renderResults = (matchedItems: IndexItem[]) => {
   resultsRoot.removeAttribute('hidden');
 };
 
-const filterIndexItems = (index: IndexItem[], queryTerms: string[], year: number | null) =>
+const filterIndexItems = (index: IndexItem[], queryTerms: string[], year: number | null, encrypted: boolean | null) =>
   index.filter((item) => {
     const key = getIndexKey(item);
     if (!key) return false;
     if (year !== null && item.year !== year) return false;
+    if (encrypted !== null && item.encrypted !== encrypted) return false;
     const hay = indexHay?.get(key) || '';
     return queryTerms.every((term) => hay.includes(term));
   });
@@ -499,9 +540,10 @@ const resetFilters = (options: { focusInput?: boolean } = {}) => {
     input.value = '';
   }
   setActiveYearState(null);
+  setActiveEncryptedState(null);
   showBrowse();
   setStatus('');
-  syncUrlState('', null);
+  syncUrlState('', null, null);
   if (options.focusInput) {
     input?.focus();
   }
@@ -532,6 +574,8 @@ const setDegradedMode = () => {
     yearSelect.setAttribute('aria-disabled', 'true');
   }
   yearSelectWrap?.setAttribute('data-disabled', 'true');
+  encryptedTrigger?.setAttribute('aria-disabled', 'true');
+  encryptedTrigger?.setAttribute('disabled', 'true');
   closeMoreMenu();
   setStatus('索引加载失败，已禁用搜索');
   showBrowse();
@@ -570,10 +614,10 @@ const applyFilter = async (preloadedIndex: IndexItem[] | null = null) => {
   const queryTerms = tokenizeSearchQuery(rawQuery);
   const normalizedQuery = rawQuery.toLowerCase();
 
-  if (rawQuery === '' && activeYear === null) {
+  if (rawQuery === '' && activeYear === null && activeEncrypted === null) {
     showBrowse();
     setStatus('');
-    syncUrlState('', null);
+    syncUrlState('', null, null);
     return;
   }
 
@@ -586,9 +630,9 @@ const applyFilter = async (preloadedIndex: IndexItem[] | null = null) => {
     return;
   }
 
-  syncUrlState(rawQuery, activeYear);
+  syncUrlState(rawQuery, activeYear, activeEncrypted);
 
-  const matchedItems = filterIndexItems(index, queryTerms, activeYear);
+  const matchedItems = filterIndexItems(index, queryTerms, activeYear, activeEncrypted);
   if (matchedItems.length === 0) {
     showBrowse();
     if (resultsRoot && resultsListEl) {
@@ -751,6 +795,16 @@ yearMenu?.addEventListener('keydown', (event) => {
   yearMenuButtons[nextIndex]?.focus();
 });
 
+const closeEncryptedMenu = () => {
+  if (!encryptedMoreRoot || !encryptedTrigger || !encryptedMenu) {
+    return;
+  }
+  encryptedMoreRoot.dataset.open = 'false';
+  encryptedTrigger.classList.remove('is-open');
+  encryptedTrigger.setAttribute('aria-expanded', 'false');
+  encryptedMenu.setAttribute('hidden', 'true');
+};
+
 yearSelect?.addEventListener('change', async () => {
   if (indexLoader.hasFailed()) return;
 
@@ -777,11 +831,56 @@ document.addEventListener('pointerdown', (event) => {
   const target = event.target;
   if (target instanceof Node && yearMoreRoot.contains(target)) return;
   closeMoreMenu();
+
+  if (encryptedMoreRoot && encryptedMoreRoot.dataset.open === 'true') {
+    if (target instanceof Node && encryptedMoreRoot.contains(target)) return;
+    closeEncryptedMenu();
+  }
 });
 
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
   closeMoreMenu();
+  closeEncryptedMenu();
+});
+
+encryptedTrigger?.addEventListener('click', (event) => {
+  event.preventDefault();
+  if (indexLoader.hasFailed()) return;
+  if (!encryptedMoreRoot || !encryptedMenu) return;
+  const isOpen = encryptedMoreRoot.dataset.open === 'true';
+  if (isOpen) {
+    closeEncryptedMenu();
+  } else {
+    encryptedMoreRoot.dataset.open = 'true';
+    encryptedTrigger.classList.add('is-open');
+    encryptedTrigger.setAttribute('aria-expanded', 'true');
+    encryptedMenu.removeAttribute('hidden');
+  }
+});
+
+encryptedMenuItems.forEach((button) => {
+  button.addEventListener('click', async () => {
+    if (indexLoader.hasFailed()) return;
+    const buttonEncrypted = button.dataset.bitsEncrypted;
+    const encrypted = buttonEncrypted === '' ? null : (buttonEncrypted === 'true');
+    if (activeEncrypted === encrypted) {
+      closeEncryptedMenu();
+      return;
+    }
+
+    setActiveEncryptedState(encrypted);
+    closeEncryptedMenu();
+    await applyFilter();
+  });
+});
+
+encryptedMoreRoot?.addEventListener('focusout', (event) => {
+  const nextTarget = event.relatedTarget;
+  if (nextTarget instanceof Node && encryptedMoreRoot.contains(nextTarget)) {
+    return;
+  }
+  closeEncryptedMenu();
 });
 
 window.addEventListener('resize', () => {
@@ -796,8 +895,9 @@ if (input && initialState.query) {
   input.value = initialState.query;
 }
 setActiveYearState(initialState.year);
-syncUrlState(initialState.query, initialState.year);
+setActiveEncryptedState(initialState.encrypted);
+syncUrlState(initialState.query, initialState.year, initialState.encrypted);
 
-if (initialState.query || initialState.year !== null) {
+if (initialState.query || initialState.year !== null || initialState.encrypted !== null) {
   void applyFilter();
 }
