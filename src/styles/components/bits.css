@@ -156,7 +156,7 @@
 .bits-year-menu {
   position: absolute;
   top: calc(100% + 10px);
-  right: 0;
+  left: 0;
   width: max-content;
   min-width: 136px;
   max-width: min(180px, calc(100vw - 32px));
@@ -307,7 +307,7 @@
 .bits-encrypted-menu {
  position: absolute;
  top: calc(100% + 10px);
- right: 0;
+ left: 0;
  width: max-content;
  min-width: 120px;
  max-width: min(160px, calc(100vw - 32px));
