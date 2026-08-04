@@ -174,52 +174,70 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 
       <div class="bits-controls__actions">
           {encryptedOptions.length > 0 ? (
-            <div class="bits-encrypted-more" data-bits-encrypted-more data-open="false" data-bits-client-control>
-              <button
-                class="bits-encrypted-trigger"
-                type="button"
-                data-bits-encrypted-trigger
-                aria-label="按加密状态筛选"
-                aria-expanded="false"
-                aria-controls="bits-encrypted-menu"
-              >
-                <span data-bits-encrypted-label>加密</span>
-                <span class="bits-encrypted-caret" aria-hidden="true"></span>
-              </button>
-              <div
-                class="bits-encrypted-menu"
-                id="bits-encrypted-menu"
-                data-bits-encrypted-menu
-                hidden
-                aria-label="加密状态筛选"
-              >
-                <div class="bits-encrypted-menu__list">
-                  <button
-                    class="bits-encrypted-menu__item is-active"
-                    type="button"
-                    data-bits-encrypted-menu-item
-                    data-bits-encrypted=""
-                    aria-label="显示全部絮语"
-                    aria-pressed="true"
-                  >
-                    <span class="bits-encrypted-menu__item-label">全部</span>
-                  </button>
-                  {encryptedOptions.map((option) => (
+            <>
+              {/* 桌面端：自定义下拉按钮组，与 year 更多菜单 UI 一致 */}
+              <div class="bits-encrypted-more" data-bits-encrypted-more data-open="false" data-bits-client-control>
+                <button
+                  class="bits-encrypted-trigger"
+                  type="button"
+                  data-bits-encrypted-trigger
+                  aria-label="按加密状态筛选"
+                  aria-expanded="false"
+                  aria-controls="bits-encrypted-menu"
+                >
+                  <span data-bits-encrypted-label>加密</span>
+                  <span class="bits-encrypted-caret" aria-hidden="true"></span>
+                </button>
+                <div
+                  class="bits-encrypted-menu"
+                  id="bits-encrypted-menu"
+                  data-bits-encrypted-menu
+                  hidden
+                  aria-label="加密状态筛选"
+                >
+                  <div class="bits-encrypted-menu__list">
                     <button
-                      class="bits-encrypted-menu__item"
+                      class="bits-encrypted-menu__item is-active"
                       type="button"
                       data-bits-encrypted-menu-item
-                      data-bits-encrypted={option.encrypted ? 'true' : 'false'}
-                      aria-label={`筛选${option.label}絮语，共 ${option.count} 条`}
-                      aria-pressed="false"
+                      data-bits-encrypted=""
+                      aria-label="显示全部絮语"
+                      aria-pressed="true"
                     >
-                      <span class="bits-encrypted-menu__item-label">{option.label}</span>
-                      <span class="bits-encrypted-menu__item-count">{option.count}</span>
+                      <span class="bits-encrypted-menu__item-label">全部</span>
                     </button>
-                  ))}
+                    {encryptedOptions.map((option) => (
+                      <button
+                        class="bits-encrypted-menu__item"
+                        type="button"
+                        data-bits-encrypted-menu-item
+                        data-bits-encrypted={option.encrypted ? 'true' : 'false'}
+                        aria-label={`筛选${option.label}絮语，共 ${option.count} 条`}
+                        aria-pressed="false"
+                      >
+                        <span class="bits-encrypted-menu__item-label">{option.label}</span>
+                        <span class="bits-encrypted-menu__item-count">{option.count}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+              {/* 手机端（≤640px）：原生 select，触发系统 picker */}
+              <div class="bits-encrypted-select-wrap" data-bits-client-control>
+                <label class="sr-only" for="bits-encrypted-select">按加密状态筛选絮语</label>
+                <select
+                  class="bits-encrypted-select"
+                  id="bits-encrypted-select"
+                  data-bits-encrypted-select
+                  aria-label="按加密状态筛选絮语"
+                >
+                  <option value="">全部</option>
+                  {encryptedOptions.map((option) => (
+                    <option value={option.encrypted ? 'true' : 'false'}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+            </>
           ) : null}
 
         <div class="bits-controls__search-cluster" data-has-year-filter={yearOptions.length > 0 ? 'true' : 'false'}>

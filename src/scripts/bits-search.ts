@@ -33,6 +33,8 @@ const encryptedTrigger = document.querySelector<HTMLButtonElement>('[data-bits-e
 const encryptedLabel = document.querySelector<HTMLElement>('[data-bits-encrypted-label]');
 const encryptedMenu = document.querySelector<HTMLElement>('[data-bits-encrypted-menu]');
 const encryptedMenuItems = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bits-encrypted-menu-item]'));
+const encryptedSelect = document.querySelector<HTMLSelectElement>('[data-bits-encrypted-select]');
+const encryptedSelectWrap = encryptedSelect?.closest<HTMLElement>('.bits-encrypted-select-wrap') ?? null;
 
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
@@ -333,6 +335,14 @@ const setActiveEncryptedState = (encrypted: boolean | null) => {
     } else {
       encryptedLabel.textContent = '公开';
     }
+  }
+  if (encryptedSelect) {
+    encryptedSelect.value = encrypted === null ? '' : String(encrypted);
+    encryptedSelect.dataset.empty = String(encrypted === null);
+  }
+  if (encryptedSelectWrap) {
+    encryptedSelectWrap.dataset.empty = String(encrypted === null);
+    encryptedSelectWrap.dataset.active = String(encrypted !== null);
   }
 };
 
@@ -649,6 +659,11 @@ const setDegradedMode = () => {
   yearSelectWrap?.setAttribute('data-disabled', 'true');
   encryptedTrigger?.setAttribute('aria-disabled', 'true');
   encryptedTrigger?.setAttribute('disabled', 'true');
+  if (encryptedSelect) {
+    encryptedSelect.disabled = true;
+    encryptedSelect.setAttribute('aria-disabled', 'true');
+  }
+  encryptedSelectWrap?.setAttribute('data-disabled', 'true');
   closeMoreMenu();
   setStatus('索引加载失败，已禁用搜索');
   showBrowse();
@@ -903,9 +918,7 @@ yearMenu?.addEventListener('keydown', (event) => {
 });
 
 const closeEncryptedMenu = () => {
-  if (!encryptedMoreRoot || !encryptedTrigger || !encryptedMenu) {
-    return;
-  }
+  if (!encryptedMoreRoot || !encryptedTrigger || !encryptedMenu) return;
   encryptedMoreRoot.dataset.open = 'false';
   encryptedTrigger.classList.remove('is-open');
   encryptedTrigger.setAttribute('aria-expanded', 'false');
@@ -943,11 +956,11 @@ yearMoreRoot?.addEventListener('focusout', (event) => {
 });
 
 document.addEventListener('pointerdown', (event) => {
-  if (!isMoreMenuOpen || !yearMoreRoot) return;
   const target = event.target;
-  if (target instanceof Node && yearMoreRoot.contains(target)) return;
-  closeMoreMenu();
-
+  if (isMoreMenuOpen && yearMoreRoot) {
+    if (target instanceof Node && yearMoreRoot.contains(target)) return;
+    closeMoreMenu();
+  }
   if (encryptedMoreRoot && encryptedMoreRoot.dataset.open === 'true') {
     if (target instanceof Node && encryptedMoreRoot.contains(target)) return;
     closeEncryptedMenu();
@@ -984,7 +997,6 @@ encryptedMenuItems.forEach((button) => {
       closeEncryptedMenu();
       return;
     }
-
     setActiveEncryptedState(encrypted);
     closeEncryptedMenu();
     await applyFilter();
@@ -993,10 +1005,16 @@ encryptedMenuItems.forEach((button) => {
 
 encryptedMoreRoot?.addEventListener('focusout', (event) => {
   const nextTarget = event.relatedTarget;
-  if (nextTarget instanceof Node && encryptedMoreRoot.contains(nextTarget)) {
-    return;
-  }
+  if (nextTarget instanceof Node && encryptedMoreRoot.contains(nextTarget)) return;
   closeEncryptedMenu();
+});
+
+encryptedSelect?.addEventListener('change', async () => {
+  if (indexLoader.hasFailed()) return;
+  const val = encryptedSelect.value;
+  const encrypted = val === '' ? null : (val === 'true');
+  setActiveEncryptedState(encrypted);
+  await applyFilter();
 });
 
 window.addEventListener('resize', () => {

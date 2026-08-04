@@ -382,7 +382,101 @@
  color: var(--faint);
 }
 
+/* 桌面端隐藏原生 select，≤640px 手机端才显示 */
+.bits-encrypted-select-wrap {
+  display: none;
+  position: relative;
+  flex: 0 0 auto;
+  height: var(--bits-control-h);
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: color-mix(in srgb, var(--panel) 68%, var(--bg));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 1px 2px rgba(17, 17, 17, 0.04);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  overflow: hidden;
+}
 
+.bits-encrypted-select-wrap::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted);
+  pointer-events: none;
+}
+
+.bits-encrypted-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 100%;
+  padding: 0 24px 0 10px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-align: left;
+  text-align-last: left;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+.bits-encrypted-select option {
+  text-align: left;
+}
+
+.bits-encrypted-select-wrap[data-empty="true"] .bits-encrypted-select {
+  color: var(--muted);
+}
+
+.bits-encrypted-select-wrap[data-active="true"] {
+  background: color-mix(in srgb, #fff 92%, var(--panel));
+  border-color: color-mix(in srgb, var(--border) 74%, transparent);
+  box-shadow:
+    0 1px 1px rgba(17, 17, 17, 0.04),
+    0 6px 18px rgba(17, 17, 17, 0.06);
+}
+
+.bits-encrypted-select-wrap[data-active="true"] .bits-encrypted-select {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.bits-encrypted-select-wrap[data-disabled="true"] {
+  opacity: 0.55;
+}
+
+.bits-encrypted-select-wrap:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent),
+    0 6px 18px rgba(17, 17, 17, 0.08);
+}
+
+.bits-encrypted-select:focus-visible {
+  outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bits-encrypted-select-wrap:not([data-disabled="true"]):hover {
+    border-color: color-mix(in srgb, var(--border) 76%, transparent);
+    background: color-mix(in srgb, var(--panel) 74%, var(--bg));
+  }
+}
 
 .bits-controls__actions {
   display: flex;
@@ -1510,6 +1604,48 @@ span[data-tag].bit-search-result__tag:focus-visible {
   .bits-year-select-wrap:focus-within {
     border-color: transparent;
     border-left-color: var(--bits-mobile-divider);
+    box-shadow: none;
+  }
+
+  /* 手机端：隐藏桌面自定义按钮组，显示原生 select */
+  .bits-encrypted-more {
+    display: none;
+  }
+
+  .bits-encrypted-select-wrap {
+    display: flex;
+    align-items: stretch;
+    width: var(--bits-mobile-action-w);
+    min-width: var(--bits-mobile-action-w);
+    max-width: var(--bits-mobile-action-w);
+    height: var(--bits-control-h);
+    border: 1px solid var(--bits-mobile-frame);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--panel) 74%, var(--bg));
+    box-shadow: none;
+  }
+
+  .bits-encrypted-select-wrap::after {
+    right: 8px;
+  }
+
+  .bits-encrypted-select-wrap[data-active="true"] {
+    background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+    box-shadow: none;
+    border-color: var(--bits-mobile-frame);
+  }
+
+  .bits-encrypted-select-wrap[data-empty="true"] .bits-encrypted-select {
+    color: var(--muted);
+  }
+
+  .bits-encrypted-select-wrap[data-active="true"] .bits-encrypted-select {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .bits-encrypted-select-wrap:focus-within {
+    border-color: var(--bits-mobile-frame);
     box-shadow: none;
   }
 
