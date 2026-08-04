@@ -95,6 +95,8 @@ $effect(() => {
                 width={viewModel.firstImage.width}
                 height={viewModel.firstImage.height}
                 loading="lazy"
+                on:load={(e) => e.currentTarget.setAttribute('data-loaded', '')}
+                on:error={(e) => { const img = e.currentTarget; img.onerror = null; img.src = 'https://placehold.net/shape-400x400.png'; img.setAttribute('data-loaded', ''); }}
               />
             </div>
           </div>
@@ -111,6 +113,8 @@ $effect(() => {
                     width={image.width}
                     height={image.height}
                     loading="lazy"
+                    on:load={(e) => e.currentTarget.setAttribute('data-loaded', '')}
+                    on:error={(e) => { const img = e.currentTarget; img.onerror = null; img.src = 'https://placehold.net/shape-400x400.png'; img.setAttribute('data-loaded', ''); }}
                   />
                   {#if index === maxVisible - 1 && hiddenImageCount > 0}
                     <span class="bit-media-more" aria-hidden="true">

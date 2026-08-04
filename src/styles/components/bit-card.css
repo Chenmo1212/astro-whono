@@ -125,19 +125,39 @@
   width: 100%;
 }
 
+@keyframes bit-media-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 .bit-media-item {
   position: relative;
   border-radius: 8px;
   overflow: hidden;
   aspect-ratio: 4 / 3;
   border: 0;
-  background: transparent;
+  background: color-mix(in srgb, var(--panel) 68%, var(--bg));
+  animation: bit-media-pulse 1.6s ease-in-out infinite;
   padding: 0;
   width: 100%;
   display: block;
   text-align: left;
   cursor: pointer;
   appearance: none;
+}
+
+.bit-media-item:has(img[data-loaded]) {
+  animation: none;
+  background: transparent;
+}
+
+.bit-media-item > img:not([data-loaded]) {
+  opacity: 0;
+}
+
+.bit-media-item > img[data-loaded] {
+  opacity: 1;
+  transition: opacity 0.2s ease;
 }
 
 .bit-media-item--more::after {

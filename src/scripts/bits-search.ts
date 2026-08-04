@@ -15,6 +15,7 @@ const browseRoot = document.querySelector<HTMLElement>('[data-bits-browse]');
 const resultsRoot = document.querySelector<HTMLElement>('[data-bits-search-results]');
 const resultsSummaryEl = document.querySelector<HTMLElement>('[data-bits-search-results-summary]');
 const resultsListEl = document.querySelector<HTMLElement>('[data-bits-search-results-list]');
+const resultsPaginationEl = document.querySelector<HTMLElement>('[data-bits-search-pagination]');
 const clearBtn = document.querySelector<HTMLButtonElement>('[data-bits-search-clear]');
 const yearFilterRoot = document.querySelector<HTMLElement>('[data-bits-year-filter]');
 const yearCursor = document.querySelector<HTMLElement>('[data-bits-year-cursor]');
@@ -38,7 +39,7 @@ const withBase = createWithBase(base);
 const indexUrl = withBase('bits/index.json');
 
 const FILTER_DEBOUNCE_MS = 120;
-const MAX_VISIBLE_RESULTS = 50;
+const PAGE_SIZE = 50;
 const QUERY_PARAM_QUERY = 'q';
 const QUERY_PARAM_YEAR = 'year';
 const QUERY_PARAM_ENCRYPTED = 'encrypted';
@@ -95,6 +96,8 @@ let activeYear: number | null = null;
 let activeEncrypted: boolean | null = null;
 let isMoreMenuOpen = false;
 let statusTimer: number | null = null;
+let currentPage = 1;
+let totalFilteredItems: IndexItem[] = [];
 const filterRunner = createDebouncedAsyncRunner(() => applyFilter(), FILTER_DEBOUNCE_MS);
 
 const getTrimmedQuery = () => (input?.value || '').trim();
@@ -249,10 +252,10 @@ const setStatus = (
   }
 };
 
-const formatResultsSummary = (count: number, year: number | null) => {
+const formatResultsSummary = (count: number, year: number | null, page: number, totalPages: number) => {
   const summary =
-    count > MAX_VISIBLE_RESULTS
-      ? `找到 ${count} 条结果，当前显示前 ${MAX_VISIBLE_RESULTS} 条`
+    totalPages > 1
+      ? `找到 ${count} 条结果，第 ${page} / ${totalPages} 页`
       : `找到 ${count} 条结果`;
   return year ? `${year} 年 · ${summary}` : summary;
 };
@@ -441,11 +444,73 @@ const getEmptyResultsText = (query: string, year: number | null) => {
   return '未找到相关内容，换个关键词试试。';
 };
 
-const renderResults = (matchedItems: IndexItem[]) => {
+const renderPagination = (total: number, page: number) => {
+  if (!resultsPaginationEl) return;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages <= 1) {
+    resultsPaginationEl.innerHTML = '';
+    resultsPaginationEl.setAttribute('hidden', 'true');
+    return;
+  }
+
+  resultsPaginationEl.removeAttribute('hidden');
+
+  const prevDisabled = page <= 1;
+  const nextDisabled = page >= totalPages;
+
+  resultsPaginationEl.innerHTML = `
+    <nav class="pagination" aria-label="搜索结果分页">
+      <div class="pagination__inner">
+        <button
+          class="pagination__link${prevDisabled ? ' pagination__link--disabled' : ''}"
+          type="button"
+          data-bits-page-prev
+          ${prevDisabled ? 'disabled aria-disabled="true"' : ''}
+          aria-label="上一页"
+        >上一页</button>
+        <span class="pagination__info" aria-live="polite">${page} / ${totalPages}</span>
+        <button
+          class="pagination__link pagination__link--next${nextDisabled ? ' pagination__link--disabled' : ''}"
+          type="button"
+          data-bits-page-next
+          ${nextDisabled ? 'disabled aria-disabled="true"' : ''}
+          aria-label="下一页"
+        >下一页</button>
+      </div>
+    </nav>
+  `;
+
+  resultsPaginationEl.querySelector('[data-bits-page-prev]')?.addEventListener('click', () => {
+    if (currentPage <= 1) return;
+    currentPage -= 1;
+    renderResults(totalFilteredItems, false);
+    resultsRoot?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  resultsPaginationEl.querySelector('[data-bits-page-next]')?.addEventListener('click', () => {
+    const pages = Math.ceil(totalFilteredItems.length / PAGE_SIZE);
+    if (currentPage >= pages) return;
+    currentPage += 1;
+    renderResults(totalFilteredItems, false);
+    resultsRoot?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+};
+
+const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
   if (!resultsRoot || !resultsListEl) return;
 
-  const visibleItems = matchedItems.slice(0, MAX_VISIBLE_RESULTS);
-  const summary = formatResultsSummary(matchedItems.length, activeYear);
+  if (resetPage) {
+    currentPage = 1;
+  }
+  totalFilteredItems = matchedItems;
+
+  const totalPages = Math.ceil(matchedItems.length / PAGE_SIZE);
+  const safePage = Math.min(Math.max(currentPage, 1), totalPages || 1);
+  if (safePage !== currentPage) currentPage = safePage;
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const visibleItems = matchedItems.slice(start, start + PAGE_SIZE);
+  const summary = formatResultsSummary(matchedItems.length, activeYear, currentPage, totalPages);
   const currentBitsPage = getCurrentBitsPage();
 
   if (resultsSummaryEl) {
@@ -465,7 +530,10 @@ const renderResults = (matchedItems: IndexItem[]) => {
         : '';
       const tags = normalTags
         .slice(0, 3)
-        .map((tag) => `<span class="bit-search-result__tag">#${highlightText(tag.trim(), queryTerms)}</span>`)
+        .map(
+          (tag) =>
+            `<span class="bit-search-result__tag" data-tag="${escapeHtml(tag.trim())}" role="button" tabindex="0">#${highlightText(tag.trim(), queryTerms)}</span>`
+        )
         .join('');
       const metaTrail = [
         dateLabel
@@ -486,6 +554,8 @@ const renderResults = (matchedItems: IndexItem[]) => {
               ${item.thumbnail.height ? `height="${item.thumbnail.height}"` : ''}
               loading="lazy"
               decoding="async"
+              onload="this.setAttribute('data-loaded','')"
+              onerror="this.onerror=null;this.src='https://placehold.net/shape-400x400.png';this.setAttribute('data-loaded','')"
             />
           </div>
         `
@@ -516,6 +586,7 @@ const renderResults = (matchedItems: IndexItem[]) => {
 
   browseRoot?.setAttribute('hidden', 'true');
   resultsRoot.removeAttribute('hidden');
+  renderPagination(matchedItems.length, currentPage);
 };
 
 const filterIndexItems = (index: IndexItem[], queryTerms: string[], year: number | null, encrypted: boolean | null) =>
@@ -539,6 +610,8 @@ const resetFilters = (options: { focusInput?: boolean } = {}) => {
   if (input) {
     input.value = '';
   }
+  currentPage = 1;
+  totalFilteredItems = [];
   setActiveYearState(null);
   setActiveEncryptedState(null);
   showBrowse();
@@ -681,8 +754,24 @@ clearBtn?.addEventListener('click', () => {
   resetFilters({ focusInput: true });
 });
 
+const handleTagClick = (tag: string) => {
+  if (!tag || !input) return;
+  input.value = `${tag}`;
+  void applyFilter();
+  input.focus();
+};
+
 resultsListEl?.addEventListener('click', (event) => {
   const target = event.target as HTMLElement | null;
+
+  const tagEl = target?.closest<HTMLElement>('span[data-tag]');
+  if (tagEl) {
+    event.preventDefault();
+    event.stopPropagation();
+    handleTagClick(tagEl.dataset.tag ?? '');
+    return;
+  }
+
   const link = target?.closest<HTMLAnchorElement>('a[href]');
   if (!link) return;
 
@@ -711,8 +800,16 @@ resultsListEl?.addEventListener('click', (event) => {
 });
 
 resultsListEl?.addEventListener('keydown', (event) => {
-  if (event.key !== 'ArrowUp') return;
   const target = event.target as HTMLElement | null;
+
+  const tagEl = target?.closest<HTMLElement>('span[data-tag]');
+  if (tagEl && (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault();
+    handleTagClick(tagEl.dataset.tag ?? '');
+    return;
+  }
+
+  if (event.key !== 'ArrowUp') return;
   const currentLink = target?.closest<HTMLAnchorElement>('.bit-search-result__link');
   const firstResultLink = getFirstResultLink();
   if (!currentLink || !firstResultLink || currentLink !== firstResultLink) return;
@@ -724,9 +821,19 @@ yearButtons.forEach((button) => {
   button.addEventListener('click', async () => {
     const year = getYearButtonValue(button);
     if (button.dataset.bitsYear !== '' && year === null) return;
-    if (indexLoader.hasFailed() || activeYear === year) return;
+    if (indexLoader.hasFailed()) return;
 
     closeMoreMenu();
+
+    // "全部" tab：直接重置回 browse 视图，清除搜索词和年份筛选
+    if (year === null) {
+      if (activeYear !== null || isResultsVisible()) {
+        resetFilters();
+      }
+      return;
+    }
+
+    if (activeYear === year) return;
     setActiveYearState(year);
     await applyFilter();
   });
@@ -811,9 +918,18 @@ yearSelect?.addEventListener('change', async () => {
   const raw = yearSelect.value.trim();
   const year = raw ? Number(raw) : null;
   if (raw && !Number.isFinite(year)) return;
-  if (activeYear === year) return;
 
   closeMoreMenu();
+
+  // 选"全部"：直接重置回 browse 视图
+  if (year === null) {
+    if (activeYear !== null || isResultsVisible()) {
+      resetFilters();
+    }
+    return;
+  }
+
+  if (activeYear === year) return;
   setActiveYearState(year);
   await applyFilter();
 });

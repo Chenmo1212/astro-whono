@@ -119,6 +119,8 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
           height={card.firstImage.height}
           loading={getImageLoading(prioritizeLeadMedia)}
           fetchpriority={getImageFetchPriority(prioritizeLeadMedia)}
+          onload="this.setAttribute('data-loaded','')"
+          onerror="this.onerror=null;this.src='https://placehold.net/shape-400x400.png';this.setAttribute('data-loaded','')"
         />
       </button>
     </div>
@@ -142,6 +144,8 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
                 height={image.height}
                 loading={getImageLoading(prioritizeLeadMedia && index === 0)}
                 fetchpriority={getImageFetchPriority(prioritizeLeadMedia && index === 0)}
+                onload="this.setAttribute('data-loaded','')"
+                onerror="this.onerror=null;this.src='https://placehold.net/shape-400x400.png';this.setAttribute('data-loaded','')"
               />
               {isMore ? (
                 <>
