@@ -723,19 +723,22 @@
 }
 
 .bits-status {
-  min-height: 4px;
   font-size: 12px;
   color: var(--muted);
 }
 
 .bits-status:empty {
-  min-height: 0;
+  display: none;
 }
 
 .bits-draft-load-status {
   min-height: 16px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.bits-draft-load-status:empty {
+  display: none;
 }
 
 .bits-draft-load-status[data-tone="error"] {
@@ -1350,9 +1353,6 @@ span[data-tag].bit-search-result__tag:focus-visible {
     --bits-control-h: 38px;
   }
 
-  .bits-status {
-    min-height: 2px;
-  }
 
   .bits-year-filter {
     width: fit-content;
