@@ -838,16 +838,23 @@
   gap: 14px;
 }
 
-.bit-search-result__layout--media {
-  display: grid;
-  grid-template-columns: minmax(0, 104px) minmax(0, 1fr);
-  align-items: stretch;
-}
-
 .bit-search-result__layout--media .bit-search-result__content {
   display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.bit-search-result__layout--media .bit-search-result__thumb {
+  flex: 0 0 104px;
+  width: 104px;
+}
+
+.bit-search-result__layout--media .bit-search-result__body {
+  display: flex;
   flex-direction: column;
-  align-self: stretch;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .bit-search-result__layout--media .bit-search-result__footer {
@@ -957,8 +964,7 @@
   color: var(--faint);
 }
 
-.bit-search-result__date,
-.bit-search-result__page {
+.bit-search-result__date {
   color: inherit;
 }
 
@@ -1008,22 +1014,41 @@ span[data-tag].bit-search-result__tag:focus-visible {
 }
 
 @media (max-width: 520px) {
-  .bit-search-result__layout--media {
-    grid-template-columns: 1fr;
-  }
-
-  .bit-search-result__thumb {
-    width: min(100%, 180px);
-  }
-
-  .bit-search-result__footer {
+  .bit-search-result__layout--media .bit-search-result__content {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
   }
 
-  .bit-search-result__meta-line {
-    align-self: flex-start;
-    justify-content: flex-start;
+  .bit-search-result__layout--media .bit-search-result__thumb {
+    flex: none;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    margin-top: 12px;
+  }
+
+  .bit-search-result__layout--media .bit-search-result__body {
+    flex: none;
+  }
+
+  .bit-search-result__layout--media .bit-search-result__footer {
+    margin-top: 25px;
+    padding-top: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .bit-search-result__layout--media .bit-search-result__footer .bit-search-result__tags {
+    margin-top: 0;
+  }
+
+  .bit-search-result__layout--media .bit-search-result__footer > :first-child {
+    flex: 0 0 auto;
+  }
+
+  .bit-search-result__layout--media .bit-search-result__meta-line {
+    align-self: center;
+    justify-content: center;
   }
 }
 

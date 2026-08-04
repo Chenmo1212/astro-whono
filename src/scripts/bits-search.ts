@@ -128,14 +128,6 @@ const includesAnyTerm = (value: string, terms: string[]) => {
   return terms.some((term) => lower.includes(term.toLowerCase()));
 };
 
-const getCurrentBitsPage = () => {
-  const match = window.location.pathname.match(/\/bits(?:\/page\/(\d+))?\/?$/);
-  if (!match) return 1;
-
-  const page = Number(match[1] ?? '1');
-  return Number.isFinite(page) && page > 0 ? page : 1;
-};
-
 const getContextSnippet = (value: string, terms: string[], maxLength = 120) => {
   const normalized = value.trim();
   if (!normalized) return '';
@@ -521,8 +513,6 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
   const start = (currentPage - 1) * PAGE_SIZE;
   const visibleItems = matchedItems.slice(start, start + PAGE_SIZE);
   const summary = formatResultsSummary(matchedItems.length, activeYear, currentPage, totalPages);
-  const currentBitsPage = getCurrentBitsPage();
-
   if (resultsSummaryEl) {
     resultsSummaryEl.textContent = summary;
   }
@@ -533,7 +523,6 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
       const queryTerms = tokenizeSearchQuery(query);
       const snippet = getDisplaySnippet(item, queryTerms);
       const dateLabel = item.dateLabel?.trim() ?? '';
-      const pageHint = item.page && item.page !== currentBitsPage ? `来自第 ${item.page} 页` : '';
       const { placeText, normalTags } = getDisplayTags(item.tags ?? []);
       const place = placeText
         ? `<span class="bit-search-result__tag bit-search-result__tag--place">📍 ${highlightText(placeText, queryTerms)}</span>`
@@ -548,8 +537,7 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
       const metaTrail = [
         dateLabel
           ? `<time class="bit-search-result__date" datetime="${escapeHtml(item.date ?? '')}">${escapeHtml(dateLabel)}</time>`
-          : '',
-        pageHint ? `<span class="bit-search-result__page">${escapeHtml(pageHint)}</span>` : ''
+          : ''
       ]
         .filter(Boolean)
         .join('<span class="bit-search-result__sep" aria-hidden="true">·</span>');
@@ -575,8 +563,8 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
         <article class="bit-card bit-card--search-result">
           <a class="bit-search-result__link" href="${href}">
             <div class="bit-search-result__layout${thumbnail ? ' bit-search-result__layout--media' : ''}">
-              ${thumbnail}
               <div class="bit-search-result__content">
+                ${thumbnail ? `${thumbnail}<div class="bit-search-result__body">` : ''}
                 ${snippet ? `<p class="bit-search-result__excerpt">${highlightText(snippet, queryTerms)}</p>` : ''}
                 ${place || tags || metaTrail
                   ? `
@@ -586,6 +574,7 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
                     </div>
                   `
                   : ''}
+                ${thumbnail ? '</div>' : ''}
               </div>
             </div>
           </a>
