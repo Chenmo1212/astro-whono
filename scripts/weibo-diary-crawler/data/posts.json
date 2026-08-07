@@ -3244,5 +3244,57 @@
       "errors": []
     },
     "crawled_at": "2026-08-04 17:12:15"
+  },
+  {
+    "user_id": 7796507396,
+    "screen_name": "暮冬十二1212",
+    "bid": "Rcftsdbym",
+    "text": "#陈默的爱岛生活# 第1439天局部暴雨的时候就搭上小车去阳光明媚的另一边吧最近的状态有些低沉，并非慌乱和不安，单纯只是平静的低情绪状态。室友邀请了一些朋友来家里玩，一个人哼哧哼哧许久捣鼓了一桌菜，挺是丰盛。这两天有很积极的去健身，每一天都运动两个多小时，消耗一千多大卡，尽管体重目前并没有太多变化，但至少是个不错的开始了。或许是为了让自己不再刷一些无脑的视频消耗时间，开始随机看起了剧。Sex education。记得之前有听过这部剧，蛮多人推荐的，但这名字实在让人很难接受，深怕真的是自己想的那样。可等真的看进去的时候，其实发现也还好。虽然有不少开放的画面，但相比Normal people而言，这部剧已经是收敛许多了。第一季目前快看完了，能感受到导演想透过不同的角色去表达不同的感受，但还是在看完之前尽量不要妄下结论吧。",
+    "text_html": "<a  href=\"https://m.weibo.cn/search?containerid=231522type%3D1%26t%3D10%26q%3D%23%E9%99%88%E9%BB%98%E7%9A%84%E7%88%B1%E5%B2%9B%E7%94%9F%E6%B4%BB%23&extparam=%23%E9%99%88%E9%BB%98%E7%9A%84%E7%88%B1%E5%B2%9B%E7%94%9F%E6%B4%BB%23&luicode=20000061&lfid=5329194223142678&launchid=10000360-page_H5\" data-hide=\"\"><span class=\"surl-text\">#陈默的爱岛生活#</span></a> 第1439天<br /><br />局部暴雨的时候就搭上小车去阳光明媚的另一边吧<br /><br />最近的状态有些低沉，并非慌乱和不安，单纯只是平静的低情绪状态。<br /><br />室友邀请了一些朋友来家里玩，一个人哼哧哼哧许久捣鼓了一桌菜，挺是丰盛。<br /><br />这两天有很积极的去健身，每一天都运动两个多小时，消耗一千多大卡，尽管体重目前并没有太多变化，但至少是个不错的开始了。<br /><br />或许是为了让自己不再刷一些无脑的视频消耗时间，开始随机看起了剧。Sex education。记得之前有听过这部剧，蛮多人推荐的，但这名字实在让人很难接受，深怕真的是自己想的那样。可等真的看进去的时候，其实发现也还好。虽然有不少开放的画面，但相比Normal people而言，这部剧已经是收敛许多了。第一季目前快看完了，能感受到导演想透过不同的角色去表达不同的感受，但还是在看完之前尽量不要妄下结论吧。",
+    "pics": [
+      "https://wx2.sinaimg.cn/mw2000/008vDlJigy1ifuym26vy4j31400u0drs.jpg",
+      "https://wx3.sinaimg.cn/mw2000/008vDlJigy1ifuym1j30bj30u0140wly.jpg",
+      "https://wx2.sinaimg.cn/mw2000/008vDlJigy1ifuylzfnyfj30u0140aff.jpg",
+      "https://wx3.sinaimg.cn/mw2000/008vDlJigy1ifuym24kbgj30u0140n2o.jpg",
+      "https://wx1.sinaimg.cn/mw2000/008vDlJigy1ifuym4djktj30u0140te3.jpg",
+      "https://wx3.sinaimg.cn/mw2000/008vDlJigy1ifuym4u34fj30u0140wju.jpg"
+    ],
+    "location": "",
+    "topics": "陈默的爱岛生活",
+    "created_at": "2026-08-07T08:26:17",
+    "source": "微博轻享版",
+    "attitudes_count": 1,
+    "comments_count": 0,
+    "reposts_count": 0,
+    "full_created_at": "2026-08-07 08:26:17",
+    "weibo_id": "5329194223142678",
+    "local_images": [
+      "./images/2026/20260807_01.jpg",
+      "./images/2026/20260807_02.jpg",
+      "./images/2026/20260807_03.jpg",
+      "./images/2026/20260807_04.jpg",
+      "./images/2026/20260807_05.jpg",
+      "./images/2026/20260807_06.jpg"
+    ],
+    "processed_images": {
+      "cdn_urls": [
+        "https://cdn.chenmo1212.cn/blog/2026/20260807_03.jpg",
+        "https://cdn.chenmo1212.cn/blog/2026/20260807_02.jpg",
+        "https://cdn.chenmo1212.cn/blog/2026/20260807_01.jpg",
+        "https://cdn.chenmo1212.cn/blog/2026/20260807_04.jpg",
+        "https://cdn.chenmo1212.cn/blog/2026/20260807_05.jpg",
+        "https://cdn.chenmo1212.cn/blog/2026/20260807_06.jpg"
+      ],
+      "local_compressed": [
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260807_03.jpg",
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260807_02.jpg",
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260807_01.jpg",
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260807_04.jpg",
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260807_05.jpg",
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260807_06.jpg"
+      ],
+      "errors": []
+    },
+    "crawled_at": "2026-08-07 16:22:54"
   }
 ]
