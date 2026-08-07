@@ -194,28 +194,29 @@ const buildBitsIndex = async (pageSize: number) => {
     const firstImage = bit.data.images?.[0];
     const hrefPath = publishedHrefById.get(bit.id) ?? `${getBitsPagePath(page)}#${getBitAnchorId(bit.id)}`;
 
+    const isEncrypted = bit.data.encrypted === true;
     return {
       key: bit.id,
       slug: getBitSlug(bit),
       title: bit.data.title ?? '',
       description: bit.data.description ?? '',
       tags: bit.data.tags ?? [],
-      text: derivedText.text,
-      excerpt: derivedText.excerpt,
+      text: isEncrypted ? '' : derivedText.text,
+      excerpt: isEncrypted ? '' : derivedText.excerpt,
       date: bit.data.date ? bit.data.date.toISOString() : null,
       dateLabel: bit.data.date ? formatDateTime(bit.data.date) : null,
       year: bit.data.date ? bit.data.date.getFullYear() : null,
       page,
       href: withBase(hrefPath),
-      encrypted: bit.data.encrypted === true,
-      thumbnail: firstImage
-        ? {
+      encrypted: isEncrypted,
+      thumbnail: isEncrypted || !firstImage
+        ? null
+        : {
             src: withBase(firstImage.src),
             ...(firstImage.width ? { width: firstImage.width } : {}),
             ...(firstImage.height ? { height: firstImage.height } : {}),
             alt: firstImage.alt ?? ''
           }
-        : null
     };
   });
 };

@@ -46,6 +46,12 @@ const QUERY_PARAM_QUERY = 'q';
 const QUERY_PARAM_YEAR = 'year';
 const QUERY_PARAM_ENCRYPTED = 'encrypted';
 
+// 加密筛选的三种状态：
+//   'all'       — 不筛选，显示全部（默认）
+//   'public'    — 仅显示公开内容
+//   'encrypted' — 仅显示加密内容
+type EncryptedFilter = 'all' | 'public' | 'encrypted';
+
 type IndexItem = {
   key?: string;
   slug: string;
@@ -95,7 +101,7 @@ const shouldBypassIndexCache = import.meta.env.DEV;
 let indexHay: Map<string, string> | null = null;
 let filterRunId = 0;
 let activeYear: number | null = null;
-let activeEncrypted: boolean | null = null;
+let activeEncrypted: EncryptedFilter = 'public';
 let isMoreMenuOpen = false;
 let statusTimer: number | null = null;
 let currentPage = 1;
@@ -311,30 +317,33 @@ const closeMoreMenu = () => {
   setMoreMenuOpen(false);
 };
 
-const setActiveEncryptedState = (encrypted: boolean | null) => {
+const ENCRYPTED_LABELS: Record<EncryptedFilter, string> = {
+  all: '全部',
+  public: '公开',
+  encrypted: '加密'
+};
+
+const setActiveEncryptedState = (encrypted: EncryptedFilter) => {
   activeEncrypted = encrypted;
+  // data-bits-encrypted="" → 全部；data-bits-encrypted="true" → 加密；data-bits-encrypted="false" → 公开
   encryptedMenuItems.forEach((button) => {
-    const buttonEncrypted = button.dataset.bitsEncrypted;
-    const isActive = buttonEncrypted === '' ? encrypted === null : (encrypted === (buttonEncrypted === 'true'));
+    const val = button.dataset.bitsEncrypted;
+    const buttonFilter: EncryptedFilter = val === '' ? 'all' : val === 'true' ? 'encrypted' : 'public';
+    const isActive = buttonFilter === encrypted;
     button.classList.toggle('is-active', isActive);
     button.setAttribute('aria-pressed', String(isActive));
   });
   if (encryptedLabel) {
-    if (encrypted === null) {
-      encryptedLabel.textContent = '加密';
-    } else if (encrypted === true) {
-      encryptedLabel.textContent = '加密';
-    } else {
-      encryptedLabel.textContent = '公开';
-    }
+    encryptedLabel.textContent = ENCRYPTED_LABELS[encrypted];
   }
   if (encryptedSelect) {
-    encryptedSelect.value = encrypted === null ? '' : String(encrypted);
-    encryptedSelect.dataset.empty = String(encrypted === null);
+    // <select> 的 value 约定：'' = 全部, 'true' = 加密, 'false' = 公开
+    encryptedSelect.value = encrypted === 'all' ? '' : encrypted === 'encrypted' ? 'true' : 'false';
+    encryptedSelect.dataset.empty = String(encrypted === 'all');
   }
   if (encryptedSelectWrap) {
-    encryptedSelectWrap.dataset.empty = String(encrypted === null);
-    encryptedSelectWrap.dataset.active = String(encrypted !== null);
+    encryptedSelectWrap.dataset.empty = String(encrypted === 'all');
+    encryptedSelectWrap.dataset.active = String(encrypted !== 'all');
   }
 };
 
@@ -372,7 +381,7 @@ const setActiveYearState = (year: number | null) => {
   window.requestAnimationFrame(updateYearCursor);
 };
 
-const getFilterUrl = (query: string, year: number | null, encrypted: boolean | null = activeEncrypted) => {
+const getFilterUrl = (query: string, year: number | null, encrypted: EncryptedFilter = activeEncrypted) => {
   const nextUrl = new URL(window.location.href);
   nextUrl.hash = '';
   if (query) {
@@ -385,8 +394,11 @@ const getFilterUrl = (query: string, year: number | null, encrypted: boolean | n
   } else {
     nextUrl.searchParams.delete(QUERY_PARAM_YEAR);
   }
-  if (encrypted !== null) {
-    nextUrl.searchParams.set(QUERY_PARAM_ENCRYPTED, String(encrypted));
+  // 'public' 是默认值，不写入 URL 以保持干净；'encrypted' 写入 true，'all' 写入 all
+  if (encrypted === 'encrypted') {
+    nextUrl.searchParams.set(QUERY_PARAM_ENCRYPTED, 'true');
+  } else if (encrypted === 'all') {
+    nextUrl.searchParams.set(QUERY_PARAM_ENCRYPTED, 'all');
   } else {
     nextUrl.searchParams.delete(QUERY_PARAM_ENCRYPTED);
   }
@@ -416,9 +428,12 @@ const readInitialState = () => {
     }
   }
 
-  let encrypted: boolean | null = null;
-  if (rawEncrypted) {
-    encrypted = rawEncrypted === 'true';
+  // 无参数 = 公开（默认），'true' = 仅加密，'all' = 全部
+  let encrypted: EncryptedFilter = 'public';
+  if (rawEncrypted === 'true') {
+    encrypted = 'encrypted';
+  } else if (rawEncrypted === 'all') {
+    encrypted = 'all';
   }
 
   return {
@@ -428,6 +443,10 @@ const readInitialState = () => {
   };
 };
 
+const bitsList = document.getElementById('bits-list');
+
+// 切回 browse 视图（带搜索词高亮的结果列表）
+// 根据当前 activeEncrypted 状态决定是否展示加密卡片
 const showBrowse = () => {
   browseRoot?.removeAttribute('hidden');
   resultsRoot?.setAttribute('hidden', 'true');
@@ -436,6 +455,14 @@ const showBrowse = () => {
   }
   if (resultsSummaryEl) {
     resultsSummaryEl.textContent = '搜索结果';
+  }
+  if (bitsList) {
+    // 'all' 或 'encrypted' 时显示加密卡片，'public' 时隐藏
+    if (activeEncrypted !== 'public') {
+      bitsList.setAttribute('data-show-encrypted', '');
+    } else {
+      bitsList.removeAttribute('data-show-encrypted');
+    }
   }
 };
 
@@ -519,10 +546,55 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
 
   resultsListEl.innerHTML = visibleItems
     .map((item) => {
+      const href = item.href ? escapeHtml(item.href) : withBase('bits/');
+      const dateLabel = item.dateLabel?.trim() ?? '';
+      const metaTrail = dateLabel
+        ? `<time class="bit-search-result__date" datetime="${escapeHtml(item.date ?? '')}">${escapeHtml(dateLabel)}</time>`
+        : '';
+
+      if (item.encrypted) {
+        const { placeText, normalTags } = getDisplayTags(item.tags ?? []);
+        const place = placeText
+          ? `<span class="bit-search-result__tag bit-search-result__tag--place">📍 ${escapeHtml(placeText)}</span>`
+          : '';
+        const tags = normalTags
+          .slice(0, 3)
+          .map((tag) => `<span class="bit-search-result__tag">#${escapeHtml(tag.trim())}</span>`)
+          .join('');
+
+        return `
+          <article class="bit-card bit-card--search-result">
+            <a class="bit-search-result__link" href="${href}">
+              <div class="bit-search-result__layout bit-search-result__layout--encrypted">
+                <div class="bit-search-result__encrypted-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <div class="bit-search-result__encrypted-body">
+                  <div class="bit-search-result__encrypted-header">
+                    <span class="bit-search-result__encrypted-badge">加密内容</span>
+                  </div>
+                  <p class="bit-search-result__encrypted-hint">此内容受密码保护，点击前往输入密码</p>
+                  ${place || tags || metaTrail
+                    ? `
+                      <div class="bit-search-result__footer">
+                        ${place || tags ? `<div class="bit-search-result__tags">${place}${tags}</div>` : '<div></div>'}
+                        ${metaTrail ? `<div class="bit-search-result__meta-line">${metaTrail}</div>` : ''}
+                      </div>
+                    `
+                    : ''}
+                </div>
+              </div>
+            </a>
+          </article>
+        `;
+      }
+
       const query = getTrimmedQuery();
       const queryTerms = tokenizeSearchQuery(query);
       const snippet = getDisplaySnippet(item, queryTerms);
-      const dateLabel = item.dateLabel?.trim() ?? '';
       const { placeText, normalTags } = getDisplayTags(item.tags ?? []);
       const place = placeText
         ? `<span class="bit-search-result__tag bit-search-result__tag--place">📍 ${highlightText(placeText, queryTerms)}</span>`
@@ -534,14 +606,11 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
             `<span class="bit-search-result__tag" data-tag="${escapeHtml(tag.trim())}" role="button" tabindex="0">#${highlightText(tag.trim(), queryTerms)}</span>`
         )
         .join('');
-      const metaTrail = [
-        dateLabel
-          ? `<time class="bit-search-result__date" datetime="${escapeHtml(item.date ?? '')}">${escapeHtml(dateLabel)}</time>`
-          : ''
+      const fullMetaTrail = [
+        metaTrail
       ]
         .filter(Boolean)
         .join('<span class="bit-search-result__sep" aria-hidden="true">·</span>');
-      const href = item.href ? escapeHtml(item.href) : withBase('bits/');
       const thumbnail = item.thumbnail
         ? `
           <div class="bit-search-result__thumb">
@@ -553,7 +622,7 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
               loading="lazy"
               decoding="async"
               onload="this.setAttribute('data-loaded','')"
-              onerror="this.onerror=null;this.src='https://placehold.net/shape-400x400.png';this.setAttribute('data-loaded','')"
+              onerror="this.onerror=null;this.src='${escapeHtml(base)}images/placeholder.svg';this.setAttribute('data-loaded','')"
             />
           </div>
         `
@@ -566,11 +635,11 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
               <div class="bit-search-result__content">
                 ${thumbnail ? `${thumbnail}<div class="bit-search-result__body">` : ''}
                 ${snippet ? `<p class="bit-search-result__excerpt">${highlightText(snippet, queryTerms)}</p>` : ''}
-                ${place || tags || metaTrail
+                ${place || tags || fullMetaTrail
                   ? `
                     <div class="bit-search-result__footer">
                       ${place || tags ? `<div class="bit-search-result__tags">${place}${tags}</div>` : '<div></div>'}
-                      ${metaTrail ? `<div class="bit-search-result__meta-line">${metaTrail}</div>` : ''}
+                      ${fullMetaTrail ? `<div class="bit-search-result__meta-line">${fullMetaTrail}</div>` : ''}
                     </div>
                   `
                   : ''}
@@ -588,18 +657,38 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
   renderPagination(matchedItems.length, currentPage);
 };
 
-const filterIndexItems = (index: IndexItem[], queryTerms: string[], year: number | null, encrypted: boolean | null) =>
+const filterIndexItems = (index: IndexItem[], queryTerms: string[], year: number | null, encrypted: EncryptedFilter) =>
   index.filter((item) => {
     const key = getIndexKey(item);
     if (!key) return false;
     if (year !== null && item.year !== year) return false;
-    if (encrypted !== null && item.encrypted !== encrypted) return false;
+    // 'all' 不过滤；'encrypted' 只留加密项；'public' 只留公开项
+    if (encrypted === 'encrypted' && !item.encrypted) return false;
+    if (encrypted === 'public' && item.encrypted) return false;
     const hay = indexHay?.get(key) || '';
     return queryTerms.every((term) => hay.includes(term));
   });
 
 const scheduleApplyFilter = (delay = FILTER_DEBOUNCE_MS) => {
   filterRunner.schedule(delay);
+};
+
+// 重置年份和搜索词，但保留加密筛选状态
+// 'encrypted' 时需要走 applyFilter 展示仅加密结果；其他情况直接回到 browse 视图
+const resetYearOnly = async () => {
+  filterRunId += 1;
+  filterRunner.cancel();
+  if (input) input.value = '';
+  currentPage = 1;
+  totalFilteredItems = [];
+  setActiveYearState(null);
+  if (activeEncrypted === 'encrypted') {
+    await applyFilter();
+  } else {
+    showBrowse();
+    setStatus('');
+    syncUrlState('', null, activeEncrypted);
+  }
 };
 
 const resetFilters = (options: { focusInput?: boolean } = {}) => {
@@ -612,10 +701,10 @@ const resetFilters = (options: { focusInput?: boolean } = {}) => {
   currentPage = 1;
   totalFilteredItems = [];
   setActiveYearState(null);
-  setActiveEncryptedState(null);
+  setActiveEncryptedState('public');
   showBrowse();
   setStatus('');
-  syncUrlState('', null, null);
+  syncUrlState('', null, 'public');
   if (options.focusInput) {
     input?.focus();
   }
@@ -691,10 +780,10 @@ const applyFilter = async (preloadedIndex: IndexItem[] | null = null) => {
   const queryTerms = tokenizeSearchQuery(rawQuery);
   const normalizedQuery = rawQuery.toLowerCase();
 
-  if (rawQuery === '' && activeYear === null && activeEncrypted === null) {
+  if (rawQuery === '' && activeYear === null && activeEncrypted === 'public') {
     showBrowse();
     setStatus('');
-    syncUrlState('', null, null);
+    syncUrlState('', null, 'public');
     return;
   }
 
@@ -829,11 +918,10 @@ yearButtons.forEach((button) => {
 
     closeMoreMenu();
 
-    // "全部" tab：直接重置回 browse 视图，清除搜索词和年份筛选
+    // 年份"全部"：只重置年份和搜索词，保留加密筛选状态
     if (year === null) {
-      if (activeYear !== null || isResultsVisible()) {
-        resetFilters();
-      }
+      if (activeYear === null && !isResultsVisible()) return;
+      await resetYearOnly();
       return;
     }
 
@@ -923,11 +1011,10 @@ yearSelect?.addEventListener('change', async () => {
 
   closeMoreMenu();
 
-  // 选"全部"：直接重置回 browse 视图
+  // 年份"全部"：只重置年份和搜索词，保留加密筛选状态
   if (year === null) {
-    if (activeYear !== null || isResultsVisible()) {
-      resetFilters();
-    }
+    if (activeYear === null && !isResultsVisible()) return;
+    await resetYearOnly();
     return;
   }
 
@@ -980,8 +1067,8 @@ encryptedTrigger?.addEventListener('click', (event) => {
 encryptedMenuItems.forEach((button) => {
   button.addEventListener('click', async () => {
     if (indexLoader.hasFailed()) return;
-    const buttonEncrypted = button.dataset.bitsEncrypted;
-    const encrypted = buttonEncrypted === '' ? null : (buttonEncrypted === 'true');
+    const val = button.dataset.bitsEncrypted;
+    const encrypted: EncryptedFilter = val === '' ? 'all' : val === 'true' ? 'encrypted' : 'public';
     if (activeEncrypted === encrypted) {
       closeEncryptedMenu();
       return;
@@ -1001,7 +1088,7 @@ encryptedMoreRoot?.addEventListener('focusout', (event) => {
 encryptedSelect?.addEventListener('change', async () => {
   if (indexLoader.hasFailed()) return;
   const val = encryptedSelect.value;
-  const encrypted = val === '' ? null : (val === 'true');
+  const encrypted: EncryptedFilter = val === '' ? 'all' : val === 'true' ? 'encrypted' : 'public';
   setActiveEncryptedState(encrypted);
   await applyFilter();
 });
@@ -1021,6 +1108,7 @@ setActiveYearState(initialState.year);
 setActiveEncryptedState(initialState.encrypted);
 syncUrlState(initialState.query, initialState.year, initialState.encrypted);
 
-if (initialState.query || initialState.year !== null || initialState.encrypted !== null) {
+// 仅当有实际筛选条件时才触发搜索；纯默认状态（无查询、无年份、公开筛选）直接展示 browse
+if (initialState.query || initialState.year !== null || initialState.encrypted !== 'public') {
   void applyFilter();
 }

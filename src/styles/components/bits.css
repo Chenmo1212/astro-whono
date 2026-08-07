@@ -540,6 +540,7 @@
   border: 0;
   border-left: 1px solid var(--border);
   background: var(--panel);
+  color: var(--text);
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
@@ -800,11 +801,19 @@
 }
 
 #bits-list {
-  margin-top: 0px;
+  margin-top: 20px;
 }
 
 #bits-list > .bit-card:first-child {
   margin-top: 0;
+}
+
+#bits-list > .bit-card[data-bit-encrypted] {
+  display: none;
+}
+
+#bits-list[data-show-encrypted] > .bit-card[data-bit-encrypted] {
+  display: block;
 }
 
 .bits-controls__actions > button.new[data-loading="true"] {
@@ -934,7 +943,6 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 12px;
 }
 
 .bit-search-result__footer > :first-child {
@@ -1011,6 +1019,65 @@ span[data-tag].bit-search-result__tag:focus-visible {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: inherit;
   font-weight: inherit;
+}
+
+.bit-search-result__layout--encrypted {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.bit-search-result__encrypted-icon {
+  flex: 0 0 88px;
+  width: 88px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 68%, var(--bg));
+  border: 1px solid var(--border);
+  color: var(--faint);
+}
+
+.bit-search-result__encrypted-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.bit-search-result__encrypted-body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.bit-search-result__encrypted-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.bit-search-result__encrypted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--faint) 10%, var(--bg));
+  color: var(--faint);
+  border: 1px solid color-mix(in srgb, var(--faint) 28%, transparent);
+}
+
+.bit-search-result__encrypted-hint {
+  font-size: 13px;
+  color: var(--faint);
+  margin: 0 0 2px;
+  line-height: 1.5;
 }
 
 @media (max-width: 520px) {

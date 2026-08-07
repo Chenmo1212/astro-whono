@@ -10,7 +10,8 @@ const {
   excerpt = '',
   Content = null,
   shouldRenderFull = false,
-  prioritizeLeadMedia = false
+  prioritizeLeadMedia = false,
+  isEncryptedCard = false
 } = Astro.props;
 
 const bitEntry = bit as BitsEntry;
@@ -42,6 +43,7 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
   data-bit
   data-bit-key={bitEntry.id}
   data-slug={card.slug}
+  {...(isEncryptedCard ? { 'data-bit-encrypted': '' } : {})}
 >
   <div class="bit-author">
     <div class={`avatar${card.authorAvatar ? ' avatar--image' : ' is-fallback'}`} aria-hidden="true">
@@ -120,7 +122,7 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
           loading={getImageLoading(prioritizeLeadMedia)}
           fetchpriority={getImageFetchPriority(prioritizeLeadMedia)}
           onload="this.setAttribute('data-loaded','')"
-          onerror="this.onerror=null;this.src='https://placehold.net/shape-400x400.png';this.setAttribute('data-loaded','')"
+          onerror={`this.onerror=null;this.src='${base}images/placeholder.svg';this.setAttribute('data-loaded','')`}
         />
       </button>
     </div>
@@ -145,7 +147,7 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
                 loading={getImageLoading(prioritizeLeadMedia && index === 0)}
                 fetchpriority={getImageFetchPriority(prioritizeLeadMedia && index === 0)}
                 onload="this.setAttribute('data-loaded','')"
-                onerror="this.onerror=null;this.src='https://placehold.net/shape-400x400.png';this.setAttribute('data-loaded','')"
+                onerror={`this.onerror=null;this.src='${base}images/placeholder.svg';this.setAttribute('data-loaded','')`}
               />
               {isMore ? (
                 <>

@@ -296,7 +296,7 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
   <div data-bits-browse>
     <div id="bits-list">
       {cards.map(({ bit, excerpt, Content, shouldRenderFull }) => (
-        <BitCard bit={bit} excerpt={excerpt} Content={Content} shouldRenderFull={shouldRenderFull} prioritizeLeadMedia={bit.id === priorityMediaBitId} />
+        <BitCard bit={bit} excerpt={excerpt} Content={Content} shouldRenderFull={shouldRenderFull} prioritizeLeadMedia={bit.id === priorityMediaBitId} isEncryptedCard={bit.data.encrypted === true} />
       ))}
     </div>
 
