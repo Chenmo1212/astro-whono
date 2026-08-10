@@ -8,6 +8,7 @@ export type AdminImageClientItem = {
   value: string;
   origin: AdminImageOrigin;
   fileName: string;
+  cloudKey?: string | null;
   width: number | null;
   height: number | null;
   size: number | null;
@@ -57,6 +58,7 @@ export const getAdminImageOriginLabel = (origin: AdminImageClientMeta['origin'])
   if (origin === 'public') return '公开资源';
   if (origin === 'src/assets') return '站点素材';
   if (origin === 'src/content') return '文章附件';
+  if (origin === 'cloud') return '云端资源';
   return '本地资源';
 };
 
@@ -86,6 +88,7 @@ const isAdminImageClientItem = (item: unknown): item is AdminImageClientItem =>
   && typeof item.value === 'string'
   && isAdminImageOrigin(item.origin)
   && typeof item.fileName === 'string'
+  && (item.cloudKey === undefined || isNullableString(item.cloudKey))
   && isNullableNumber(item.width)
   && isNullableNumber(item.height)
   && isNullableNumber(item.size)

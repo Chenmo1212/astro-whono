@@ -402,6 +402,7 @@ const getUploadPreviewSrc = (result: EditorImageUploadResult): string =>
 const applyUploadedImage = (index: number, result: EditorImageUploadResult) => {
   const row = rows[index];
   if (!row) return;
+  const isCloudUpload = result.src.startsWith('https://');
   replaceRow(index, applyBitsImageRowAsset(row, {
     src: result.src,
     width: result.width,
@@ -409,8 +410,8 @@ const applyUploadedImage = (index: number, result: EditorImageUploadResult) => {
   }));
   setRowMeta(index, {
     text: formatAdminImageMetaSummary({
-      kind: 'local',
-      origin: 'public',
+      kind: isCloudUpload ? 'remote' : 'local',
+      origin: isCloudUpload ? 'cloud' : 'public',
       width: result.width,
       height: result.height,
       size: result.size

@@ -7,6 +7,7 @@ export type AdminImageBrowseItem = {
   path: string;
   origin: AdminImageOrigin;
   fileName: string;
+  cloudKey?: string | null;
   owner: string | null;
   ownerLabel: string | null;
   browseGroup: Exclude<AdminImageBrowseGroup, 'all'>;
@@ -15,19 +16,20 @@ export type AdminImageBrowseItem = {
   browseSubgroupLabel: string | null;
   preferredValue: string | null;
   previewSrc: string | null;
+  size: number | null;
+  mimeType: string | null;
 };
 
 export type AdminImageListItem = AdminImageBrowseItem & {
   value: string;
   width: number | null;
   height: number | null;
-  size: number | null;
-  mimeType: string | null;
 };
 
 export type AdminImageBootstrap = {
   listEndpoint: string;
   metaEndpoint: string;
+  cloudDeleteEndpoint: string;
   initialState: {
     scope: AdminImageScope;
     group: string;

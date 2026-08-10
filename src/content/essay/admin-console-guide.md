@@ -3,6 +3,7 @@ title: Admin Console 快速指南
 description: 介绍 astro-whono 本地 Admin Console 的入口、各页面功能。
 badge: 指南
 date: 2026-04-24
+updatedAt: 2026-08-10
 tags: [ "Admin Console", "指南" ]
 draft: false
 ---
@@ -57,10 +58,10 @@ Content Console 是内容管理与可视化写作入口，可以集中查看和�
 
 ### 🖼️ Images Console
 
-Images Console 可浏览图片资源、核对图片信息，并复制可用于配置或内容字段的路径。
+Images Console 可浏览本地与云端图片、核对图片信息，并复制可用于配置或内容字段的路径或 URL。
 
-目前定位接近资源浏览器，暂不支持压缩、删除或替换文件。
-需要换图时，先把图片放到项目约定目录，再回到对应页面选择或填写路径。
+本地图片暂不支持压缩、删除或替换；启用 S3 兼容存储后，可删除当前应用管理的云端图片，配置方式见 [Content Console 使用指南](/archive/content-console-guide/)。
+需要更换本地图片时，先把图片放到项目约定目录，再回到对应页面选择或填写路径。
 
 ### 📤 Data Console
 

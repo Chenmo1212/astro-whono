@@ -1,8 +1,9 @@
 ---
 title: Content Console 使用指南
-description: 说明 astro-whono 本地 Content Console 在开发环境下的内容类型、列表查找、编辑预览与下载删除等能力。
+description: 说明 astro-whono 本地 Content Console 在开发环境下的内容类型、列表查找、图片上传、编辑预览与下载删除等能力。
 badge: 指南
 date: 2026-06-13
+updatedAt: 2026-08-10
 tags: [ "Content Console", "指南" ]
 draft: false
 ---
@@ -32,7 +33,49 @@ http://localhost:4321/admin/content/
 
 如果本地修改了开发端口，请将 `4321` 替换为实际端口。
 
-Content Console 直接读取 `src/content/**` 下的源文件，不依赖数据库或外部服务。新建、保存与删除都会落到仓库内的内容文件，相关改动可通过 Git 跟踪和回退。
+Content Console 直接读取 `src/content/**` 下的源文件，不依赖数据库。新建、保存与删除都会落到仓库内的内容文件，图片上传的存储位置则由本地文件或可选的 S3 兼容存储配置决定。
+
+## 图片上传与云存储
+
+Admin Console 的图片上传默认写入本地文件。需要使用对象存储时，可在本地开发环境启用 AWS S3、Cloudflare R2、MinIO 等 S3 兼容服务。
+
+启用后，随笔 / 小记正文图片和絮语配图会上传到配置的存储桶（bucket），并将 `https://` 公开地址写入内容。已有本地图片不会自动迁移。Images Console（`/admin/images/`）可以浏览、复制 URL 和删除云端图片；删除仅限当前应用管理的图片目录。
+
+### R2、MinIO 或其他自定义 endpoint
+
+在项目根目录的 `.env.local` 中填写：
+
+```dotenv
+ASTRO_WHONO_IMAGE_STORAGE=s3
+ASTRO_WHONO_S3_ENDPOINT=https://your-s3-endpoint
+ASTRO_WHONO_S3_REGION=auto
+ASTRO_WHONO_S3_BUCKET=your-bucket
+ASTRO_WHONO_S3_ACCESS_KEY_ID=your-access-key
+ASTRO_WHONO_S3_SECRET_ACCESS_KEY=your-secret-key
+ASTRO_WHONO_S3_PUBLIC_BASE_URL=https://your-cdn-domain
+# 可选：ASTRO_WHONO_S3_PREFIX=blog
+# 可选：ASTRO_WHONO_S3_FORCE_PATH_STYLE=true（自定义 endpoint 默认 true）
+# 可选：ASTRO_WHONO_S3_SESSION_TOKEN=temporary-session-token
+```
+
+`ASTRO_WHONO_S3_ENDPOINT` 是对象存储服务的访问地址，`ASTRO_WHONO_S3_PUBLIC_BASE_URL` 是写入内容的公开图片地址，两者可以不同。公开地址必须是有效的 `https://` URL。自定义 endpoint 默认使用 `region=auto` 和 path-style；如服务有特殊要求，可显式设置 `ASTRO_WHONO_S3_FORCE_PATH_STYLE`。
+
+### AWS 原生 S3
+
+原生 AWS S3 不设置 `ASTRO_WHONO_S3_ENDPOINT`，并填写 bucket 的实际 region，不能使用 `auto`：
+
+```dotenv
+ASTRO_WHONO_IMAGE_STORAGE=s3
+ASTRO_WHONO_S3_REGION=us-east-1
+ASTRO_WHONO_S3_BUCKET=your-bucket
+ASTRO_WHONO_S3_ACCESS_KEY_ID=your-access-key
+ASTRO_WHONO_S3_SECRET_ACCESS_KEY=your-secret-key
+ASTRO_WHONO_S3_PUBLIC_BASE_URL=https://your-cdn-domain
+# 可选：ASTRO_WHONO_S3_PREFIX=blog
+# 可选：ASTRO_WHONO_S3_SESSION_TOKEN=temporary-session-token
+```
+
+`.env.local` 默认被 Git 忽略；不要把 access key、secret access key 或 session token 提交到仓库。
 
 ## 内容类型与能力
 
@@ -74,7 +117,7 @@ Content Console 统一管理四类内容，但它们的能力并不相同：
 - frontmatter 信息面板：发布日期、更新日期、标签、草稿与归档等字段
 - 目录与 Markdown 语法两个辅助侧栏
 - 工具栏：常用 Markdown、数学公式、emoji、图片与画廊
-- 正文图片上传：上传后保存到当前内容的附件目录，并插入 Markdown
+- 正文图片上传：默认保存到当前内容的附件目录；启用云存储后写入配置的存储桶，并插入返回的 `https://` 地址
 
 ### 絮语
 
@@ -110,9 +153,52 @@ Content Console 统一管理四类内容，但它们的能力并不相同：
 
 ## 内容字段与写作约定
 
-Content Console 负责录入和维护内容，具体的 frontmatter 字段、图片路径规则与正文写作约定（Callout、Figure、Gallery、公式等）仍以仓库 README 「内容与写作」为准，这里不再重复。
+Content Console 与直接编辑 `src/content/**` 共用同一套字段规则。这里列出日常写作最常用的部分；完整的排版示例见 [Markdown 排版指南](https://astro.whono.me/archive/markdown-guide/)。
 
-**新建的内容默认是草稿**。随笔、絮语的草稿在本地开发可见，生产构建、RSS 与公开列表会自动过滤；小记是单页内容，不应标记为草稿。
+### 随笔
+
+```yaml
+title: My Post
+date: 2026-01-01
+draft: false
+archive: true
+# slug: my-post
+# publishedAt: 2026-01-01T12:00:00+08:00
+# updatedAt: 2026-01-02
+```
+
+`title` 和 `date` 是必填字段；`tags`、`description`、`cover`、`badge` 等字段按需填写。`date` 可写 `YYYY-MM-DD` 或带时区的 ISO 8601 时间；需要保留具体发布时间时再填写 `publishedAt`，`updatedAt` 不能早于 `date`。不填写 `slug` 时由源文件路径派生（例如 `2024/my-post` 会变成 `2024-my-post`），自定义值需使用小写 kebab-case；最终 slug 不能使用 `page`、`tag` 或 `rss.xml`，也不能与其他随笔重复。
+
+`draft: true` 的随笔只在本地开发中显示，生产列表、RSS 和 sitemap 会过滤。`archive: false` 只会将文章移出 `/archive/` 聚合与归档 RSS，文章仍可从 `/essay/` 和详情路由访问。
+
+### 絮语（bits）
+
+```yaml
+date: 2026-01-01T12:00:00+08:00
+tags: [阅读]
+images:
+  - src: bits/demo-01.webp
+    width: 800
+    height: 600
+    alt: 示例图片
+# author:
+#   name: Alice
+#   avatar: author/alice.webp
+```
+
+`title`、`tags`、`images` 和 `author` 都是可选字段。`images[].src` 可填写 `public/**` 下的相对图片路径（填写时去掉 `public/`，例如 `bits/demo-01.webp`）或 `https://` 远程地址；本地相对路径不能使用 `http`、`..`、查询串或片段。`width` / `height` 为正整数时可减少布局跳动，`alt` 用于图片说明。头像同样只填写 `public/**` 下的相对路径，例如 `author/avatar.webp`。当前 `/bits/` 不生成详情页，通常不需要填写 `slug`。
+
+### 小记与关于
+
+小记和关于都是固定单页：小记源文件为 `src/content/memo/index.md`，不应标记为草稿；关于源文件为 `src/content/about/index.md`，正文中的友链、FAQ 和联系链接使用对应 directive。两者的页面标题和副标题在 Theme Console 中维护。
+
+### 图片、摘要与正文
+
+- 随笔 / 小记正文图片默认保存到当前内容的附件目录；絮语本地配图保存到 `public/bits/`。Admin Console 启用云存储后，新上传图片改写入配置的 bucket，并将 `https://` 地址写入内容，已有本地图片不会自动迁移。
+- 列表摘要默认由正文清洗后截断；可用 `<!-- more -->` 指定截断位置。`description` 只用于 SEO 和 Open Graph 的 meta description，不改变列表摘要。
+- Callout、Figure、Gallery、公式、代码块等写法与示例统一见 [Markdown 排版指南](https://astro.whono.me/archive/markdown-guide/)。
+
+新建的随笔和絮语默认是草稿；保存后先在本地预览，确认内容、图片和 frontmatter 后再发布。
 
 ---
 

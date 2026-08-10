@@ -135,7 +135,9 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/preview',
     'dist/api/admin/images/list',
     'dist/api/admin/images/meta',
-    'dist/api/admin/images/upload'
+    'dist/api/admin/images/upload',
+    'dist/api/admin/images/cloud/delete',
+    'dist/api/admin/site-assets/upload'
   ];
 
   for (const artifactPath of requiredArtifacts) {
@@ -483,6 +485,18 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/images/upload',
     adminImageUploadArtifact,
     '/api/admin/images/upload/'
+  );
+  const adminImageCloudDeleteArtifact = readText('dist/api/admin/images/cloud/delete');
+  assertAdminImageUploadStaticShell(
+    'dist/api/admin/images/cloud/delete',
+    adminImageCloudDeleteArtifact,
+    '/api/admin/images/cloud/delete/'
+  );
+  const adminSiteAssetUploadArtifact = readText('dist/api/admin/site-assets/upload');
+  assertAdminImageUploadStaticShell(
+    'dist/api/admin/site-assets/upload',
+    adminSiteAssetUploadArtifact,
+    '/api/admin/site-assets/upload/'
   );
 
   console.log('Production artifact verification passed.');

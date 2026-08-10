@@ -4,6 +4,7 @@ import {
   getAdminImageListRequest
 } from '../../../../lib/admin-console/image-params';
 import { listAdminImageItems } from '../../../../lib/admin-console/image-shared';
+import { AdminImageUploadError } from '../../../../lib/admin-console/image-upload-error';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -24,7 +25,9 @@ export const GET: APIRoute = async ({ url }) => {
       headers: JSON_HEADERS
     });
   } catch (error) {
-    const status = error instanceof AdminImageError ? error.status : 500;
+    const status = error instanceof AdminImageError || error instanceof AdminImageUploadError
+      ? error.status
+      : 500;
     const message = error instanceof Error ? error.message : '图片列表读取失败';
     return new Response(JSON.stringify({ ok: false, errors: [message] }, null, 2), {
       status,

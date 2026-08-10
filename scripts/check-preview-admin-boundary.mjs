@@ -36,6 +36,11 @@ const previewHost = '127.0.0.1';
 const ADMIN_BOOTSTRAP_XSS_SENTINEL = '__ADMIN_BOOTSTRAP_XSS_SENTINEL__';
 const ADMIN_BOOTSTRAP_BREAKOUT_PAYLOAD = `</script><script>window.${ADMIN_BOOTSTRAP_XSS_SENTINEL}=1</script>`;
 const ADMIN_CONTENT_LOCAL_DEV_NOTICE = '若需查看或编辑内容索引';
+const basePathSegment = String(process.env.ASTRO_WHONO_BASE_PATH ?? '')
+  .trim()
+  .replace(/^\/+|\/+$/g, '');
+const basePrefix = basePathSegment ? `/${basePathSegment}` : '';
+const withBasePath = (pathname) => `${basePrefix}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
 
 const getRequestedPort = (envName, fallbackPort) => {
   const parsed = Number(process.env[envName] ?? String(fallbackPort));
@@ -43,7 +48,7 @@ const getRequestedPort = (envName, fallbackPort) => {
 };
 
 const request = async (baseUrl, pathname, init = {}) => {
-  const response = await fetch(`${baseUrl}${pathname}`, init);
+  const response = await fetch(`${baseUrl}${withBasePath(pathname)}`, init);
   const bodyText = await response.text();
   let bodyJson = null;
   try {
@@ -703,7 +708,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
   const baseUrl = `http://${previewHost}:${previewPort}`;
 
   try {
-    await waitForHttpReady(`${baseUrl}/`);
+    await waitForHttpReady(`${baseUrl}${withBasePath('/')}`);
 
     const adminOverviewResponse = await request(baseUrl, '/admin/');
     const adminThemeResponse = await request(baseUrl, '/admin/theme/');
@@ -732,6 +737,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const imageListResponse = await request(baseUrl, '/api/admin/images/list/');
     const imageMetaResponse = await request(baseUrl, '/api/admin/images/meta/');
     const imageUploadGetResponse = await request(baseUrl, '/api/admin/images/upload/');
+    const imageCloudDeleteGetResponse = await request(baseUrl, '/api/admin/images/cloud/delete/');
     const siteAssetUploadGetResponse = await request(baseUrl, '/api/admin/site-assets/upload/');
     const imageUploadFormData = new FormData();
     imageUploadFormData.set('collection', 'essay');
@@ -835,6 +841,14 @@ export const runPreviewAdminBoundaryCheck = async () => {
       },
       body: imageUploadFormData
     });
+    const imageCloudDeletePostResponse = await request(baseUrl, '/api/admin/images/cloud/delete/', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin: baseUrl
+      },
+      body: JSON.stringify({ key: 'preview-boundary-demo.png' })
+    });
     const siteAssetUploadFormData = new FormData();
     siteAssetUploadFormData.set('slot', 'png');
     siteAssetUploadFormData.set(
@@ -875,6 +889,11 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertAdminImageStaticResponse('GET /api/admin/images/meta/', imageMetaResponse, '/api/admin/images/meta/');
     assertAdminImageUploadStaticResponse('GET /api/admin/images/upload/', imageUploadGetResponse);
     assertAdminImageUploadStaticResponse(
+      'GET /api/admin/images/cloud/delete/',
+      imageCloudDeleteGetResponse,
+      '/api/admin/images/cloud/delete/'
+    );
+    assertAdminImageUploadStaticResponse(
       'GET /api/admin/site-assets/upload/',
       siteAssetUploadGetResponse,
       '/api/admin/site-assets/upload/'
@@ -886,6 +905,11 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertAdminContentStaticResponse('POST /api/admin/content/bulk-export/', contentBulkExportResponse, '/api/admin/content/bulk-export/');
     assertAdminPreviewStaticResponse('POST /api/admin/preview/', previewPostResponse);
     assertAdminImageUploadStaticResponse('POST /api/admin/images/upload/', imageUploadPostResponse);
+    assertAdminImageUploadStaticResponse(
+      'POST /api/admin/images/cloud/delete/',
+      imageCloudDeletePostResponse,
+      '/api/admin/images/cloud/delete/'
+    );
     assertAdminImageUploadStaticResponse(
       'POST /api/admin/site-assets/upload/',
       siteAssetUploadPostResponse,
@@ -929,7 +953,7 @@ export const runDevAdminSettingsSmokeCheck = async () => {
   });
 
   try {
-    await waitForHttpReady(`${baseUrl}/`, { attempts: 75, intervalMs: 200 });
+    await waitForHttpReady(`${baseUrl}${withBasePath('/')}`, { attempts: 75, intervalMs: 200 });
 
     const getResponse = await waitForJsonApiReady(baseUrl, '/api/admin/settings/');
     expect(getResponse.status === 200, `Dev GET /api/admin/settings/ returned ${getResponse.status}`);

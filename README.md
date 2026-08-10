@@ -168,98 +168,20 @@ npm run audit:prod
 
 ## 内容与写作
 
-### 内容与路由
+内容集合、源文件与公开入口如下，字段和写作细节见现有指南：
 
-内容集合（Content Collections）：
-- 随笔：位于 `src/content/essay` 目录
-- 絮语：位于 `src/content/bits` 目录
-- 小记：位于 `src/content/memo/index.md`
-- 关于：位于 `src/content/about/index.md`（固定单页）
-- 归档：由随笔集合按 `archive` 字段生成目录视图
+| 类型 | 源文件 | 主要入口 |
+| --- | --- | --- |
+| 随笔 | `src/content/essay/` | `/essay/`、`/archive/`、`/archive/[slug]/` |
+| 絮语 | `src/content/bits/` | `/bits/` |
+| 小记 | `src/content/memo/index.md` | `/memo/` |
+| 关于 | `src/content/about/index.md` | `/about/` |
 
-主要路由：
-- 列表页：`/archive/`、`/essay/`、`/bits/`、`/memo/`、`/about/`
-- 详情页规范入口：/archive/[slug]（/essay/[slug] 保留兼容跳转）
-
-草稿规则：
-- `essay` / `bits` 的 `draft: true` 在本地开发可见，生产构建、RSS 与公开列表会过滤
-- `memo` 是单页内容；`src/content/memo/index.md` 不应标记为草稿，生产构建会终止以避免 `/memo/` 输出空页
-
-### 图片资源
-
-- 文章正文图片：建议放 `src/content/**` 或 `src/assets/**`， Astro 在构建时可以参与处理优化
-- `/bits/` 配图：放 `public/bits/**`，并填写实际文件路径，例如 `bits/demo-01.jpg`
-- `/bits/` 默认头像：放 `public/author/**`，并填写实际文件路径，例如 `author/your-avatar.png`
-- 首页 Hero：支持 `src/assets/**`、`public/**` 和 `https://` 图片地址
-- 需要公共直链，或不希望经过 Astro 处理的图片：放 `public/**`
-
-### 核心字段（Frontmatter）
-
-随笔：
-```yaml
-title: My Post
-date: 2026-01-01
-draft: false        # 草稿：上线后不会出现在列表/RSS（本地预览可见，默认是 false，可省略）
-archive: true       # 归档开关：false 不进 /archive 与 /archive/rss.xml（默认 true，详情与 /essay 仍可见，可省略）
-slug: optional      # 自定义 URL slug（默认使用拍平后的内容路径，例如 2024/my-post → 2024-my-post）
-badge: optional     # 列表徽标；未填时列表显示“随笔”
-updatedAt: 2026-01-02 # 可选更新日期；填写后前台日期显示为“更新于：YYYY-MM-DD”
-```
-
-`date` 建议使用 `YYYY-MM-DD`，用于归档、排序和日期展示；旧内容中的 ISO 8601 datetime 兼容读取，按日期部分处理。需要保留具体发布时间时，可另填 `publishedAt: 2026-01-01T12:00:00+08:00`。
-
-絮语（bits）：
-```yaml
-date: 2026-01-01T12:00:00+08:00 # 示例；生成器按本地时区输出
-tags:                           # 可选标签（默认空数组，可省略）
-  - loc:深圳                    # 地点标签写法：loc:<地点>，仅展示第一个
-  - 阅读
-images:                         # 可选：多图（自动读取图片尺寸，用于减少页面跳动 CLS）
-  - src: bits/demo-01.webp      # 支持相对路径 bits/... 或绝对 URL https://...
-    width: 800                  # 可选；建议填写，生成器 / 图片选择器会自动回填
-    height: 800                 # 可选；建议填写，生成器 / 图片选择器会自动回填
-# draft: true   # 可选：草稿；`dev` 可见，`build/preview` 与线上默认不显示
-```
-
-当前 `/bits/` 不生成详情页，`slug` 通常无需填写。
-
-作者信息（仅 /bits/ 页面）：
-
-- 默认作者与头像优先读取 Theme Console 的 `page.bits.defaultAuthor`；未创建 `src/data/settings/page.json` 时回退到 `site.config.mjs` 的 `site.author` / `site.authorAvatar`
-- 头像仅写相对图片路径（不带 `public/` 与前导 `/`），例如 `author/avatar.webp`，指向 `public/**` 中实际存在的文件；缺失或加载失败时回退到首字母头像
-- 单条 bits 可在 frontmatter 用 `author` 覆盖，头像规则相同：
-
-```yaml
-author:
-  name: Alice
-  avatar: author/alice.webp
-```
-
-
-### 摘要与描述（description）
-
-- 列表摘要默认从正文生成（清洗后截断）
-- 可用 `<!-- more -->` 指定摘要截取位置
-- `description` 仅用于 SEO/OG（meta description），不影响列表摘要
-
-
-### 写作约定（内容块）
-
-- Callout：`:::note[title] ... :::`（note / tip / info / warning）
-- Figure：`figure.figure > (img|picture) + figcaption.figure-caption?`，可选 `figure--sm/md/lg/full` 与 `figure--left/center/right`
-- Gallery：`ul.gallery > li > figure > (img|picture) + figcaption?`，可选 `cols-2` / `cols-3`
-- Math：支持双美元公式，行内写 `$$x$$`，块级写 `$$ ... $$`；单美元 `$x$` 不作为公式解析
-- Quote：标准 `blockquote`，可选 `cite` 标注来源
-- Pullquote：`blockquote.pullquote`
-- Code Block：构建时增强工具栏/复制按钮/行号（作者无需额外写法）
-
-Callout 示例：
-
-```md
-:::note[Note]
-这里是正文……
-:::
-```
+- `essay` / `bits` 是多条内容；`memo` / `about` 是固定单页。
+- `essay` / `bits` 的 `draft: true` 只在本地开发中用于预览，生产构建、公开列表和 RSS 会过滤；`memo` 不应标记为草稿。
+- `essay.archive: false` 只退出 `/archive/` 聚合与归档 RSS，不代表隐藏文章；详情页、`/essay/` 和 essay RSS 仍可见。
+- Admin Console 图片上传默认写入本地，也可在开发环境配置 AWS S3、Cloudflare R2 或 MinIO 等 S3 兼容存储。
+- 图片上传、frontmatter 字段、日期与摘要规则见 [Content Console 使用指南](https://astro.whono.me/archive/content-console-guide/)；Callout、Figure、Gallery、公式等 Markdown 扩展见 [Markdown 排版指南](https://astro.whono.me/archive/markdown-guide/)。
 
 
 ## 字体与许可

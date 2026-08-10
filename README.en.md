@@ -167,95 +167,20 @@ Production builds remain static output: `/admin/` can show a read-only public Ov
 
 ## Content and Writing
 
-### Collections and Routes
+Content collections, source locations, and public entry points:
 
-Content Collections:
-- Essay: `src/content/essay`
-- Bits: `src/content/bits`
-- Memo: `src/content/memo/index.md`
-- About: `src/content/about/index.md` (fixed single page)
-- Archive: generated from essay entries via the `archive` field
+| Type | Source | Main routes |
+| --- | --- | --- |
+| Essay | `src/content/essay/` | `/essay/`, `/archive/`, `/archive/[slug]/` |
+| Bits | `src/content/bits/` | `/bits/` |
+| Memo | `src/content/memo/index.md` | `/memo/` |
+| About | `src/content/about/index.md` | `/about/` |
 
-Main routes:
-- List pages: `/archive/`, `/essay/`, `/bits/`, `/memo/`, `/about/`
-- Canonical detail route: `/archive/[slug]` (`/essay/[slug]` remains as a compatibility redirect)
-
-### Image Assets
-
-- Images inside article content: prefer `src/content/**` or `src/assets/**`, so Astro can process and optimize them during build
-- `/bits/` images: place them under `public/bits/**` and use the actual file path, for example `bits/demo-01.jpg`
-- Default avatar for `/bits/`: place it under `public/author/**` and use the actual file path, for example `author/your-avatar.png`
-- Home Hero: supports `src/assets/**`, `public/**`, and `https://` image URLs
-- If you need a public direct URL, or do not want Astro to process the asset, place it under `public/**`
-
-
-### Core Frontmatter Fields
-
-Essay:
-```yaml
-title: My Post
-date: 2026-01-01
-draft: false        # Draft: hidden from list/RSS in production (visible in local preview; default false, optional)
-archive: true       # Archive switch: false excludes it from /archive and /archive/rss.xml (default true; detail page and /essay remain available)
-slug: optional      # Custom URL slug (defaults to the flattened content path, e.g. 2024/my-post -> 2024-my-post)
-badge: optional     # List badge; if omitted, list shows "Essay"
-updatedAt: 2026-01-02 # Optional update date; replaces the visible article date when set
-```
-
-`date` should use the `YYYY-MM-DD` format for archive grouping, ordering, and date display; legacy ISO 8601 datetime values are still accepted and normalized to their date part. To keep a precise publish time, add `publishedAt: 2026-01-01T12:00:00+08:00`.
-
-Bits:
-```yaml
-date: 2026-01-01T12:00:00+08:00 # Example; generator outputs local timezone
-tags:                           # Optional tags (defaults to empty array)
-  - loc:Shenzhen                # Location tag format: loc:<place>; only the first one is displayed
-  - reading
-images:                         # Optional: multi-image list (dimensions reduce CLS)
-  - src: bits/demo-01.webp      # Supports relative path bits/... or absolute URL https://...
-    width: 800                  # Optional; recommended, generator / image picker can fill it
-    height: 800                 # Optional; recommended, generator / image picker can fill it
-# draft: true   # Optional draft; visible in `dev`, hidden by default in `build/preview` and production
-```
-
-`/bits/` does not currently generate detail routes; `slug` usually does not need to be set.
-
-Author info (on `/bits/` only):
-
-- Default author and avatar are read from Theme Console via `page.bits.defaultAuthor`; if `src/data/settings/page.json` does not exist yet, they fall back to `site.author` / `site.authorAvatar` in `site.config.mjs`
-- Avatars use relative image paths only (no `public/`, no leading `/`), for example `author/avatar.webp`, pointing to an existing file under `public/**`; a missing or failed avatar falls back to an initial-based one
-- Per-bit overrides are supported via `author` in frontmatter, with the same avatar rule:
-
-```yaml
-author:
-  name: Alice
-  avatar: author/alice.webp
-```
-
-
-### Excerpt and Description (`description`)
-
-- List excerpt is generated from content by default (sanitized and truncated)
-- Use `<!-- more -->` to define excerpt split point
-- `description` is used for SEO/OG (meta description) only and does not affect list excerpts
-
-
-### Writing Conventions (Content Blocks)
-
-- Callout: `:::note[title] ... :::` (`note` / `tip` / `info` / `warning`)
-- Figure: `figure.figure > (img|picture) + figcaption.figure-caption?`; optional `figure--sm/md/lg/full` and `figure--left/center/right`
-- Gallery: `ul.gallery > li > figure > (img|picture) + figcaption?`; optional `cols-2` / `cols-3`
-- Math: double-dollar syntax is supported, with inline `$$x$$` and block `$$ ... $$`; single-dollar `$x$` is not parsed as math
-- Quote: standard `blockquote`, optional `cite` for source
-- Pullquote: `blockquote.pullquote`
-- Code Block: toolbar / copy button / line numbers are enhanced at build time (no extra author-side syntax needed)
-
-Callout example:
-
-```md
-:::note[Note]
-Body text goes here...
-:::
-```
+- Essay and Bits are multi-entry collections; Memo and About are fixed single pages.
+- `draft: true` is visible only in local development; production lists and feeds filter drafts. Memo should not be marked as draft.
+- `essay.archive: false` removes an essay from the `/archive/` aggregation and archive feed, but it remains available through `/essay/`, its detail route, and the essay feed.
+- Admin Console image uploads use local storage by default; AWS S3, Cloudflare R2, and MinIO are supported as optional S3-compatible storage.
+- For image upload, frontmatter, dates, and excerpts, see the [Content Console guide (Chinese)](https://astro.whono.me/archive/content-console-guide/). For Callout, Figure, Gallery, and math syntax, see the [Markdown formatting guide (Chinese)](https://astro.whono.me/archive/markdown-guide/).
 
 
 ## Fonts and Licensing
