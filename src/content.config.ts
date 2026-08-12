@@ -31,7 +31,9 @@ const essayBaseFields = {
     authTag: z.string(),
     algorithm: z.string().default('aes-256-gcm'),
     iterations: z.number().default(100000),
-  }).optional()
+  }).optional(),
+  // Public teaser shown on the card before the password is entered
+  summary: z.string().optional()
 };
 
 const essayShape = {
@@ -171,7 +173,9 @@ const bits = defineCollection({
       authTag: z.string(),
       algorithm: z.string().default('aes-256-gcm'),
       iterations: z.number().default(100000),
-    }).optional()
+    }).optional(),
+    // Public teaser shown on the card before the password is entered
+    summary: z.string().optional()
   })
 });
 

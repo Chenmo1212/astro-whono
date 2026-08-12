@@ -59,7 +59,11 @@ def run_crawl_job(cfg: dict, enable_pipeline: bool = True):
     if enable_pipeline:
         # 使用完整管道
         from pipeline import run_full_pipeline
-        run_full_pipeline(cfg)
+        try:
+            run_full_pipeline(cfg)
+        except Exception as e:
+            logger.error("管道执行失败，退出：{}", e)
+            sys.exit(1)
     else:
         # 原始工作流（向后兼容）
         from crawler import DiaryWeiboCrawler

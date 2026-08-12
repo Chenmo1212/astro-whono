@@ -56,6 +56,20 @@ privacy:
   # 每次 API 调用的超时秒数
   timeout: 60
 
+# 加密文章 teaser 生成配置（使用 DeepSeek API）
+# 依赖隐私检查已标记 encrypted: true，建议在 privacy 之后运行
+teaser:
+  # 是否启用 teaser 生成
+  enabled: true
+  # 使用的模型
+  model: "deepseek-chat"
+  # 若为 true，将生成的 teaser 写入 frontmatter summary 字段；false 则仅打印（dry-run）
+  apply: true
+  # 每次 API 调用的超时秒数
+  timeout: 60
+  # 若为 true，对已有 summary 的文件强制重新生成（默认跳过）
+  force: false
+
 # 完整处理管道配置
 pipeline:
   # 是否启用完整处理管道（爬取 → 压缩 → 上传 → bits转换）

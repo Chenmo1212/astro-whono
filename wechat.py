@@ -82,7 +82,11 @@ def notify_weibo_sync(api_url: str, job_status: str, repository: str,
     bj_now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
     details_url = f"{server_url}/{repository}/actions/runs/{run_id}"
 
-    if total == 0:
+    crawl_failed: bool = summary.get("crawl_failed", False)
+
+    if crawl_failed:
+        sync_summary = "⚠️ Crawl failed — Cookie may have expired or network error"
+    elif total == 0:
         sync_summary = "No new posts today"
     else:
         sync_summary = (

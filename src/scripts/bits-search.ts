@@ -875,7 +875,18 @@ resultsListEl?.addEventListener('click', (event) => {
   }
 
   event.preventDefault();
-  resetFilters();
+
+  // 点击搜索结果里的 bit 链接，切回 browse 视图定位到目标卡片
+  // 保留当前加密筛选状态（showBrowse 会据此决定是否显示加密卡片）
+  filterRunId += 1;
+  filterRunner.cancel();
+  if (input) input.value = '';
+  currentPage = 1;
+  totalFilteredItems = [];
+  setActiveYearState(null);
+  showBrowse();
+  setStatus('');
+  syncUrlState('', null, activeEncrypted);
 
   if (!nextUrl.hash) return;
   const targetEl = document.getElementById(nextUrl.hash.slice(1));
@@ -884,7 +895,7 @@ resultsListEl?.addEventListener('click', (event) => {
     return;
   }
 
-  const basePath = getFilterUrl('', null);
+  const basePath = getFilterUrl('', null, activeEncrypted);
   window.history.replaceState({}, '', basePath);
   window.requestAnimationFrame(() => {
     window.location.hash = nextUrl.hash;

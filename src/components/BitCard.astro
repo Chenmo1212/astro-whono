@@ -67,6 +67,7 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
     <EncryptedPostClient
       postId={bitEntry.id}
       encryptedContent={bitEntry.data.encryptedContent}
+      {...(bitEntry.data.summary ? { summary: bitEntry.data.summary } : {})}
     />
   ) : Content ? (
     shouldUseExpandableBody ? (

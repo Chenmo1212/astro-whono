@@ -90,23 +90,66 @@ class DiaryWeiboCrawler:
 
         # 环境变量 WEIBO_COOKIE 优先，其次 config.yaml 中的 cookie 字段
         cookie_str = os.environ.get("WEIBO_COOKIE") or cfg.get("cookie", "")
-        # ---- Cookie 解析（直接复用 weibo.py 逻辑）----
-        core_cookies, backup_cookies = parse_cookie_string(cookie_str)
+        cookies, _ = parse_cookie_string(cookie_str)
 
         self.session = requests.Session()
-        self.session.cookies.update(core_cookies)
+        self.session.cookies.update(cookies)
 
-        # Session 预热：让服务器下发最新指纹（同 weibo.py Weibo.__init__()）
-        try:
-            self.session.get("https://m.weibo.cn", headers=self._HEADERS, timeout=10)
-            logger.info("Session 预热成功")
-        except Exception as e:
-            logger.warning("Session 预热失败（{}），启用备份 Cookie", e)
-            self.session.cookies.update(backup_cookies)
+        # Session 预热：复现浏览器自动刷新 SUB+SUBP 的行为
+        self._refresh_login_cookies()
 
         adapter = HTTPAdapter(max_retries=5)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
+
+    def _refresh_login_cookies(self) -> None:
+        """
+        复现浏览器自动刷新 SUB+SUBP 的行为。
+
+        浏览器不需要反复登录的原因：每次打开微博时，前端会悄悄请求
+        passport.weibo.cn/sso/crossdomain，用长效的 _T_WM/ALF 换取新的
+        SUB+SUBP（短效 API 凭证）。爬虫这里复现这一步，确保每次运行时
+        SUB+SUBP 都是新鲜的，避免触发 Sina Visitor System。
+
+        流程：
+          1. 访问 m.weibo.cn 主页，触发服务器下发 login_ticket（跳转到 crossdomain）
+          2. 跟随重定向后，服务器会 Set-Cookie 写入新的 SUB+SUBP
+          3. 验证 session 中确实拿到了 SUB
+        """
+        try:
+            # Step 1: 访问主页，requests 会自动跟随重定向到 crossdomain 并刷新 Cookie
+            resp = self.session.get(
+                "https://m.weibo.cn",
+                headers={**self._HEADERS, "accept": "text/html,application/xhtml+xml,*/*"},
+                timeout=15,
+                allow_redirects=True,
+            )
+            sub = self.session.cookies.get("SUB")
+            subp = self.session.cookies.get("SUBP")
+            if sub and subp:
+                logger.info("Session 预热成功，SUB+SUBP 已刷新")
+            elif sub:
+                logger.info("Session 预热成功（仅 SUB，无 SUBP）")
+            else:
+                # Step 2: 主页没有触发刷新时，尝试直接请求 visitor 初始化接口
+                logger.debug("主页预热未刷新 SUB，尝试 visitor 接口兜底")
+                self.session.get(
+                    "https://passport.weibo.cn/visitor/visitor",
+                    params={"a": "init", "cb": "cross_domain", "from": "weibo"},
+                    headers=self._HEADERS,
+                    timeout=10,
+                )
+                sub = self.session.cookies.get("SUB")
+                if sub:
+                    logger.info("Session 预热成功（visitor 接口兜底）")
+                else:
+                    logger.warning(
+                        "Session 预热完成但未获取到 SUB Cookie，"
+                        "如果后续请求失败请重新从浏览器复制完整 Cookie"
+                    )
+        except Exception as e:
+            logger.warning("Session 预热失败（网络问题）：{}", e)
+
 
     # ------------------------------------------------------------------ #
     #   以下方法一一对应 weibo.py 中的同名方法，逻辑保持一致，仅去掉      #
@@ -127,12 +170,30 @@ class DiaryWeiboCrawler:
         max_retries = 5
         backoff_factor = 5
 
+        resp = None
         for attempt in range(1, max_retries + 1):
             try:
                 resp = self.session.get(
                     url, params=params, headers=self._HEADERS, timeout=10, verify=certifi.where()
                 )
+                # 先记录原始响应信息，无论成功与否
+                logger.debug(
+                    "第 {} 页原始响应：HTTP {} | Content-Type: {} | body[:200]: {}",
+                    page,
+                    resp.status_code,
+                    resp.headers.get("Content-Type", "unknown"),
+                    resp.text[:200].replace("\n", " "),
+                )
                 resp.raise_for_status()
+                # 若响应体为空，说明 Cookie 失效或被重定向到验证码页面
+                if not resp.text or not resp.text.strip():
+                    wait = backoff_factor * (2 ** attempt)
+                    logger.warning(
+                        "第 {} 页响应体为空（HTTP {}），Cookie 可能已过期，{}秒后重试",
+                        page, resp.status_code, wait,
+                    )
+                    sleep(wait)
+                    continue
                 js = resp.json()
                 if "data" in js:
                     logger.info("成功获取第 {} 页数据", page)
@@ -140,13 +201,21 @@ class DiaryWeiboCrawler:
                 else:
                     logger.warning("第 {} 页返回数据无 data 字段，可能触发验证码", page)
                     return {}
-            except RequestException as e:
+            except Exception as e:
                 wait = backoff_factor * (2 ** attempt)
-                logger.warning("请求失败（{}/{}），{}秒后重试：{}", attempt, max_retries, wait, e)
-                sleep(wait)
-            except ValueError as e:
-                wait = backoff_factor * (2 ** attempt)
-                logger.warning("JSON 解析失败（{}/{}），{}秒后重试：{}", attempt, max_retries, wait, e)
+                body_snippet = resp.text[:500].replace("\n", " ") if resp is not None else "(无响应)"
+                logger.warning(
+                    "第 {} 页请求失败（{}/{}），{}秒后重试\n"
+                    "  异常类型: {}\n"
+                    "  异常信息: {}\n"
+                    "  HTTP状态: {}\n"
+                    "  响应体:   {}",
+                    page, attempt, max_retries, wait,
+                    type(e).__name__,
+                    e,
+                    resp.status_code if resp is not None else "N/A",
+                    body_snippet,
+                )
                 sleep(wait)
 
         logger.error("超过最大重试次数，跳过第 {} 页", page)

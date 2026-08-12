@@ -112,24 +112,10 @@ def parse_cookie_string(cookie_string: str) -> tuple[dict, dict]:
     core: dict = {}
     backup: dict = {}
 
-    if "SUB=" in cookie_string:
-        # 提取核心 SUB
-        m = re.search(r"SUB=(.*?)(;|$)", cookie_string)
-        if m:
-            core["SUB"] = m.group(1)
-        # 提取备份指纹 _T_WM / XSRF-TOKEN
-        m_twm = re.search(r"_T_WM=(.*?)(;|$)", cookie_string)
-        if m_twm:
-            backup["_T_WM"] = m_twm.group(1)
-        m_xsrf = re.search(r"XSRF-TOKEN=(.*?)(;|$)", cookie_string)
-        if m_xsrf:
-            backup["XSRF-TOKEN"] = m_xsrf.group(1)
-
-    # 保底全量解析
-    if not core:
-        for pair in cookie_string.split(";"):
-            if "=" in pair:
-                key, val = pair.split("=", 1)
-                core[key.strip()] = val.strip()
+    # 直接全量解析所有字段，避免遗漏关键鉴权 Cookie
+    for pair in cookie_string.split(";"):
+        if "=" in pair:
+            key, val = pair.split("=", 1)
+            core[key.strip()] = val.strip()
 
     return core, backup

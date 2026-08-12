@@ -31,7 +31,12 @@ from bits_converter import batch_write_bits_files
 from storage import create_storage
 
 
-def _write_pipeline_summary(posts: list[dict], privacy_results: list[dict], summary_path: str) -> None:
+def _write_pipeline_summary(
+    posts: list[dict],
+    privacy_results: list[dict],
+    summary_path: str,
+    crawl_failed: bool = False,
+) -> None:
     """
     将管道运行结果写入 JSON 摘要文件，供通知脚本读取。
 
@@ -39,6 +44,8 @@ def _write_pipeline_summary(posts: list[dict], privacy_results: list[dict], summ
         posts: 处理后的微博列表
         privacy_results: 隐私检查结果列表（可为空）
         summary_path: 输出 JSON 文件路径
+        crawl_failed: True 表示爬取本身出错（Cookie 失效、网络异常等），
+                      False 表示正常运行（可能只是今天没有新微博）
     """
     post_summaries = []
     for post in posts:
@@ -77,6 +84,7 @@ def _write_pipeline_summary(posts: list[dict], privacy_results: list[dict], summ
         "encrypted":     sum(1 for p in post_summaries if p["encrypted"]),
         "total_images":  sum(p["image_count"] for p in post_summaries),
         "img_errors":    sum(p["img_errors"] for p in post_summaries),
+        "crawl_failed":  crawl_failed,
         "posts":         post_summaries,
     }
 
@@ -130,8 +138,8 @@ def run_full_pipeline(
         logger.info("✓ 爬取完成：共获取 {} 条微博", len(posts))
     except Exception as e:
         logger.exception("爬取失败：{}", e)
-        _write_pipeline_summary([], [], summary_path)
-        return []
+        _write_pipeline_summary([], [], summary_path, crawl_failed=True)
+        raise
 
     # ── 去重：过滤掉已在 posts.json 中存在的微博 ──
     try:
@@ -239,7 +247,7 @@ def run_full_pipeline(
     privacy_enabled = privacy_cfg.get("enabled", False)
     if privacy_enabled and bits_write and output_paths:
         try:
-            logger.info("【步骤 5/6】运行隐私敏感性检查...")
+            logger.info("【步骤 5/7】运行隐私敏感性检查...")
             from check_privacy import check_and_apply_privacy
 
             api_key = os.environ.get("DEEPSEEK_API_KEY", "")
@@ -266,9 +274,42 @@ def run_full_pipeline(
     elif privacy_enabled and not bits_write:
         logger.debug("check_privacy: bits_write=False，跳过隐私检查（无文件写入）")
 
-    # ── 步骤6：写入存储 ──
+    # ── 步骤6：生成加密 teaser ──
+    teaser_cfg = cfg.get("teaser", {})
+    teaser_enabled = teaser_cfg.get("enabled", False)
+    if teaser_enabled and bits_write and output_paths:
+        try:
+            logger.info("【步骤 6/7】生成加密文章 teaser...")
+            from generate_teaser import generate_teasers
+
+            api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+            if not api_key:
+                logger.warning(
+                    "generate_teaser: 未设置环境变量 DEEPSEEK_API_KEY，跳过 teaser 生成"
+                )
+            else:
+                teaser_results = generate_teasers(
+                    file_paths=output_paths,
+                    api_key=api_key,
+                    model=teaser_cfg.get("model", "deepseek-chat"),
+                    timeout=int(teaser_cfg.get("timeout", 60)),
+                    apply=teaser_cfg.get("apply", True),
+                    force=teaser_cfg.get("force", False),
+                )
+                written = [r for r in teaser_results if r["applied"]]
+                errors  = [r for r in teaser_results if r["error"]]
+                logger.info(
+                    "✓ teaser 生成完成：{} 篇已写入，{} 篇出错",
+                    len(written), len(errors),
+                )
+        except Exception as e:
+            logger.exception("teaser 生成失败：{}", e)
+    elif teaser_enabled and not bits_write:
+        logger.debug("generate_teaser: bits_write=False，跳过 teaser 生成（无文件写入）")
+
+    # ── 步骤7：写入存储 ──
     try:
-        logger.info("【步骤 6/6】持久化存储...")
+        logger.info("【步骤 7/7】持久化存储...")
         storage = create_storage(cfg)
         crawled_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         for post in posts:
