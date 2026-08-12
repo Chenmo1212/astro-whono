@@ -137,7 +137,7 @@ def run_full_pipeline(
             return []
         logger.info("✓ 爬取完成：共获取 {} 条微博", len(posts))
     except Exception as e:
-        logger.exception("爬取失败：{}", e)
+        logger.exception("爬取失败（Cookie 失效或网络异常）：{}", e)
         _write_pipeline_summary([], [], summary_path, crawl_failed=True)
         raise
 

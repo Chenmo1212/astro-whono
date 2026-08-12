@@ -67,15 +67,19 @@ class DiaryWeiboCrawler:
         """
         初始化爬取器。
         cfg 对应 config.yaml 中的 weibo 节点：
-          - cookie        : 原始 Cookie 字符串
-          - uid           : 自己的微博数字 UID
-          - fetch_count   : 每次爬取最新几条（默认 5）
+          - cookie           : 原始 Cookie 字符串
+          - uid              : 自己的微博数字 UID
+          - fetch_count      : 每次爬取最新几条（默认 5）
           - page_weibo_count : 每页请求条数（默认 10）
+          - max_retries      : 每页最大重试次数（默认 5）
+          - retry_interval   : 重试间隔秒数，固定值（默认 10）
         """
         self.uid = str(cfg["uid"])
         self.fetch_mode = cfg.get("fetch_mode", "count")          # "count" | "since_date"
         self.fetch_count = int(cfg.get("fetch_count", 5))
         self.page_weibo_count = int(cfg.get("page_weibo_count", 10))
+        self.max_retries = int(cfg.get("max_retries", 5))
+        self.retry_interval = int(cfg.get("retry_interval", 10))
 
         # since_date 模式：解析截止日期
         since_raw = cfg.get("fetch_since_date", "")
@@ -158,8 +162,8 @@ class DiaryWeiboCrawler:
 
     def _get_weibo_json(self, page: int) -> dict:
         """
-        获取指定页的微博 JSON 数据。
-        对应 weibo.py Weibo.get_weibo_json()，保留指数退避重试逻辑。
+        获取指定页的微博 JSON 数据。重试间隔固定为 retry_interval 秒。
+        所有重试耗尽后抛出 RuntimeError，由上层（pipeline）捕获并标记 crawl_failed=True。
         """
         url = "https://m.weibo.cn/api/container/getIndex?"
         params = {
@@ -167,10 +171,11 @@ class DiaryWeiboCrawler:
             "page": page,
             "count": self.page_weibo_count,
         }
-        max_retries = 5
-        backoff_factor = 5
+        max_retries = self.max_retries
+        retry_interval = self.retry_interval
 
         resp = None
+        last_exc: Optional[Exception] = None
         for attempt in range(1, max_retries + 1):
             try:
                 resp = self.session.get(
@@ -187,12 +192,11 @@ class DiaryWeiboCrawler:
                 resp.raise_for_status()
                 # 若响应体为空，说明 Cookie 失效或被重定向到验证码页面
                 if not resp.text or not resp.text.strip():
-                    wait = backoff_factor * (2 ** attempt)
                     logger.warning(
                         "第 {} 页响应体为空（HTTP {}），Cookie 可能已过期，{}秒后重试",
-                        page, resp.status_code, wait,
+                        page, resp.status_code, retry_interval,
                     )
-                    sleep(wait)
+                    sleep(retry_interval)
                     continue
                 js = resp.json()
                 if "data" in js:
@@ -202,7 +206,7 @@ class DiaryWeiboCrawler:
                     logger.warning("第 {} 页返回数据无 data 字段，可能触发验证码", page)
                     return {}
             except Exception as e:
-                wait = backoff_factor * (2 ** attempt)
+                last_exc = e
                 body_snippet = resp.text[:500].replace("\n", " ") if resp is not None else "(无响应)"
                 logger.warning(
                     "第 {} 页请求失败（{}/{}），{}秒后重试\n"
@@ -210,16 +214,18 @@ class DiaryWeiboCrawler:
                     "  异常信息: {}\n"
                     "  HTTP状态: {}\n"
                     "  响应体:   {}",
-                    page, attempt, max_retries, wait,
+                    page, attempt, max_retries, retry_interval,
                     type(e).__name__,
                     e,
                     resp.status_code if resp is not None else "N/A",
                     body_snippet,
                 )
-                sleep(wait)
+                sleep(retry_interval)
 
-        logger.error("超过最大重试次数，跳过第 {} 页", page)
-        return {}
+        logger.error("超过最大重试次数，第 {} 页爬取失败", page)
+        raise RuntimeError(
+            f"第 {page} 页超过最大重试次数（{max_retries} 次），爬取失败"
+        ) from last_exc
 
     def _get_long_weibo(self, weibo_id: str) -> Optional[dict]:
         """
