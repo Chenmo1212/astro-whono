@@ -3,5 +3,6 @@
   "encrypted": 0,
   "total_images": 0,
   "img_errors": 0,
+  "crawl_failed": false,
   "posts": []
 }
