@@ -28,8 +28,8 @@ vi.mock('@aws-sdk/client-s3', () => {
       s3SdkMock.clientConfigs.push(config);
     }
 
-    send(command: unknown): Promise<unknown> {
-      return s3SdkMock.send(command);
+    send(command: unknown, options?: unknown): Promise<unknown> {
+      return s3SdkMock.send(command, options);
     }
   }
 
@@ -37,14 +37,9 @@ vi.mock('@aws-sdk/client-s3', () => {
     constructor(readonly input: Record<string, unknown>) {}
   }
 
-  class DeleteObjectCommand {
-    constructor(readonly input: Record<string, unknown>) {}
-  }
-
   return {
     S3Client,
     PutObjectCommand,
-    DeleteObjectCommand,
     paginateListObjectsV2: s3SdkMock.paginateListObjectsV2
   };
 });
@@ -158,6 +153,8 @@ describe('admin images api', () => {
   });
 
   afterEach(async () => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
     delete process.env.ASTRO_WHONO_INTERNAL_TEST_PROJECT_ROOT;
     delete process.env.ASTRO_WHONO_IMAGE_STORAGE;
     delete process.env.ASTRO_WHONO_S3_ENDPOINT;
@@ -315,6 +312,9 @@ describe('admin images api', () => {
       Bucket: 'site-images',
       Prefix: 'uploads/'
     });
+    expect(s3SdkMock.paginateListObjectsV2.mock.calls[0]?.[2]).toEqual({
+      abortSignal: expect.any(AbortSignal)
+    });
     expect(s3SdkMock.clientConfigs[0]).toEqual(expect.objectContaining({
       endpoint: 'https://s3.example.test',
       forcePathStyle: true,
@@ -397,10 +397,15 @@ describe('admin images api', () => {
 
     expect(response.status).toBe(502);
     const payload = JSON.parse(await response.text());
-    expect(payload).toEqual({
+    expect(payload).toEqual(expect.objectContaining({
       ok: false,
-      errors: ['云端图片列表读取失败：S3 unavailable']
-    });
+      errors: ['云端图片操作失败，请查看服务端日志'],
+      error: expect.objectContaining({
+        code: 'cloud_unknown',
+        outcome: 'failed_known',
+        traceId: expect.any(String)
+      })
+    }));
   });
 
   it('requires an explicit region for native AWS S3 when endpoint is omitted', async () => {
@@ -414,10 +419,11 @@ describe('admin images api', () => {
     } as never);
 
     expect(response.status).toBe(500);
-    expect(JSON.parse(await response.text())).toEqual({
+    expect(JSON.parse(await response.text())).toEqual(expect.objectContaining({
       ok: false,
-      errors: ['云端图片存储配置缺失：region']
-    });
+      errors: ['云端图片存储配置无效，请检查服务端配置'],
+      error: expect.objectContaining({ code: 'cloud_config_invalid', traceId: expect.any(String) })
+    }));
     expect(s3SdkMock.paginateListObjectsV2).not.toHaveBeenCalled();
   });
 
@@ -431,10 +437,11 @@ describe('admin images api', () => {
     } as never);
 
     expect(response.status).toBe(500);
-    expect(JSON.parse(await response.text())).toEqual({
+    expect(JSON.parse(await response.text())).toEqual(expect.objectContaining({
       ok: false,
-      errors: ['云端图片存储配置无效：原生 AWS S3 的 region 不能为 auto']
-    });
+      errors: ['云端图片存储配置无效，请检查服务端配置'],
+      error: expect.objectContaining({ code: 'cloud_config_invalid', traceId: expect.any(String) })
+    }));
     expect(s3SdkMock.paginateListObjectsV2).not.toHaveBeenCalled();
   });
 
@@ -458,10 +465,11 @@ describe('admin images api', () => {
     } as never);
 
     expect(response.status).toBe(500);
-    expect(JSON.parse(await response.text())).toEqual({
+    expect(JSON.parse(await response.text())).toEqual(expect.objectContaining({
       ok: false,
-      errors: ['云端图片存储配置无效：publicBaseUrl 必须是有效的 https:// URL']
-    });
+      errors: ['云端图片存储配置无效，请检查服务端配置'],
+      error: expect.objectContaining({ code: 'cloud_config_invalid', traceId: expect.any(String) })
+    }));
     expect(s3SdkMock.paginateListObjectsV2).not.toHaveBeenCalled();
   });
 
@@ -705,16 +713,20 @@ describe('admin images api', () => {
       Body: PNG_1X1,
       ContentType: 'image/png'
     });
-    expect(s3SdkMock.clientConfigs[0]).toEqual({
+    expect(s3SdkMock.send.mock.calls[0]?.[1]).toEqual({
+      abortSignal: expect.any(AbortSignal)
+    });
+    expect(s3SdkMock.clientConfigs[0]).toEqual(expect.objectContaining({
       region: 'auto',
       endpoint: 'https://s3.example.test',
       forcePathStyle: false,
+      maxAttempts: 2,
       credentials: {
         accessKeyId: 'test-access-key',
         secretAccessKey: 'test-secret-key',
         sessionToken: 'test-session-token'
       }
-    });
+    }));
     await expect(readFile(path.join(tempRoot, 'public', 'bits', 'cloud-cover.png'))).rejects.toThrow();
   });
 
@@ -734,10 +746,71 @@ describe('admin images api', () => {
     } as never);
 
     expect(response.status).toBe(502);
-    expect(JSON.parse(await response.text())).toEqual({
+    expect(JSON.parse(await response.text())).toEqual(expect.objectContaining({
       ok: false,
-      errors: ['云端图片上传失败：S3 upload unavailable']
-    });
+      errors: ['云端图片操作失败，请查看服务端日志'],
+      error: expect.objectContaining({ code: 'cloud_unknown', outcome: 'failed_known', traceId: expect.any(String) })
+    }));
+  });
+
+  it('redacts provider network errors and marks an upload outcome as unknown', async () => {
+    configureS3TestEnv();
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    s3SdkMock.send.mockRejectedValueOnce(Object.assign(
+      new Error('signed endpoint https://s3.example.test/?credential=secret'),
+      { code: 'ECONNRESET', $metadata: { requestId: 'provider-request-id' } }
+    ));
+
+    const { POST } = await import('../src/pages/api/admin/images/upload');
+    const formData = new FormData();
+    formData.set('collection', 'bits');
+    formData.set('entryId', 'demo');
+    formData.set('image', new File([PNG_1X1], 'Network Failure.PNG', { type: 'image/png' }));
+
+    const response = await POST({
+      request: createUploadRequest('http://127.0.0.1:4321/api/admin/images/upload', formData),
+      url: new URL('http://127.0.0.1:4321/api/admin/images/upload')
+    } as never);
+    const responseText = await response.text();
+    const payload = JSON.parse(responseText);
+
+    expect(response.status).toBe(502);
+    expect(responseText).not.toContain('credential=secret');
+    expect(responseText).not.toContain('provider-request-id');
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain('credential=secret');
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain('signed endpoint');
+    expect(payload.error).toEqual(expect.objectContaining({
+      code: 'cloud_provider_unavailable',
+      outcome: 'unknown_may_have_succeeded',
+      traceId: expect.any(String)
+    }));
+    consoleError.mockRestore();
+  });
+
+  it('aborts a cloud upload at the operation deadline', async () => {
+    vi.useFakeTimers();
+    configureS3TestEnv();
+    s3SdkMock.send.mockReturnValueOnce(new Promise(() => undefined));
+
+    const { POST } = await import('../src/pages/api/admin/images/upload');
+    const formData = new FormData();
+    formData.set('collection', 'bits');
+    formData.set('entryId', 'demo');
+    formData.set('image', new File([PNG_1X1], 'Timeout.PNG', { type: 'image/png' }));
+    const responsePromise = POST({
+      request: createUploadRequest('http://127.0.0.1:4321/api/admin/images/upload', formData),
+      url: new URL('http://127.0.0.1:4321/api/admin/images/upload')
+    } as never);
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    const response = await responsePromise;
+    const payload = JSON.parse(await response.text());
+
+    expect(response.status).toBe(504);
+    expect(payload.error).toEqual(expect.objectContaining({
+      code: 'cloud_timeout',
+      outcome: 'unknown_may_have_succeeded'
+    }));
   });
 
   it('persists a cloud Bits upload through the existing optional-dimensions contract', async () => {
@@ -787,85 +860,6 @@ describe('admin images api', () => {
     expect(savedBits).toContain(`src: ${uploadPayload.result.src}`);
     expect(savedBits).not.toContain('width:');
     expect(savedBits).not.toContain('height:');
-  });
-
-  it('deletes configured cloud images by key', async () => {
-    configureS3TestEnv();
-
-    const { POST } = await import('../src/pages/api/admin/images/cloud/delete');
-    const response = await POST({
-      request: createJsonWriteRequest(
-        'http://127.0.0.1:4321/api/admin/images/cloud/delete',
-        { key: 'uploads/essay/guide/cloud-shot.webp' }
-      ),
-      url: new URL('http://127.0.0.1:4321/api/admin/images/cloud/delete')
-    } as never);
-
-    expect(response.status).toBe(200);
-    const payload = JSON.parse(await response.text());
-    expect(payload.ok).toBe(true);
-    expect(payload.result.key).toBe('uploads/essay/guide/cloud-shot.webp');
-    expect(s3SdkMock.send).toHaveBeenCalledTimes(1);
-    const deleteCommand = s3SdkMock.send.mock.calls[0]?.[0] as {
-      constructor: { name: string };
-      input: Record<string, unknown>;
-    };
-    expect(deleteCommand.constructor.name).toBe('DeleteObjectCommand');
-    expect(deleteCommand.input).toEqual({
-      Bucket: 'site-images',
-      Key: 'uploads/essay/guide/cloud-shot.webp'
-    });
-  });
-
-  it('returns a structured 502 response when cloud deletion fails', async () => {
-    configureS3TestEnv();
-    s3SdkMock.send.mockRejectedValueOnce(new Error('S3 delete unavailable'));
-
-    const { POST } = await import('../src/pages/api/admin/images/cloud/delete');
-    const response = await POST({
-      request: createJsonWriteRequest(
-        'http://127.0.0.1:4321/api/admin/images/cloud/delete',
-        { key: 'uploads/essay/guide/cloud-shot.webp' }
-      ),
-      url: new URL('http://127.0.0.1:4321/api/admin/images/cloud/delete')
-    } as never);
-
-    expect(response.status).toBe(502);
-    expect(JSON.parse(await response.text())).toEqual({
-      ok: false,
-      errors: ['云端图片删除失败：S3 delete unavailable']
-    });
-  });
-
-  it('rejects cloud deletion when storage is disabled or the key leaves the managed namespace', async () => {
-    const { POST } = await import('../src/pages/api/admin/images/cloud/delete');
-
-    const disabledResponse = await POST({
-      request: createJsonWriteRequest(
-        'http://127.0.0.1:4321/api/admin/images/cloud/delete',
-        { key: 'uploads/essay/guide/cloud-shot.webp' }
-      ),
-      url: new URL('http://127.0.0.1:4321/api/admin/images/cloud/delete')
-    } as never);
-    expect(disabledResponse.status).toBe(400);
-    expect(JSON.parse(await disabledResponse.text()).errors).toEqual([
-      '未启用云端图片存储，无法删除'
-    ]);
-    expect(s3SdkMock.send).not.toHaveBeenCalled();
-
-    configureS3TestEnv();
-    const outOfNamespaceResponse = await POST({
-      request: createJsonWriteRequest(
-        'http://127.0.0.1:4321/api/admin/images/cloud/delete',
-        { key: 'uploads/other/cloud-shot.webp' }
-      ),
-      url: new URL('http://127.0.0.1:4321/api/admin/images/cloud/delete')
-    } as never);
-    expect(outOfNamespaceResponse.status).toBe(400);
-    expect(JSON.parse(await outOfNamespaceResponse.text()).errors).toEqual([
-      '云端图片 key 不在当前应用管理的 namespace 内，无法删除'
-    ]);
-    expect(s3SdkMock.send).not.toHaveBeenCalled();
   });
 
   it('uploads memo body images next to the fixed memo source file', async () => {

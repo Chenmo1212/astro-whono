@@ -1,12 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import {
-  DeleteObjectCommand,
   paginateListObjectsV2,
   PutObjectCommand,
   S3Client
 } from '@aws-sdk/client-s3';
-import { AdminImageUploadError } from './image-upload-error';
+import {
+  AdminImageUploadError,
+  createAdminImageCloudError,
+  type AdminImageCloudErrorCode,
+  type AdminImageCloudErrorOutcome
+} from './image-upload-error';
 
 type AdminImageCloudUploadInput = {
   collection: 'essay' | 'bits' | 'memo';
@@ -34,7 +38,6 @@ type AdminImageCloudUploadResult = {
 };
 
 export type AdminImageCloudListItem = {
-  key: string;
   url: string;
   fileName: string;
   size: number | null;
@@ -51,6 +54,17 @@ const MIME_BY_EXT: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp'
 };
+
+const ADMIN_IMAGE_CLOUD_MAX_ATTEMPTS = 2;
+const ADMIN_IMAGE_CLOUD_UPLOAD_DEADLINE_MS = 60_000;
+const ADMIN_IMAGE_CLOUD_LIST_DEADLINE_MS = 15_000;
+
+class AdminImageCloudDeadlineError extends Error {
+  constructor(deadlineMs: number) {
+    super(`Cloud image operation exceeded ${deadlineMs}ms deadline`);
+    this.name = 'AdminImageCloudDeadlineError';
+  }
+}
 
 const trimSlashes = (value: string): string => value.replace(/^\/+|\/+$/g, '');
 
@@ -111,7 +125,7 @@ const parsePublicBaseUrl = (value: string): URL => {
     url.pathname = pathname || '/';
     return url;
   } catch {
-    throw new AdminImageUploadError('云端图片存储配置无效：publicBaseUrl 必须是有效的 https:// URL', 500);
+    throw createAdminImageCloudError('cloud_config_invalid', 'failed_known');
   }
 };
 
@@ -143,11 +157,11 @@ const getAdminImageCloudStorageConfig = (): AdminImageCloudStorageConfig => {
     .map(([key]) => key);
 
   if (missing.length > 0) {
-    throw new AdminImageUploadError(`云端图片存储配置缺失：${missing.join(', ')}`, 500);
+    throw createAdminImageCloudError('cloud_config_invalid', 'failed_known');
   }
 
   if (!config.endpoint && config.region.toLowerCase() === 'auto') {
-    throw new AdminImageUploadError('云端图片存储配置无效：原生 AWS S3 的 region 不能为 auto', 500);
+    throw createAdminImageCloudError('cloud_config_invalid', 'failed_known');
   }
 
   return {
@@ -159,6 +173,7 @@ const getAdminImageCloudStorageConfig = (): AdminImageCloudStorageConfig => {
 const createS3Client = (config: AdminImageCloudStorageConfig): S3Client =>
   new S3Client({
     region: config.region,
+    maxAttempts: ADMIN_IMAGE_CLOUD_MAX_ATTEMPTS,
     ...(config.endpoint ? { endpoint: config.endpoint } : {}),
     forcePathStyle: config.forcePathStyle,
     credentials: {
@@ -168,14 +183,88 @@ const createS3Client = (config: AdminImageCloudStorageConfig): S3Client =>
     }
   });
 
+const readErrorRecord = (error: unknown): Record<string, unknown> | null =>
+  typeof error === 'object' && error !== null ? error as Record<string, unknown> : null;
+
+const getErrorCode = (error: unknown): string => {
+  const record = readErrorRecord(error);
+  const value = typeof record?.code === 'string' ? record.code : record?.name;
+  return typeof value === 'string' ? value : '';
+};
+
+const getProviderHttpStatus = (error: unknown): number | null => {
+  const metadata = readErrorRecord(readErrorRecord(error)?.$metadata);
+  return typeof metadata?.httpStatusCode === 'number' ? metadata.httpStatusCode : null;
+};
+
+const isRateLimitedError = (error: unknown): boolean => {
+  const record = readErrorRecord(error);
+  const retryable = readErrorRecord(record?.$retryable);
+  const code = getErrorCode(error);
+  return getProviderHttpStatus(error) === 429
+    || retryable?.throttling === true
+    || ['SlowDown', 'TooManyRequests', 'TooManyRequestsException', 'Throttling', 'ThrottlingException']
+      .includes(code);
+};
+
+const isTimeoutError = (error: unknown): boolean => [
+  'AbortError',
+  'AdminImageCloudDeadlineError',
+  'RequestTimeout',
+  'RequestTimeoutException',
+  'TimeoutError',
+  'ETIMEDOUT'
+].includes(getErrorCode(error));
+
+const isNetworkError = (error: unknown): boolean => [
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'ENOTFOUND',
+  'EPIPE'
+].includes(getErrorCode(error));
+
 const toCloudStorageOperationError = (
-  action: '上传' | '列表读取' | '删除',
+  operation: 'upload' | 'list',
   error: unknown
 ): AdminImageUploadError => {
-  const detail = error instanceof Error && error.message.trim()
-    ? `：${error.message.trim()}`
-    : '';
-  return new AdminImageUploadError(`云端图片${action}失败${detail}`, 502);
+  let code: AdminImageCloudErrorCode;
+  if (isRateLimitedError(error)) {
+    code = 'cloud_rate_limited';
+  } else if (isTimeoutError(error)) {
+    code = 'cloud_timeout';
+  } else if (isNetworkError(error) || getProviderHttpStatus(error) !== null) {
+    code = 'cloud_provider_unavailable';
+  } else {
+    code = 'cloud_unknown';
+  }
+
+  const outcome: AdminImageCloudErrorOutcome = operation === 'upload'
+    && (code === 'cloud_timeout' || isNetworkError(error))
+    ? 'unknown_may_have_succeeded'
+    : 'failed_known';
+  return createAdminImageCloudError(code, outcome, error);
+};
+
+const withCloudOperationDeadline = async <T>(
+  deadlineMs: number,
+  run: (abortSignal: AbortSignal) => Promise<T>
+): Promise<T> => {
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new AdminImageCloudDeadlineError(deadlineMs));
+    }, deadlineMs);
+  });
+
+  try {
+    return await Promise.race([run(controller.signal), deadline]);
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
+  }
 };
 
 const getMimeTypeFromFileName = (fileName: string): string | null =>
@@ -215,7 +304,6 @@ const toAdminImageCloudListItem = (
   if (!mimeType) return null;
 
   return {
-    key,
     url: createPublicUrl(publicBaseUrl, key),
     fileName,
     size: typeof object.Size === 'number' && Number.isFinite(object.Size) && object.Size >= 0
@@ -234,14 +322,16 @@ export const uploadAdminImageToCloudStorage = async (
   const contentType = input.mimeType || 'application/octet-stream';
 
   try {
-    await createS3Client(config).send(new PutObjectCommand({
-      Bucket: config.bucket,
-      Key: objectKey,
-      Body: input.buffer,
-      ContentType: contentType
-    }));
+    await withCloudOperationDeadline(ADMIN_IMAGE_CLOUD_UPLOAD_DEADLINE_MS, (abortSignal) =>
+      createS3Client(config).send(new PutObjectCommand({
+        Bucket: config.bucket,
+        Key: objectKey,
+        Body: input.buffer,
+        ContentType: contentType
+      }), { abortSignal })
+    );
   } catch (error) {
-    throw toCloudStorageOperationError('上传', error);
+    throw toCloudStorageOperationError('upload', error);
   }
 
   return {
@@ -257,23 +347,26 @@ export const listAdminCloudStorageImages = async (): Promise<AdminImageCloudList
   const items: AdminImageCloudListItem[] = [];
 
   try {
-    const paginator = paginateListObjectsV2(
-      { client: createS3Client(config) },
-      {
-        Bucket: config.bucket,
-        ...(config.prefix ? { Prefix: `${config.prefix}/` } : {})
-      }
-    );
+    await withCloudOperationDeadline(ADMIN_IMAGE_CLOUD_LIST_DEADLINE_MS, async (abortSignal) => {
+      const paginator = paginateListObjectsV2(
+        { client: createS3Client(config) },
+        {
+          Bucket: config.bucket,
+          ...(config.prefix ? { Prefix: `${config.prefix}/` } : {})
+        },
+        { abortSignal }
+      );
 
-    for await (const page of paginator) {
-      for (const object of page.Contents ?? []) {
-        if (!isManagedAdminImageKey(object.Key ?? '', config.prefix)) continue;
-        const item = toAdminImageCloudListItem(object, config.publicBaseUrl);
-        if (item) items.push(item);
+      for await (const page of paginator) {
+        for (const object of page.Contents ?? []) {
+          if (!isManagedAdminImageKey(object.Key ?? '', config.prefix)) continue;
+          const item = toAdminImageCloudListItem(object, config.publicBaseUrl);
+          if (item) items.push(item);
+        }
       }
-    }
+    });
   } catch (error) {
-    throw toCloudStorageOperationError('列表读取', error);
+    throw toCloudStorageOperationError('list', error);
   }
 
   return items;
@@ -287,25 +380,4 @@ const isManagedAdminImageKey = (key: string, prefix: string): boolean => {
   return parts.length >= 3
     && (parts[0] === 'essay' || parts[0] === 'bits' || parts[0] === 'memo')
     && parts.every((part) => part.length > 0 && part !== '.' && part !== '..');
-};
-
-export const deleteAdminCloudStorageImage = async (key: string): Promise<void> => {
-  if (!isAdminImageCloudStorageEnabled()) {
-    throw new AdminImageUploadError('未启用云端图片存储，无法删除');
-  }
-
-  const normalizedKey = key.trim().replace(/\\/g, '/').replace(/^\/+/, '');
-  const config = getAdminImageCloudStorageConfig();
-  if (!normalizedKey || !isManagedAdminImageKey(normalizedKey, config.prefix)) {
-    throw new AdminImageUploadError('云端图片 key 不在当前应用管理的 namespace 内，无法删除');
-  }
-
-  try {
-    await createS3Client(config).send(new DeleteObjectCommand({
-      Bucket: config.bucket,
-      Key: normalizedKey
-    }));
-  } catch (error) {
-    throw toCloudStorageOperationError('删除', error);
-  }
 };

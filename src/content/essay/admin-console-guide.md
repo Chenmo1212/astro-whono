@@ -60,7 +60,7 @@ Content Console 是内容管理与可视化写作入口，可以集中查看和�
 
 Images Console 可浏览本地与云端图片、核对图片信息，并复制可用于配置或内容字段的路径或 URL。
 
-本地图片暂不支持压缩、删除或替换；启用 S3 兼容存储后，可删除当前应用管理的云端图片，配置方式见 [Content Console 使用指南](/archive/content-console-guide/)。
+对象存储配置和实际服务验证说明见 [Content Console 使用指南](/archive/content-console-guide/)。
 需要更换本地图片时，先把图片放到项目约定目录，再回到对应页面选择或填写路径。
 
 ### 📤 Data Console

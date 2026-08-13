@@ -83,7 +83,6 @@ export type AdminImageBrowseIndexItem = {
   path: string;
   origin: AdminImageOrigin;
   fileName: string;
-  cloudKey?: string | null;
   owner: string | null;
   ownerLabel: string | null;
   browseGroup: Exclude<AdminImageBrowseGroup, 'all'>;
@@ -101,7 +100,6 @@ export type AdminImageListItem = {
   value: string;
   origin: AdminImageOrigin;
   fileName: string;
-  cloudKey?: string | null;
   owner: string | null;
   ownerLabel: string | null;
   browseGroup: Exclude<AdminImageBrowseGroup, 'all'>;
@@ -149,7 +147,6 @@ type AdminImageAssetRecord = {
   path: string;
   origin: AdminImageOrigin;
   fileName: string;
-  cloudKey?: string | null;
   owner: string | null;
   ownerLabel: string | null;
   cloudMeta?: Pick<AdminImageCloudListItem, 'url' | 'size' | 'mimeType' | 'lastModified'>;
@@ -738,7 +735,6 @@ const listAdminImageBrowseAssets = async (): Promise<AdminImageBrowseAsset[]> =>
       path: item.url,
       origin: 'cloud' as const,
       fileName: item.fileName,
-      cloudKey: item.key,
       owner: null,
       ownerLabel: null,
       cloudMeta: {
@@ -765,7 +761,6 @@ export const listAdminImageBrowseIndex = async (): Promise<AdminImageBrowseIndex
     path: asset.path,
     origin: asset.origin,
     fileName: asset.fileName,
-    cloudKey: asset.cloudKey ?? null,
     owner: asset.owner,
     ownerLabel: asset.ownerLabel,
     browseGroup: asset.browseGroup,
@@ -850,7 +845,6 @@ const toAdminImageListItem = async (
       value: item.value,
       origin: item.origin,
       fileName: item.fileName,
-      cloudKey: item.cloudKey ?? null,
       owner: item.owner,
       ownerLabel: item.ownerLabel,
       browseGroup: browseMeta.browseGroup,
@@ -873,7 +867,6 @@ const toAdminImageListItem = async (
     value: item.value,
     origin: item.origin,
     fileName: item.fileName,
-    cloudKey: item.cloudKey ?? null,
     owner: item.owner,
     ownerLabel: item.ownerLabel,
     browseGroup: browseMeta.browseGroup,

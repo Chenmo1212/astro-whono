@@ -4,7 +4,6 @@ import AdminLayout from '../../../components/admin/AdminLayout.astro';
 import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
 import AdminShell from '../../../components/admin/AdminShell.astro';
 import {
-  ADMIN_IMAGE_CLOUD_DELETE_API_PATH,
   ADMIN_IMAGE_LIST_API_PATH,
   ADMIN_IMAGE_META_API_PATH
 } from '../../../lib/admin-console/admin-api-paths';
@@ -13,6 +12,10 @@ import {
   listAdminImageBrowseIndex,
   type AdminImageBrowseIndexItem
 } from '../../../lib/admin-console/image-shared';
+import {
+  AdminImageUploadError,
+  logAdminImageCloudError
+} from '../../../lib/admin-console/image-upload-error';
 import { createWithBase } from '../../../utils/format';
 
 const isDev = import.meta.env.DEV;
@@ -52,7 +55,11 @@ const loadImagesDevState = async (): Promise<{
     import('../../../styles/components/admin/images/index.css?url')
   ]);
   const browseIndex = await listAdminImageBrowseIndex().catch((error) => {
-    console.error('[astro-whono] Failed to load admin image browse index:', error);
+    if (error instanceof AdminImageUploadError) {
+      logAdminImageCloudError('list', error);
+    } else {
+      console.error('[astro-whono] Failed to load admin image browse index:', error);
+    }
     return null;
   });
 
@@ -69,7 +76,6 @@ const bootstrapText = imagesDevState
   ? JSON.stringify({
       listEndpoint: withBase(ADMIN_IMAGE_LIST_API_PATH),
       metaEndpoint: withBase(ADMIN_IMAGE_META_API_PATH),
-      cloudDeleteEndpoint: withBase(ADMIN_IMAGE_CLOUD_DELETE_API_PATH),
       initialState: {
         scope: selectedScope,
         group: selectedGroup,
@@ -268,7 +274,6 @@ const bootstrapText = imagesDevState
             <span data-icon="copy"><AdminIcon name="copy" size={15} /></span>
             <span data-icon="link"><AdminIcon name="link" size={15} /></span>
             <span data-icon="eye"><AdminIcon name="eye" size={15} /></span>
-            <span data-icon="trash"><AdminIcon name="trash" size={15} /></span>
           </div>
 
           <div id="admin-images-bootstrap" hidden>{bootstrapText}</div>

@@ -31,6 +31,7 @@
     "check:admin-editor-emoji-boundary": "node ./scripts/check-admin-editor-emoji-boundary.mjs",
     "check:prod-artifacts": "node ./scripts/check-production-artifacts.mjs",
     "check:preview-admin": "node ./scripts/check-preview-admin-boundary.mjs",
+    "smoke:cloud-images": "node ./scripts/smoke-admin-image-cloud.mjs",
     "check:font-charset": "node ./scripts/font-charset.mjs --check",
     "font:charset": "node ./scripts/font-charset.mjs",
     "font:subset": "node ./scripts/font-subset.mjs",

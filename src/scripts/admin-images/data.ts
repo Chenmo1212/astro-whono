@@ -39,7 +39,6 @@ export const toBrowseItem = (item: AdminImageListItem): AdminImageBrowseItem => 
   path: item.path,
   origin: item.origin,
   fileName: item.fileName,
-  cloudKey: item.cloudKey ?? null,
   owner: item.owner,
   ownerLabel: item.ownerLabel,
   browseGroup: item.browseGroup,
@@ -93,7 +92,6 @@ const isBrowseItem = (item: unknown): item is AdminImageBrowseItem =>
   && typeof item.path === 'string'
   && isAdminImageOrigin(item.origin)
   && typeof item.fileName === 'string'
-  && (item.cloudKey === undefined || isNullableString(item.cloudKey))
   && isNullableString(item.owner)
   && isNullableString(item.ownerLabel)
   && isAdminImageBrowseGroup(item.browseGroup)
@@ -111,7 +109,6 @@ const isListItem = (item: unknown): item is AdminImageListItem =>
   && typeof item.path === 'string'
   && isAdminImageOrigin(item.origin)
   && typeof item.fileName === 'string'
-  && (item.cloudKey === undefined || isNullableString(item.cloudKey))
   && isNullableString(item.owner)
   && isNullableString(item.ownerLabel)
   && isAdminImageBrowseGroup(item.browseGroup)
@@ -189,7 +186,6 @@ export const parseBootstrap = (text: string): AdminImageBootstrap | null => {
       !isRecord(payload)
       || typeof payload.listEndpoint !== 'string'
       || typeof payload.metaEndpoint !== 'string'
-      || typeof payload.cloudDeleteEndpoint !== 'string'
       || !isRecord(payload.initialState)
     ) {
       return null;
@@ -210,7 +206,6 @@ export const parseBootstrap = (text: string): AdminImageBootstrap | null => {
     return {
       listEndpoint: payload.listEndpoint,
       metaEndpoint: payload.metaEndpoint,
-      cloudDeleteEndpoint: payload.cloudDeleteEndpoint,
       initialState: {
         scope: initialScope,
         group: isAdminImageBrowseGroup(normalizedGroup) ? normalizedGroup : DEFAULT_GROUP,
@@ -224,28 +219,6 @@ export const parseBootstrap = (text: string): AdminImageBootstrap | null => {
   } catch {
     return null;
   }
-};
-
-export const deleteCloudImage = async (
-  endpoint: string,
-  key: string
-): Promise<void> => {
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/json'
-    },
-    body: JSON.stringify({ key })
-  });
-  const payload = (await response.json().catch(() => null)) as unknown;
-
-  if (response.ok && isRecord(payload) && payload.ok === true) return;
-
-  const errors = isRecord(payload) && Array.isArray(payload.errors)
-    ? payload.errors.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    : [];
-  throw new Error(errors[0] ?? `云端图片删除失败（HTTP ${response.status}）`);
 };
 
 const parseListResponse = (payload: unknown): AdminImageListResponse => {

@@ -10,6 +10,12 @@ import {
   uploadAdminEssayImage,
   uploadAdminMemoImage
 } from '../../../../lib/admin-console/image-upload';
+import { isAdminImageCloudStorageEnabled } from '../../../../lib/admin-console/image-cloud-storage';
+import {
+  createAdminImageCloudError,
+  logAdminImageCloudError,
+  toAdminImageErrorPayload
+} from '../../../../lib/admin-console/image-upload-error';
 import {
   isAdminContentImageUploadCollectionKey,
   type AdminContentImageUploadCollectionKey
@@ -30,6 +36,25 @@ const createJsonResponse = (status: number, payload: unknown): Response =>
     status,
     headers: JSON_HEADERS
   });
+
+const createCloudInvalidRequestResponse = (
+  status: number,
+  errors: string | readonly string[]
+): Response => {
+  const normalizedErrors = typeof errors === 'string' ? [errors] : [...errors];
+  const cloudError = new AdminImageUploadError(
+    normalizedErrors[0] ?? '云端图片请求无效，请检查参数后重试',
+    status,
+    {
+      code: 'cloud_invalid_request',
+      outcome: 'failed_known'
+    }
+  );
+  return createJsonResponse(status, {
+    ...toAdminImageErrorPayload(cloudError),
+    errors: normalizedErrors
+  });
+};
 
 const getRequiredText = (formData: FormData, key: string): string => {
   const value = formData.get(key);
@@ -64,20 +89,24 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   const requestError = validateAdminFormDataWriteRequest(request, url, 'Admin Images upload');
   if (requestError) {
-    return createJsonResponse(requestError.status, {
-      ok: false,
-      errors: [requestError.error]
-    });
+    return isAdminImageCloudStorageEnabled()
+      ? createCloudInvalidRequestResponse(requestError.status, requestError.error)
+      : createJsonResponse(requestError.status, {
+          ok: false,
+          errors: [requestError.error]
+        });
   }
 
   let formData: FormData;
   try {
     formData = await request.formData();
   } catch {
-    return createJsonResponse(400, {
-      ok: false,
-      errors: ['上传请求不是合法 multipart/form-data']
-    });
+    return isAdminImageCloudStorageEnabled()
+      ? createCloudInvalidRequestResponse(400, '上传请求不是合法 multipart/form-data')
+      : createJsonResponse(400, {
+          ok: false,
+          errors: ['上传请求不是合法 multipart/form-data']
+        });
   }
 
   const collection = getRequiredText(formData, 'collection');
@@ -96,10 +125,12 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 
   if (errors.length > 0 || !file || !isAdminContentImageUploadCollectionKey(collection)) {
-    return createJsonResponse(400, {
-      ok: false,
-      errors
-    });
+    return isAdminImageCloudStorageEnabled()
+      ? createCloudInvalidRequestResponse(400, errors)
+      : createJsonResponse(400, {
+          ok: false,
+          errors
+        });
   }
 
   return withAdminImageUploadLock(async () => {
@@ -111,10 +142,14 @@ export const POST: APIRoute = async ({ request, url }) => {
       });
     } catch (error) {
       if (error instanceof AdminImageUploadError) {
-        return createJsonResponse(error.status, {
-          ok: false,
-          errors: [error.message]
-        });
+        logAdminImageCloudError('upload', error);
+        return createJsonResponse(error.status, toAdminImageErrorPayload(error));
+      }
+
+      if (isAdminImageCloudStorageEnabled()) {
+        const cloudError = createAdminImageCloudError('cloud_unknown', 'failed_known', error);
+        logAdminImageCloudError('upload', cloudError);
+        return createJsonResponse(cloudError.status, toAdminImageErrorPayload(cloudError));
       }
 
       console.error('[astro-whono] Failed to upload admin image:', error);

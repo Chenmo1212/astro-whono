@@ -4,7 +4,13 @@ import {
   getAdminImageListRequest
 } from '../../../../lib/admin-console/image-params';
 import { listAdminImageItems } from '../../../../lib/admin-console/image-shared';
-import { AdminImageUploadError } from '../../../../lib/admin-console/image-upload-error';
+import {
+  createAdminImageCloudError,
+  AdminImageUploadError,
+  logAdminImageCloudError,
+  toAdminImageErrorPayload
+} from '../../../../lib/admin-console/image-upload-error';
+import { isAdminImageCloudStorageEnabled } from '../../../../lib/admin-console/image-cloud-storage';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -25,12 +31,30 @@ export const GET: APIRoute = async ({ url }) => {
       headers: JSON_HEADERS
     });
   } catch (error) {
-    const status = error instanceof AdminImageError || error instanceof AdminImageUploadError
-      ? error.status
-      : 500;
+    if (error instanceof AdminImageUploadError) {
+      logAdminImageCloudError('list', error);
+      return new Response(JSON.stringify(toAdminImageErrorPayload(error), null, 2), {
+        status: error.status,
+        headers: JSON_HEADERS
+      });
+    }
+    if (error instanceof AdminImageError) {
+      return new Response(JSON.stringify({ ok: false, errors: [error.message] }, null, 2), {
+        status: error.status,
+        headers: JSON_HEADERS
+      });
+    }
     const message = error instanceof Error ? error.message : '图片列表读取失败';
+    if (isAdminImageCloudStorageEnabled()) {
+      const cloudError = createAdminImageCloudError('cloud_unknown', 'failed_known', error);
+      logAdminImageCloudError('list', cloudError);
+      return new Response(JSON.stringify(toAdminImageErrorPayload(cloudError), null, 2), {
+        status: cloudError.status,
+        headers: JSON_HEADERS
+      });
+    }
     return new Response(JSON.stringify({ ok: false, errors: [message] }, null, 2), {
-      status,
+      status: 500,
       headers: JSON_HEADERS
     });
   }

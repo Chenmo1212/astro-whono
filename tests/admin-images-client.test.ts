@@ -178,7 +178,6 @@ describe('admin-images/data', () => {
       copyIcon: '',
       linkIcon: '',
       eyeIcon: '',
-      trashIcon: '',
       largeFileThreshold: 500 * 1024
     });
 
@@ -202,7 +201,6 @@ describe('admin-images/data', () => {
     const bootstrap = parseBootstrap(JSON.stringify({
       listEndpoint: '/api/admin/images/list/',
       metaEndpoint: '/api/admin/images/meta/',
-      cloudDeleteEndpoint: '/api/admin/images/cloud/delete/',
       initialState: {
         scope: '',
         group: 'all',
@@ -342,13 +340,14 @@ describe('admin-images/data', () => {
     expect(source).toContain("origin: isCloudUpload ? 'cloud' : 'public'");
   });
 
-  it('invalidates the server browse snapshot after cloud deletion', async () => {
-    const source = await readFile('src/scripts/admin-images/controller.ts', 'utf8');
+  it('does not expose cloud deletion controls in the Images Console', async () => {
+    const viewSource = await readFile('src/scripts/admin-images/view.ts', 'utf8');
+    const controllerSource = await readFile('src/scripts/admin-images/controller.ts', 'utf8');
+    const pageSource = await readFile('src/pages/admin/images/index.astro', 'utf8');
 
-    expect(source).toContain('let hasLocalBrowse = Array.isArray(bootstrap.browseIndex);');
-    expect(source).toContain('if (!hasLocalBrowse || !bootstrap.browseIndex) return;');
-    expect(source).toMatch(
-      /await deleteCloudImage\(bootstrap\.cloudDeleteEndpoint, key\);[\s\S]*hasLocalBrowse = false;[\s\S]*await loadList\(\{ updateLocation: true \}\);/
-    );
+    expect(viewSource).not.toContain('云端删除');
+    expect(viewSource).not.toContain('data-cloud-delete');
+    expect(controllerSource).not.toContain('deleteCloudImage(');
+    expect(pageSource).not.toContain('data-icon="trash"');
   });
 });

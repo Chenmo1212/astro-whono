@@ -136,13 +136,16 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/images/list',
     'dist/api/admin/images/meta',
     'dist/api/admin/images/upload',
-    'dist/api/admin/images/cloud/delete',
     'dist/api/admin/site-assets/upload'
   ];
 
   for (const artifactPath of requiredArtifacts) {
     expect(existsSync(artifactPath), `Expected build artifact is missing: ${artifactPath}`);
   }
+  expect(
+    !existsSync('dist/api/admin/images/cloud/delete'),
+    'Removed cloud image delete API artifact should not be generated'
+  );
 
   const robotsTxt = readText('dist/robots.txt');
   expect(
@@ -485,12 +488,6 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/images/upload',
     adminImageUploadArtifact,
     '/api/admin/images/upload/'
-  );
-  const adminImageCloudDeleteArtifact = readText('dist/api/admin/images/cloud/delete');
-  assertAdminImageUploadStaticShell(
-    'dist/api/admin/images/cloud/delete',
-    adminImageCloudDeleteArtifact,
-    '/api/admin/images/cloud/delete/'
   );
   const adminSiteAssetUploadArtifact = readText('dist/api/admin/site-assets/upload');
   assertAdminImageUploadStaticShell(

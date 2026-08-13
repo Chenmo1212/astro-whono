@@ -37,9 +37,11 @@ Content Console 直接读取 `src/content/**` 下的源文件，不依赖数据�
 
 ## 图片上传与云存储
 
-Admin Console 的图片上传默认写入本地文件。需要使用对象存储时，可在本地开发环境启用 AWS S3、Cloudflare R2、MinIO 等 S3 兼容服务。
+Admin Console 的图片上传默认保存到本地，也可在开发环境配置 S3 兼容对象存储。
 
-启用后，随笔 / 小记正文图片和絮语配图会上传到配置的存储桶（bucket），并将 `https://` 公开地址写入内容。已有本地图片不会自动迁移。Images Console（`/admin/images/`）可以浏览、复制 URL 和删除云端图片；删除仅限当前应用管理的图片目录。
+启用后，随笔 / 小记正文图片和絮语配图会上传到配置的存储桶（bucket），并将 `https://` 公开地址写入内容。已有本地图片不会自动迁移。Images Console（`/admin/images/`）可以浏览并复制云端 URL。
+
+维护者可运行 `npm run smoke:cloud-images` 验证实际服务。该命令默认不会联网；只有显式设置 `ASTRO_WHONO_CLOUD_SMOKE=1` 并提供独立测试凭证时，才会上传测试对象、分页读取对象列表，并在结束时清理该对象。
 
 ### R2、MinIO 或其他自定义 endpoint
 

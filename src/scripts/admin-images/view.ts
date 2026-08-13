@@ -395,7 +395,6 @@ export const renderDetail = ({
   copyIcon,
   linkIcon,
   eyeIcon,
-  trashIcon,
   largeFileThreshold
 }: {
   detailEl: HTMLElement;
@@ -406,7 +405,6 @@ export const renderDetail = ({
   copyIcon: string;
   linkIcon: string;
   eyeIcon: string;
-  trashIcon: string;
   largeFileThreshold: number;
 }) => {
   if (!item) {
@@ -446,7 +444,6 @@ export const renderDetail = ({
   const fieldCopyLabel = hasPreferredValue ? '可用值' : '文件路径';
   const markdownRef = getMarkdownReference(item);
   const previewSrc = detailMeta?.previewSrc ?? item.previewSrc;
-  const canDeleteCloudImage = item.origin === 'cloud' && Boolean(item.cloudKey);
 
   detailEl.hidden = false;
   detailEl.innerHTML = `
@@ -521,17 +518,6 @@ export const renderDetail = ({
               ${eyeIcon}
               浏览器新标签中打开
             </a>`
-        : ''}
-          ${canDeleteCloudImage
-        ? `<button
-              class="admin-btn admin-btn--danger"
-              type="button"
-              data-cloud-delete-key="${escapeHtml(item.cloudKey ?? '')}"
-              data-cloud-delete-label="${escapeHtml(item.fileName)}"
-            >
-              ${trashIcon}
-              删除云端图片
-            </button>`
         : ''}
         </div>
       </div>

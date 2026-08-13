@@ -179,7 +179,7 @@ Content collections, source locations, and public entry points:
 - Essay and Bits are multi-entry collections; Memo and About are fixed single pages.
 - `draft: true` is visible only in local development; production lists and feeds filter drafts. Memo should not be marked as draft.
 - `essay.archive: false` removes an essay from the `/archive/` aggregation and archive feed, but it remains available through `/essay/`, its detail route, and the essay feed.
-- Admin Console image uploads use local storage by default; AWS S3, Cloudflare R2, and MinIO are supported as optional S3-compatible storage.
+- Admin Console image uploads are saved locally by default, with optional S3-compatible object storage available in development. Images Console can browse cloud images and copy their URLs.
 - For image upload, frontmatter, dates, and excerpts, see the [Content Console guide (Chinese)](https://astro.whono.me/archive/content-console-guide/). For Callout, Figure, Gallery, and math syntax, see the [Markdown formatting guide (Chinese)](https://astro.whono.me/archive/markdown-guide/).
 
 

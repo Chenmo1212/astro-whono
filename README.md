@@ -180,7 +180,7 @@ npm run audit:prod
 - `essay` / `bits` 是多条内容；`memo` / `about` 是固定单页。
 - `essay` / `bits` 的 `draft: true` 只在本地开发中用于预览，生产构建、公开列表和 RSS 会过滤；`memo` 不应标记为草稿。
 - `essay.archive: false` 只退出 `/archive/` 聚合与归档 RSS，不代表隐藏文章；详情页、`/essay/` 和 essay RSS 仍可见。
-- Admin Console 图片上传默认写入本地，也可在开发环境配置 AWS S3、Cloudflare R2 或 MinIO 等 S3 兼容存储。
+- Admin Console 图片上传默认保存到本地，也可在开发环境配置 S3 兼容对象存储。Images Console 可浏览云端图片并复制 URL。
 - 图片上传、frontmatter 字段、日期与摘要规则见 [Content Console 使用指南](https://astro.whono.me/archive/content-console-guide/)；Callout、Figure、Gallery、公式等 Markdown 扩展见 [Markdown 排版指南](https://astro.whono.me/archive/markdown-guide/)。
 
 
