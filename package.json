@@ -86,9 +86,10 @@
     "anymatch": {
       "picomatch": "2.3.2"
     },
+    "fast-uri": "3.1.5",
     "fast-xml-parser": "5.7.0",
     "h3": "1.15.9",
-    "postcss": "8.5.25",
+    "postcss": "8.5.26",
     "rollup": "4.59.0",
     "volar-service-yaml": "0.0.70",
     "yaml": "2.8.3",
