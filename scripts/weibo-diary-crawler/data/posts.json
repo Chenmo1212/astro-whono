@@ -3496,5 +3496,49 @@
       "errors": []
     },
     "crawled_at": "2026-08-16 15:45:13"
+  },
+  {
+    "user_id": 7796507396,
+    "screen_name": "暮冬十二1212",
+    "bid": "Re5br1wtM",
+    "text": "#陈默的爱岛生活# 第1451天这两天都去了公司健身，每次去公司都会提前一晚准备好便当。有时便当带来的快乐并不是吃进嘴里的一瞬间，而是在打开的一瞬间。尽管，这些看似很健康的便当吃起来真是如同嚼蜡。这几天健身不知是哪里出了问题，明明训练的内容是一样的，但消耗的卡路里远远达不到之前的程度。是心肺能力提升了吗？倒也不至于会那么快。昨天下班后去了一趟机场附近，算是给周四的出行踩点。由于住的地方离机场很远，小破岛的交通又是极其不方便的。哪怕已经有直达的大巴，但班次间隔时间很长加上兜兜转转得花费1-2小时才能到家，就足以让我疲惫。机场附近的停车场贵得离谱，一天就需要50欧左右，自然是不可能停在机场附近的。所以我才想着是否可以停在机场前几站路的居民区里，一些居民区里的路边停车倒是不会有太多限制，但也实在是被锁怕了，所以才会去提前踩点看看。踩点的结果如同预期一般，就是很普通的居民区，路边已经停满了车，只是不知道是否能让我连续停几天。马上就要去葡萄牙咯，虽是如此，但后半程的攻略并没有做完，对这趟行程貌似也并没有太多激动的心情，更多只是逃离一下当前环境而已。但还是希望会是不错的体验！",
+    "text_html": "<a  href=\"https://m.weibo.cn/search?containerid=231522type%3D1%26t%3D10%26q%3D%23%E9%99%88%E9%BB%98%E7%9A%84%E7%88%B1%E5%B2%9B%E7%94%9F%E6%B4%BB%23&extparam=%23%E9%99%88%E9%BB%98%E7%9A%84%E7%88%B1%E5%B2%9B%E7%94%9F%E6%B4%BB%23&luicode=20000061&lfid=5333565210363182&launchid=10000360-page_H5\" data-hide=\"\"><span class=\"surl-text\">#陈默的爱岛生活#</span></a> 第1451天<br /><br />这两天都去了公司健身，每次去公司都会提前一晚准备好便当。有时便当带来的快乐并不是吃进嘴里的一瞬间，而是在打开的一瞬间。尽管，这些看似很健康的便当吃起来真是如同嚼蜡。<br /><br />这几天健身不知是哪里出了问题，明明训练的内容是一样的，但消耗的卡路里远远达不到之前的程度。是心肺能力提升了吗？倒也不至于会那么快。<br /><br />昨天下班后去了一趟机场附近，算是给周四的出行踩点。由于住的地方离机场很远，小破岛的交通又是极其不方便的。哪怕已经有直达的大巴，但班次间隔时间很长加上兜兜转转得花费1-2小时才能到家，就足以让我疲惫。机场附近的停车场贵得离谱，一天就需要50欧左右，自然是不可能停在机场附近的。所以我才想着是否可以停在机场前几站路的居民区里，一些居民区里的路边停车倒是不会有太多限制，但也实在是被锁怕了，所以才会去提前踩点看看。踩点的结果如同预期一般，就是很普通的居民区，路边已经停满了车，只是不知道是否能让我连续停几天。<br /><br />马上就要去葡萄牙咯，虽是如此，但后半程的攻略并没有做完，对这趟行程貌似也并没有太多激动的心情，更多只是逃离一下当前环境而已。但还是希望会是不错的体验！",
+    "pics": [
+      "https://wx1.sinaimg.cn/mw2000/008vDlJigy1ig8wm5hinsj30u0140tgx.jpg",
+      "https://wx1.sinaimg.cn/mw2000/008vDlJigy1ig8wm4i4ldj30u01hcq8l.jpg",
+      "https://wx2.sinaimg.cn/mw2000/008vDlJigy1ig8wm5k3owj30u01404cs.jpg",
+      "https://wx2.sinaimg.cn/mw2000/008vDlJigy1ig8wm668kcj30u0140ahh.jpg"
+    ],
+    "location": "",
+    "topics": "陈默的爱岛生活",
+    "created_at": "2026-08-19T09:55:02",
+    "source": "微博轻享版",
+    "attitudes_count": 1,
+    "comments_count": 1,
+    "reposts_count": 0,
+    "full_created_at": "2026-08-19 09:55:02",
+    "weibo_id": "5333565210363182",
+    "local_images": [
+      "./images/2026/20260819_01.jpg",
+      "./images/2026/20260819_02.jpg",
+      "./images/2026/20260819_03.jpg",
+      "./images/2026/20260819_04.jpg"
+    ],
+    "processed_images": {
+      "cdn_urls": [
+        "https://cdn.chenmo1212.cn/blog/2026/20260819_02.jpg",
+        "https://cdn.chenmo1212.cn/blog/2026/20260819_01.jpg",
+        "https://cdn.chenmo1212.cn/blog/2026/20260819_03.jpg",
+        "https://cdn.chenmo1212.cn/blog/2026/20260819_04.jpg"
+      ],
+      "local_compressed": [
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260819_02.jpg",
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260819_01.jpg",
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260819_03.jpg",
+        "/home/runner/work/astro-whono/astro-whono/scripts/weibo-diary-crawler/weibo_photos_compressed/20260819_04.jpg"
+      ],
+      "errors": []
+    },
+    "crawled_at": "2026-08-20 15:58:41"
   }
 ]
