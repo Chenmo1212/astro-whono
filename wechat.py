@@ -46,7 +46,7 @@ def notify_weibo_sync(api_url: str, job_status: str, repository: str,
         server_url:   github.server_url（如 https://github.com）
         summary_path: pipeline 写出的 pipeline_summary.json 路径
     """
-    icon = "✅" if job_status == "success" else "❌"
+    icon = "[OK]" if job_status == "success" else "[FAIL]"
 
     # ── 读取管道摘要 ──────────────────────────────────────────────────────────
     summary: dict = {}
@@ -72,11 +72,19 @@ def notify_weibo_sync(api_url: str, job_status: str, repository: str,
         except (ValueError, TypeError):
             ts = created[:16] if created else "?"
 
-        n_img   = p.get("image_count", 0)
-        n_err   = p.get("img_errors", 0)
-        enc_tag = " 🔒" if p.get("encrypted") else ""
-        img_tag = f" [{n_img} img" + (f", {n_err} failed" if n_err else "") + "]" if n_img else " [no image]"
-        lines.append(f"  • {ts}{enc_tag}{img_tag}")
+        n_img  = p.get("image_count", 0)
+        n_err  = p.get("img_errors", 0)
+        parts  = [ts]
+        parts.append("encrypted" if p.get("encrypted") else "unencrypted")
+        if n_img:
+            img_str = f"{n_img} image{'s' if n_img > 1 else ''}"
+            if n_err:
+                img_str += f" ({n_err} failed)"
+            parts.append(img_str)
+        else:
+            parts.append("no images")
+        parts.append("synced")
+        lines.append("  • " + ", ".join(parts))
 
     # ── Assemble content string ───────────────────────────────────────────────
     bj_now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
@@ -85,22 +93,17 @@ def notify_weibo_sync(api_url: str, job_status: str, repository: str,
     crawl_failed: bool = summary.get("crawl_failed", False)
 
     if crawl_failed:
-        sync_summary = "⚠️ Crawl failed — Cookie may have expired or network error"
+        sync_summary = "Crawl failed — Cookie may have expired or network error"
     elif total == 0:
         sync_summary = "No new posts today"
     else:
-        sync_summary = (
-            f"{total} post(s) synced"
-            + (f", {encrypted} encrypted" if encrypted else "")
-            + (f", {total_images} image(s)" if total_images else "")
-            + (f", {img_errors} upload failure(s)" if img_errors else "")
-        )
+        sync_summary = f"{total} post(s) synced"
 
     post_lines = "\n".join(lines) if lines else "  (no details)"
     content = (
         f"Repo: {repository}\n"
         f"Time: {bj_now} (CST)\n"
-        f"Summary: {sync_summary}\n"
+        f"Status: {sync_summary}\n"
         f"{post_lines}\n"
         f"Details: {details_url}"
     )
