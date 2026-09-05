@@ -93,6 +93,41 @@ const loadSortedBits = ({ includeDraft }: BitsQueryOptions = {}) =>
 
 export const getBitSlug = (entry: BitsEntry) => entry.data.slug ?? entry.id;
 
+export const getBitDisplayTitle = (entry: BitsEntry): string => {
+  if (entry.data.title?.trim()) {
+    return entry.data.title.trim();
+  }
+
+  // 1. 查找前缀/系列标签（如 "陈默的爱岛生活"、"陈默的退场记录" 等）
+  const seriesTag = entry.data.tags?.find(
+    (tag) => !tag.toLowerCase().startsWith('loc:') && (tag.startsWith('陈默的') || tag.includes('生活') || tag.includes('记录'))
+  ) ?? entry.data.tags?.find((tag) => !tag.toLowerCase().startsWith('loc:'));
+
+  const tagPrefix = seriesTag ? `[${seriesTag}] ` : '';
+
+  // 2. 加密内容优先使用 summary
+  if (entry.data.summary?.trim()) {
+    const summary = entry.data.summary.trim();
+    return tagPrefix ? `${tagPrefix}${summary}` : summary;
+  }
+
+  // 3. 非加密内容从正文提取第一句/简短摘要
+  const derived = getBitsDerivedText(entry);
+  const plainText = derived.plainText.trim();
+  if (plainText) {
+    const firstLine = (plainText.split('\n')[0] ?? plainText).trim();
+    const snippet = firstLine.length > 40 ? `${firstLine.slice(0, 40)}…` : firstLine;
+    return tagPrefix ? `${tagPrefix}${snippet}` : snippet;
+  }
+
+  // 4. 兜底
+  if (seriesTag) {
+    return `[${seriesTag}]`;
+  }
+
+  return '繁语记录';
+};
+
 const buildBitsYearOptions = (bits: readonly BitsEntry[]): BitsYearOption[] => {
   const yearCountMap = new Map<number, number>();
 
@@ -198,11 +233,11 @@ const buildBitsIndex = async (pageSize: number) => {
     return {
       key: bit.id,
       slug: getBitSlug(bit),
-      title: bit.data.title ?? '',
+      title: getBitDisplayTitle(bit),
       description: bit.data.description ?? '',
       tags: bit.data.tags ?? [],
       text: isEncrypted ? '' : derivedText.text,
-      excerpt: isEncrypted ? '' : derivedText.excerpt,
+      excerpt: isEncrypted ? (bit.data.summary ?? '') : derivedText.excerpt,
       date: bit.data.date ? bit.data.date.toISOString() : null,
       dateLabel: bit.data.date ? formatDateTime(bit.data.date) : null,
       year: bit.data.date ? bit.data.date.getFullYear() : null,

@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import UiIcon from './UiIcon.astro';
 import { getVisibleEssays, getEssaySlug } from '../lib/content.ts';
 import { getPublished } from '../lib/content.ts';
+import { getBitDisplayTitle } from '../lib/bits.ts';
 
 const pageTitleText = '搜索';
 const pageTitle = pageTitleText;
@@ -22,9 +23,9 @@ const allRecent = [
     date: e.data.date,
     category: '随笔'
   })),
-  ...recentBits.map(b => ({ 
-    type: 'bits' as const, 
-    title: b.data.title || '无标题', 
+  ...recentBits.map(b => ({
+    type: 'bits' as const,
+    title: getBitDisplayTitle(b),
     slug: b.id,
     date: b.data.date,
     category: '繁语'
