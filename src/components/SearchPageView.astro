@@ -10,9 +10,9 @@ const pageTitle = pageTitleText;
 const pageDescription = '搜索站点内容';
 
 // Get recent posts for the initial state
-const recentEssays = (await getVisibleEssays()).slice(0, 5);
-const recentBits = (await getPublished('bits')).slice(0, 5);
-const recentMemos = (await getPublished('memo')).slice(0, 5);
+const recentEssays = await getVisibleEssays();
+const recentBits = await getPublished('bits');
+const recentMemos = await getPublished('memo');
 
 // Combine and sort by date
 const allRecent = [
@@ -140,7 +140,7 @@ const hotTags = Array.from(tagCounts.entries())
                   <span class="recent-item__title">{item.title}</span>
                   <span class="recent-item__cat">{item.category}</span>
                   <span class="recent-item__date">
-                    {item.date.toISOString().slice(0, 7)}
+                    {item.date.toISOString().slice(2, 10)}
                   </span>
                 </div>
               ))}
