@@ -116,7 +116,7 @@ export const getBitDisplayTitle = (entry: BitsEntry): string => {
   const plainText = derived.plainText.trim();
   if (plainText) {
     const firstLine = (plainText.split('\n')[0] ?? plainText).trim();
-    const snippet = firstLine.length > 40 ? `${firstLine.slice(0, 40)}…` : firstLine;
+    const snippet = firstLine.length > 30 ? `${firstLine.slice(0, 30)}…` : firstLine;
     return tagPrefix ? `${tagPrefix}${snippet}` : snippet;
   }
 
