@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 /**
  * Auto-Encryption Script
- * 
+ *
  * Automatically encrypts essay posts that have `encrypted: true` in frontmatter
  * but don't have `encryptedContent` yet. Runs before build.
- * 
+ *
+ * Before encrypting, calls generate_teaser.py to populate `summary` for any
+ * encrypted post that is missing one (requires DEEPSEEK_API_KEY in env).
+ *
  * Usage: node scripts/auto-encrypt.mjs
  */
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { spawnSync } from 'child_process';
 import { encryptContent } from './encrypt-content.mjs';
 import { config } from 'dotenv';
 
@@ -107,10 +111,44 @@ function processFile(filePath) {
 }
 
 /**
+ * Run generate_teaser.py to populate `summary` for encrypted posts before encryption.
+ * Skips gracefully if DEEPSEEK_API_KEY is not set.
+ */
+function generateSummaries() {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) {
+    console.log('⚠️  DEEPSEEK_API_KEY not set — skipping AI summary generation\n');
+    return;
+  }
+
+  const scriptPath = path.join(__dirname, 'weibo-diary-crawler', 'generate_teaser.py');
+  if (!fs.existsSync(scriptPath)) {
+    console.log(`⚠️  generate_teaser.py not found at ${scriptPath} — skipping\n`);
+    return;
+  }
+
+  console.log('🤖 Generating summaries for encrypted posts...\n');
+  const result = spawnSync('python3', [scriptPath, '--all', '--apply'], {
+    stdio: 'inherit',
+    env: { ...process.env },
+  });
+
+  if (result.error) {
+    console.error(`⚠️  Failed to run generate_teaser.py: ${result.error.message}\n`);
+  } else if (result.status !== 0) {
+    console.error(`⚠️  generate_teaser.py exited with code ${result.status} — summaries may be incomplete\n`);
+  } else {
+    console.log('');
+  }
+}
+
+/**
  * Process all markdown files in the given directories
  */
 function processAllFiles() {
   console.log('🔐 Auto-Encryption Script\n');
+
+  generateSummaries();
 
   let totalFiles = 0;
   let processedCount = 0;
