@@ -128,9 +128,9 @@ export default defineConfig({
   // 自托管服务器使用 @astrojs/node standalone（由 VERCEL env 自动区分）。
   adapter: isVercel ? vercel() : node({ mode: 'standalone' }),
   base: deploymentBase,
-  // DEV 使用 server output 允许 Theme Console 的 /api/admin/settings/ 处理读写；
-  // 生产构建保持 server，支持 /api/decrypt 等服务端 API。
-  output: 'server',
+  // static 模式（Astro v7）：默认预渲染所有页面，仅 prerender=false 的路由走 SSR。
+  // v7 起 hybrid 已移除，static 本身即支持混合渲染，/api/decrypt 等服务端 API 正常工作。
+  output: 'static',
   integrations,
   ...(fonts.length ? { fonts } : {}),
   trailingSlash: 'always',
