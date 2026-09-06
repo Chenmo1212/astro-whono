@@ -206,6 +206,7 @@ const adminUiPrefsScriptHref = isDevAdminPage
     }
     {devUiPrefsStylesHref ? <link rel="stylesheet" href={devUiPrefsStylesHref} /> : null}
     {typographyApiFonts.map((font) => <Font cssVariable={`--font-${font.id}`} />)}
+    <script defer src="https://umami.chenmo1212.cn/script.js" data-website-id="ced49a28-5dc2-46de-9fe1-1fa5b6ba7f42" is:inline></script>
     <slot name="head" />
   </head>
   <body
