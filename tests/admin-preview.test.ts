@@ -43,6 +43,18 @@ describe('admin preview api', () => {
     expect(typeof payload.result.elapsedMs).toBe('number');
   });
 
+  it('restores unrecognized text and leaf directives as plain text without breaking paragraphs', async () => {
+    const { renderAdminMarkdownPreview } = await import('../src/lib/admin-console/preview');
+
+    const result = await renderAdminMarkdownPreview({
+      collection: 'essay',
+      source: '工作时间为17:00到凌晨00:30，还有00:30了。'
+    });
+
+    expect(result.html).toBe('<p>工作时间为17:00到凌晨00:30，还有00:30了。</p>');
+    expect(result.html).not.toContain('<div></div>');
+  });
+
   it('renders fenced code with shiki preview highlighting and toolbar structure', async () => {
     const { renderAdminMarkdownPreview } = await import('../src/lib/admin-console/preview');
 

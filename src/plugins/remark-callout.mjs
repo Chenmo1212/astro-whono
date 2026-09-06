@@ -22,48 +22,55 @@ const restoreDirectiveText = (parent, index, node) => {
 
 export default function remarkCallout() {
   return (tree) => {
-    visit(tree, 'containerDirective', (node, index, parent) => {
-      if (NON_CALLOUT_DIRECTIVES.has(node.name)) return;
-      const type = CALLOUT_TYPES.has(node.name) ? node.name : 'note';
+    visit(tree, (node, index, parent) => {
+      if (node.type === 'containerDirective') {
+        if (NON_CALLOUT_DIRECTIVES.has(node.name)) return;
 
-      if (node.type !== 'containerDirective') {
+        if (!CALLOUT_TYPES.has(node.name)) {
+          restoreDirectiveText(parent, index, node);
+          return;
+        }
+
+        if (!node.data) node.data = {};
+        node.data.hName = 'div';
+        node.data.hProperties = {
+          ...(node.data.hProperties || {}),
+          className: ['callout', node.name]
+        };
+
+        if (!Array.isArray(node.children) || node.children.length === 0) return;
+
+        const labelIndex = node.children.findIndex((child) => {
+          return child?.type === 'paragraph' && child?.data?.directiveLabel === true;
+        });
+
+        if (labelIndex === -1) return;
+
+        const labelNode = node.children[labelIndex];
+        const labelText = getText(labelNode).trim();
+        if (!labelText) {
+          node.children.splice(labelIndex, 1);
+          return;
+        }
+
+        if (!labelNode.data) labelNode.data = {};
+        labelNode.data.hName = 'p';
+        labelNode.data.hProperties = {
+          ...(labelNode.data.hProperties || {}),
+          className: ['callout-title']
+        };
+        return;
+      }
+
+      if (node.type === 'leafDirective') {
+        if (node.name === 'contact-links' || node.name === 'site-info') return;
         restoreDirectiveText(parent, index, node);
         return;
       }
 
-      if (!CALLOUT_TYPES.has(node.name)) {
+      if (node.type === 'textDirective') {
         restoreDirectiveText(parent, index, node);
-        return;
       }
-
-      if (!node.data) node.data = {};
-      node.data.hName = 'div';
-      node.data.hProperties = {
-        ...(node.data.hProperties || {}),
-        className: ['callout', node.name]
-      };
-
-      if (!Array.isArray(node.children) || node.children.length === 0) return;
-
-      const labelIndex = node.children.findIndex((child) => {
-        return child?.type === 'paragraph' && child?.data?.directiveLabel === true;
-      });
-
-      if (labelIndex === -1) return;
-
-      const labelNode = node.children[labelIndex];
-      const labelText = getText(labelNode).trim();
-      if (!labelText) {
-        node.children.splice(labelIndex, 1);
-        return;
-      }
-
-      if (!labelNode.data) labelNode.data = {};
-      labelNode.data.hName = 'p';
-      labelNode.data.hProperties = {
-        ...(labelNode.data.hProperties || {}),
-        className: ['callout-title']
-      };
     });
   };
 }
