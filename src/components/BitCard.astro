@@ -11,12 +11,16 @@ const {
   Content = null,
   shouldRenderFull = false,
   prioritizeLeadMedia = false,
-  isEncryptedCard = false
+  isEncryptedCard = false,
+  shareHref = ''
 } = Astro.props;
 
 const bitEntry = bit as BitsEntry;
 const base = import.meta.env.BASE_URL ?? '/';
 const { settings } = getThemeSettings();
+// shareHref is passed by the parent (BitsPageView) with the correct page number.
+// Falls back to empty string so ShareModal JS uses window.location.href.
+const bitSharePath = shareHref;
 const card = buildBitsCardViewModel({
   id: bitEntry.id,
   slug: bitEntry.data.slug,
@@ -200,7 +204,28 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
         ) : null}
       </div>
     ) : null}
-    <div>{card.dateLabel}</div>
+    <div class="bit-meta__right">
+      <span>{card.dateLabel}</span>
+      {!isEncrypted ? (
+        <button
+          type="button"
+          class="share-btn share-btn--bit"
+          data-share-btn
+          data-share-url={bitSharePath}
+          data-share-title={`絮语 · ${card.dateLabel}`}
+          aria-label="分享这条絮语"
+        >
+          <svg class="share-btn__icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="3" r="1.75" stroke="currentColor" stroke-width="1.4"/>
+            <circle cx="12" cy="13" r="1.75" stroke="currentColor" stroke-width="1.4"/>
+            <circle cx="3.5" cy="8" r="1.75" stroke="currentColor" stroke-width="1.4"/>
+            <line x1="10.33" y1="3.88" x2="5.14" y2="7.12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            <line x1="5.14" y1="8.88" x2="10.33" y2="12.12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          分享
+        </button>
+      ) : null}
+    </div>
   </div>
   <script>
     (() => {

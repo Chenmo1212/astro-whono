@@ -4,3 +4,11 @@
 @import "./components/callout.css";
 @import "./components/lightbox.css";
 @import "./components/code-block.css";
+
+/* Article header meta row: meta-line + share button side by side */
+.article-header__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}

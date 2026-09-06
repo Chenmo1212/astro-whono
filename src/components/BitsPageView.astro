@@ -3,8 +3,10 @@ import { render } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BitCard from './BitCard.astro';
 import Lightbox from './Lightbox.astro';
+import ShareModal from './ShareModal.astro';
 import '../styles/bits-page.css';
 import { MAX_PRIMARY_BITS_FILTER_YEARS, getBitsDerivedText, type BitsEntry, type BitsYearOption, type BitsEncryptedOption } from '../lib/bits';
+import { getBitsPagePath, getBitAnchorId } from '../lib/bits-public-routing';
 import { containsMarkdownMath } from '../lib/markdown-math';
 import {
   MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
@@ -65,13 +67,16 @@ const cards = await Promise.all(
   items.map(async (bit) => {
     const derivedText = getBitsDerivedText(bit);
     const { Content } = await render(bit);
+    // Build root-relative share href with correct page number; ShareModal JS prepends origin at runtime
+    const shareHref = `${base.replace(/\/$/, '')}${getBitsPagePath(currentPage)}#${getBitAnchorId(bit.id)}`;
 
     return {
       bit,
       excerpt: derivedText.shouldRenderFull ? '' : derivedText.excerpt,
       Content,
       shouldRenderFull: derivedText.shouldRenderFull,
-      hasMath: containsMarkdownMath(bit.body ?? '')
+      hasMath: containsMarkdownMath(bit.body ?? ''),
+      shareHref
     };
   })
 );
@@ -295,8 +300,8 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 
   <div data-bits-browse>
     <div id="bits-list">
-      {cards.map(({ bit, excerpt, Content, shouldRenderFull }) => (
-        <BitCard bit={bit} excerpt={excerpt} Content={Content} shouldRenderFull={shouldRenderFull} prioritizeLeadMedia={bit.id === priorityMediaBitId} isEncryptedCard={bit.data.encrypted === true} />
+      {cards.map(({ bit, excerpt, Content, shouldRenderFull, shareHref }) => (
+        <BitCard bit={bit} excerpt={excerpt} Content={Content} shouldRenderFull={shouldRenderFull} prioritizeLeadMedia={bit.id === priorityMediaBitId} isEncryptedCard={bit.data.encrypted === true} shareHref={shareHref} />
       ))}
     </div>
 
@@ -337,6 +342,7 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
   </noscript>
 
   <div id="bits-draft-root"></div>
+  <ShareModal />
   <Lightbox
     id="lightbox"
     label="图片预览"

@@ -50,7 +50,8 @@
     "github-slugger": "^2.0.0",
     "mdast-util-to-string": "^4.0.0",
     "qiniu": "^7.15.2",
-    "qiniu-js": "^3.4.4"
+    "qiniu-js": "^3.4.4",
+    "qrcode-generator": "^2.0.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
@@ -68,6 +69,7 @@
     "@lucide/svelte": "^1.28.0",
     "@shikijs/rehype": "^4.0.2",
     "@types/node": "^22.0.0",
+    "@types/qrcode-generator": "^0.0.16",
     "emoji-picker-element": "^1.29.1",
     "emoji-picker-element-data": "^1.8.0",
     "fflate": "^0.8.3",

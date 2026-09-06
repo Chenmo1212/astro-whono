@@ -9,6 +9,7 @@
 @import "./components/layout.css";
 @import "./components/lists.css";
 @import "./components/entry-tags.css";
+@import "./components/share-modal.css";
 
 @font-face {
   font-family: "LXGW WenKai Lite";

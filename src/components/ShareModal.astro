@@ -1,0 +1,389 @@
+---
+// ShareModal.astro
+// Singleton share dialog — rendered once per page.
+// Triggered by any [data-share-btn] button via event delegation.
+---
+
+<dialog
+  class="share-dialog"
+  id="share-modal"
+  aria-labelledby="share-modal-heading"
+  aria-modal="true"
+>
+  <div class="share-dialog__header">
+    <h2 class="share-dialog__heading" id="share-modal-heading">分享</h2>
+    <button
+      type="button"
+      class="share-dialog__close"
+      id="share-modal-close"
+      aria-label="关闭分享"
+    >×</button>
+  </div>
+  <div class="share-dialog__body">
+    <!-- Poster preview -->
+    <div class="share-poster-wrap" id="share-poster-wrap">
+      <img class="share-poster-img" id="share-poster-img" alt="分享海报预览" />
+      <div class="share-poster-loading" id="share-poster-loading" aria-live="polite">生成中…</div>
+    </div>
+    <!-- URL + copy -->
+    <div class="share-url-row">
+      <input
+        type="text"
+        class="share-url-text"
+        id="share-modal-url"
+        readonly
+        aria-label="页面链接"
+      />
+      <button type="button" class="share-copy-btn" id="share-modal-copy">
+        复制链接
+      </button>
+    </div>
+    <!-- Download poster -->
+    <button type="button" class="share-download-btn" id="share-modal-download">
+      下载海报
+    </button>
+  </div>
+</dialog>
+
+<script>
+  (() => {
+    const dialog = document.getElementById('share-modal') as HTMLDialogElement | null;
+    const heading = document.getElementById('share-modal-heading') as HTMLElement | null;
+    const posterImg = document.getElementById('share-poster-img') as HTMLImageElement | null;
+    const posterLoading = document.getElementById('share-poster-loading') as HTMLElement | null;
+    const urlInput = document.getElementById('share-modal-url') as HTMLInputElement | null;
+    const copyBtn = document.getElementById('share-modal-copy') as HTMLButtonElement | null;
+    const closeBtn = document.getElementById('share-modal-close') as HTMLButtonElement | null;
+    const downloadBtn = document.getElementById('share-modal-download') as HTMLButtonElement | null;
+
+    if (!dialog || !heading || !urlInput || !copyBtn || !closeBtn) return;
+
+    let copyResetTimer: ReturnType<typeof setTimeout> | null = null;
+    let currentDataUrl = '';
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    const cssVar = (name: string, fallback: string) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
+    // Fetch image via blob URL so canvas.toDataURL() won't throw SecurityError
+    // even when the image host doesn't send CORS headers (e.g. picsum.photos).
+    async function loadImage(src: string, timeoutMs = 5000): Promise<HTMLImageElement> {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      let blobUrl = '';
+      try {
+        const res = await fetch(src, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        blobUrl = URL.createObjectURL(blob);
+        return await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = blobUrl;
+        });
+      } finally {
+        clearTimeout(timer);
+        // Revoke after a tick so the img element has time to decode
+        if (blobUrl) setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+      }
+    }
+
+    // Lazy-load qrcode-generator (lightweight, synchronous, browser-only)
+    let qrGenLib: typeof import('qrcode-generator') | null = null;
+    const loadQrGen = async () => {
+      if (!qrGenLib) qrGenLib = (await import('qrcode-generator')).default as typeof import('qrcode-generator');
+      return qrGenLib;
+    };
+
+    async function makeQrCanvas(url: string, size: number): Promise<HTMLCanvasElement> {
+      const qrgen = await loadQrGen();
+      // typeNumber 0 = auto, ecLevel M
+      const qr = qrgen(0, 'M');
+      qr.addData(url);
+      qr.make();
+
+      const moduleCount = qr.getModuleCount();
+      const cellSize = Math.max(1, Math.floor(size / moduleCount));
+      const actualSize = cellSize * moduleCount;
+
+      const qrCanvas = document.createElement('canvas');
+      qrCanvas.width = actualSize;
+      qrCanvas.height = actualSize;
+      const ctx = qrCanvas.getContext('2d')!;
+
+      // White background, dark modules — renders correctly on any poster background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, actualSize, actualSize);
+      ctx.fillStyle = '#1a1a1a';
+      for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+          if (qr.isDark(row, col)) {
+            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+      return qrCanvas;
+    }
+
+    // ── poster composer ───────────────────────────────────────────────────────
+
+    async function composePoster(opts: {
+      title: string;
+      desc: string;
+      url: string;
+      slug: string;
+      coverSrc: string;
+    }): Promise<string> {
+      // Canvas dimensions — 3:2 landscape card
+      const W = 600;
+      const H = 400;
+      const pad = 32;
+      const qrSize = 100;
+
+      // ── Load background image and QR in parallel ──
+      const bgImgPromise = (async (): Promise<HTMLImageElement | null> => {
+        if (opts.coverSrc) {
+          try { return await loadImage(opts.coverSrc, 5000); } catch { /* skip */ }
+        }
+        const seed = encodeURIComponent(opts.slug || opts.title);
+        // picsum: 3s timeout — if slow network, fall back to solid colour
+        try { return await loadImage(`https://picsum.photos/seed/${seed}/600/400`, 3000); } catch { /* skip */ }
+        return null;
+      })();
+
+      const qrPromise = makeQrCanvas(opts.url, qrSize).catch(() => null);
+
+      const [bgImg, qrCanvas] = await Promise.all([bgImgPromise, qrPromise]);
+
+      // ── Now draw everything synchronously ──
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d')!;
+
+      if (bgImg) {
+        const imgRatio = bgImg.naturalWidth / bgImg.naturalHeight;
+        const canvasRatio = W / H;
+        let sx = 0, sy = 0, sw = bgImg.naturalWidth, sh = bgImg.naturalHeight;
+        if (imgRatio > canvasRatio) {
+          sw = bgImg.naturalHeight * canvasRatio;
+          sx = (bgImg.naturalWidth - sw) / 2;
+        } else {
+          sh = bgImg.naturalWidth / canvasRatio;
+          sy = (bgImg.naturalHeight - sh) / 2;
+        }
+        ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, W, H);
+      } else {
+        ctx.fillStyle = cssVar('--text', '#292524');
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // ── Dark overlay ──
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, 'rgba(0,0,0,0.18)');
+      grad.addColorStop(0.45, 'rgba(0,0,0,0.40)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.82)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // ── QR code (bottom-right) ──
+
+      const qrX = W - qrSize - pad;
+      const qrY = H - qrSize - pad;
+      if (qrCanvas) {
+        // Solid white background behind QR so dark modules are visible
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.beginPath();
+        ctx.roundRect(qrX - 6, qrY - 6, qrSize + 12, qrSize + 12, 8);
+        ctx.fill();
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+      }
+
+      // ── Text area (bottom-left) ──
+      const textMaxW = qrX - pad * 2;
+      ctx.textBaseline = 'alphabetic';
+
+      // Title — wrapped, max 3 lines
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 26px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
+
+      const titleLines = wrapText(ctx, opts.title, textMaxW, 3);
+      const titleLineH = 36;
+      const titleBlockH = titleLines.length * titleLineH;
+
+      // Description — 1 line
+      ctx.font = `400 15px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
+      const descLine = opts.desc ? truncateLine(ctx, opts.desc, textMaxW) : '';
+      const descBlockH = descLine ? 24 : 0;
+
+      // Domain — bottom strip
+      const hostname = (() => { try { return new URL(opts.url).hostname; } catch { return ''; } })();
+      const domainBlockH = 22;
+
+      const totalH = titleBlockH + (descLine ? 10 : 0) + descBlockH + 14 + domainBlockH;
+      let y = H - pad - totalH;
+
+      // Draw title lines
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 26px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
+      for (const line of titleLines) {
+        ctx.fillText(line, pad, y + titleLineH * 0.78);
+        y += titleLineH;
+      }
+
+      // Draw description
+      if (descLine) {
+        y += 10;
+        ctx.fillStyle = 'rgba(255,255,255,0.72)';
+        ctx.font = `400 15px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
+        ctx.fillText(descLine, pad, y + 15 * 0.9);
+        y += descBlockH;
+      }
+
+      // Draw domain
+      y += 14;
+      ctx.fillStyle = 'rgba(255,255,255,0.50)';
+      ctx.font = `400 13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
+      ctx.fillText(hostname, pad, y + 13 * 0.9);
+
+      return canvas.toDataURL('image/png');
+    }
+
+    // ── text helpers ─────────────────────────────────────────────────────────
+
+    function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number, maxLines: number): string[] {
+      const chars = [...text];
+      const lines: string[] = [];
+      let line = '';
+      for (const ch of chars) {
+        const test = line + ch;
+        if (ctx.measureText(test).width > maxW && line) {
+          lines.push(line);
+          if (lines.length >= maxLines) break;
+          line = ch;
+        } else {
+          line = test;
+        }
+      }
+      if (line && lines.length < maxLines) lines.push(line);
+      // Add ellipsis on last line if truncated
+      if (lines.length === maxLines && text !== lines.join('')) {
+        const last = lines[maxLines - 1]!;
+        lines[maxLines - 1] = truncateLine(ctx, last, maxW - ctx.measureText('…').width) + '…';
+      }
+      return lines;
+    }
+
+    function truncateLine(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
+      if (ctx.measureText(text).width <= maxW) return text;
+      const chars = [...text];
+      let result = '';
+      for (const ch of chars) {
+        if (ctx.measureText(result + ch + '…').width > maxW) break;
+        result += ch;
+      }
+      return result + '…';
+    }
+
+    // ── open share ───────────────────────────────────────────────────────────
+
+    async function openShare(opts: {
+      url: string;
+      title: string;
+      desc: string;
+      cover: string;
+      slug: string;
+    }) {
+      heading!.textContent = opts.title || '分享';
+      urlInput!.value = opts.url;
+      copyBtn!.classList.remove('is-copied');
+      copyBtn!.textContent = '复制链接';
+      if (copyResetTimer) clearTimeout(copyResetTimer);
+
+      // Show loading state, disable download until ready
+      currentDataUrl = '';
+      if (posterImg) { posterImg.src = ''; posterImg.hidden = true; }
+      if (posterLoading) {
+        posterLoading.textContent = '生成中…';
+        posterLoading.hidden = false;
+        posterLoading.classList.remove('is-error');
+      }
+      if (downloadBtn) downloadBtn.disabled = true;
+
+      dialog!.showModal();
+
+      try {
+        const dataUrl = await composePoster({ ...opts, coverSrc: opts.cover });
+        currentDataUrl = dataUrl;
+        if (posterImg) { posterImg.src = dataUrl; posterImg.hidden = false; }
+        if (posterLoading) posterLoading.hidden = true;
+        if (downloadBtn) downloadBtn.disabled = false;
+      } catch {
+        if (posterLoading) {
+          posterLoading.textContent = '海报生成失败';
+          posterLoading.classList.add('is-error');
+        }
+        // Keep download disabled — currentDataUrl is empty, clicking would be a silent no-op
+        if (downloadBtn) downloadBtn.disabled = true;
+      }
+    }
+
+    // ── close ─────────────────────────────────────────────────────────────────
+
+    closeBtn.addEventListener('click', () => dialog.close());
+
+    dialog.addEventListener('click', (e) => {
+      const rect = dialog.getBoundingClientRect();
+      const outside =
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom;
+      if (outside) dialog.close();
+    });
+
+    // ── copy ──────────────────────────────────────────────────────────────────
+
+    copyBtn.addEventListener('click', () => {
+      const url = urlInput!.value;
+      if (!url) return;
+      navigator.clipboard.writeText(url).then(() => {
+        copyBtn.classList.add('is-copied');
+        copyBtn.textContent = '已复制！';
+        if (copyResetTimer) clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(() => {
+          copyBtn.classList.remove('is-copied');
+          copyBtn.textContent = '复制链接';
+        }, 2000);
+      }).catch(() => { urlInput!.select(); });
+    });
+
+    // ── download ──────────────────────────────────────────────────────────────
+
+    downloadBtn?.addEventListener('click', () => {
+      if (!currentDataUrl) return;
+      const a = document.createElement('a');
+      a.download = `share-${Date.now()}.png`;
+      a.href = currentDataUrl;
+      a.click();
+    });
+
+    // ── event delegation ──────────────────────────────────────────────────────
+
+    document.addEventListener('click', (e) => {
+      const btn = (e.target as Element).closest<HTMLElement>('[data-share-btn]');
+      if (!btn) return;
+      let url = btn.dataset.shareUrl || window.location.href;
+      if (url.startsWith('/')) url = window.location.origin + url;
+      openShare({
+        url,
+        title: btn.dataset.shareTitle ?? document.title,
+        desc: btn.dataset.shareDesc ?? '',
+        cover: btn.dataset.shareCover ?? '',
+        slug: btn.dataset.shareSlug ?? ''
+      });
+    });
+  })();
+</script>

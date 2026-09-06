@@ -276,6 +276,13 @@
   color: var(--faint);
 }
 
+/* Right side of bit-meta: date + share button grouped */
+.bit-meta__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .bit-media-more {
     backdrop-filter: blur(var(--blur-md));
