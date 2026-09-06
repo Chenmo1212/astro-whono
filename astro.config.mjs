@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, fontProviders } from 'astro/config';
 import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 import sitemap from '@astrojs/sitemap';
 import remarkDirective from 'remark-directive';
 import rehypeRaw from 'rehype-raw';
@@ -17,6 +18,7 @@ import {
 import { site, hasSiteUrl } from './site.config.mjs';
 
 const isProductionBuild = process.env.NODE_ENV === 'production';
+const isVercel = process.env.VERCEL === '1';
 const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'essay', 'memo']);
 const rawDeploymentBase = process.env.ASTRO_WHONO_BASE_PATH ?? '/';
 const trimmedDeploymentBase = String(rawDeploymentBase).trim();
@@ -121,12 +123,14 @@ const fonts = selectedApiFonts.flatMap((entry) => {
 export default defineConfig({
   // Required for RSS generation. Prefer SITE_URL; fallback keeps build passing.
   site: site.url,
-  // Required adapter to support /api/decrypt endpoints for encrypted articles
-  adapter: node({ mode: 'standalone' }),
+  // Required adapter to support /api/decrypt endpoints for encrypted articles.
+  // Vercel 部署使用 @astrojs/vercel（Serverless Functions）；
+  // 自托管服务器使用 @astrojs/node standalone（由 VERCEL env 自动区分）。
+  adapter: isVercel ? vercel() : node({ mode: 'standalone' }),
   base: deploymentBase,
   // DEV 使用 server output 允许 Theme Console 的 /api/admin/settings/ 处理读写；
-  // 构建阶段回到 static，让 /admin/ 保持只读提示，并避免把该路径当作生产公开 API。
-  output: process.env.NODE_ENV === 'production' ? 'static' : 'server',
+  // 生产构建保持 server，支持 /api/decrypt 等服务端 API。
+  output: 'server',
   integrations,
   ...(fonts.length ? { fonts } : {}),
   trailingSlash: 'always',
