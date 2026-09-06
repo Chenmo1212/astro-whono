@@ -561,6 +561,7 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
           .slice(0, 3)
           .map((tag) => `<span class="bit-search-result__tag">#${escapeHtml(tag.trim())}</span>`)
           .join('');
+        const encryptedSummary = item.excerpt?.trim() ?? '';
 
         return `
           <article class="bit-card bit-card--search-result">
@@ -576,7 +577,9 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
                   <div class="bit-search-result__encrypted-header">
                     <span class="bit-search-result__encrypted-badge">加密内容</span>
                   </div>
-                  <p class="bit-search-result__encrypted-hint">此内容受密码保护，点击前往输入密码</p>
+                  ${encryptedSummary
+                    ? `<p class="bit-search-result__excerpt bit-search-result__encrypted-summary">${escapeHtml(encryptedSummary)}</p>`
+                    : `<p class="bit-search-result__encrypted-hint">此内容受密码保护，点击前往输入密码</p>`}
                   ${place || tags || metaTrail
                     ? `
                       <div class="bit-search-result__footer">

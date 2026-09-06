@@ -1080,6 +1080,14 @@ span[data-tag].bit-search-result__tag:focus-visible {
   line-height: 1.5;
 }
 
+.bit-search-result__encrypted-summary {
+  margin-top: 4px;
+  margin-bottom: 2px;
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--faint) 30%, transparent);
+  color: var(--muted);
+}
+
 @media (max-width: 520px) {
   .bit-search-result__layout--media .bit-search-result__content {
     flex-direction: column;

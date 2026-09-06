@@ -36,6 +36,7 @@
     "font:charset": "node ./scripts/font-charset.mjs",
     "font:subset": "node ./scripts/font-subset.mjs",
     "font:build": "npm run font:charset && npm run font:subset",
+    "bits:summaries": "./venv/bin/python scripts/weibo-diary-crawler/generate_teaser.py --all --apply",
     "new:bit": "node ./scripts/new-bit.mjs",
     "sync:folder": "fswatch -o /Users/chandler/Project/bob-learning/ /Users/chandler/Project/Astro_Blog/astro-whono/ | while read; do unison sync -batch; done"
   },
