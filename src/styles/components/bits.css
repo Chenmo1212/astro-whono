@@ -1021,36 +1021,6 @@ span[data-tag].bit-search-result__tag:focus-visible {
   font-weight: inherit;
 }
 
-.bit-search-result__layout--encrypted {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.bit-search-result__encrypted-icon {
-  flex: 0 0 88px;
-  width: 88px;
-  height: 88px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--panel) 68%, var(--bg));
-  border: 1px solid var(--border);
-  color: var(--faint);
-}
-
-.bit-search-result__encrypted-icon svg {
-  width: 22px;
-  height: 22px;
-}
-
-.bit-search-result__encrypted-body {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
 .bit-search-result__encrypted-header {
   display: flex;
   align-items: center;

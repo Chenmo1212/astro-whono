@@ -567,12 +567,6 @@ const renderResults = (matchedItems: IndexItem[], resetPage = true) => {
           <article class="bit-card bit-card--search-result">
             <a class="bit-search-result__link" href="${href}">
               <div class="bit-search-result__layout bit-search-result__layout--encrypted">
-                <div class="bit-search-result__encrypted-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </div>
                 <div class="bit-search-result__encrypted-body">
                   <div class="bit-search-result__encrypted-header">
                     <span class="bit-search-result__encrypted-badge">加密内容</span>
