@@ -1,21 +1,14 @@
 {
-  "total": 2,
+  "total": 1,
   "encrypted": 0,
-  "total_images": 4,
+  "total_images": 12,
   "img_errors": 0,
   "crawl_failed": false,
   "posts": [
     {
-      "weibo_id": "5342247811547509",
-      "created_at": "2026-09-12T08:56:35",
-      "image_count": 2,
-      "img_errors": 0,
-      "encrypted": false
-    },
-    {
-      "weibo_id": "5341867206247723",
-      "created_at": "2026-09-11T07:44:12",
-      "image_count": 2,
+      "weibo_id": "5342973807039584",
+      "created_at": "2026-09-14T09:01:26",
+      "image_count": 12,
       "img_errors": 0,
       "encrypted": false
     }
