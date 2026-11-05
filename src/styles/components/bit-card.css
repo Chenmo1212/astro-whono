@@ -87,6 +87,29 @@
 .bit-author .name {
   font-size: 13px;
   color: var(--muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Right side of bit-author: date + share button grouped */
+.bit-author__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--font-copy);
+  font-size: 12px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.bit-author .share-btn--bit {
+  min-height: 32px;
+  padding: 0 4px;
+  margin-right: -4px;
 }
 
 .bit-body {
@@ -274,13 +297,6 @@
   margin-top: 10px;
   font-size: 12px;
   color: var(--faint);
-}
-
-/* Right side of bit-meta: date + share button grouped */
-.bit-meta__right {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
 }
 
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

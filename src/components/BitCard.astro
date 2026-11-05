@@ -65,6 +65,28 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
       <span class="avatar-fallback">{card.avatarLetter}</span>
     </div>
     <div class="name">{card.authorName}</div>
+    <div class="bit-author__right">
+      <span class="bit-author__date">{card.dateLabel}</span>
+      {!isEncrypted ? (
+        <button
+          type="button"
+          class="share-btn share-btn--bit"
+          data-share-btn
+          data-share-url={bitSharePath}
+          data-share-title={`絮语 · ${card.dateLabel}`}
+          aria-label="分享这条絮语"
+        >
+          <svg class="share-btn__icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="3" r="1.75" stroke="currentColor" stroke-width="1.4"/>
+            <circle cx="12" cy="13" r="1.75" stroke="currentColor" stroke-width="1.4"/>
+            <circle cx="3.5" cy="8" r="1.75" stroke="currentColor" stroke-width="1.4"/>
+            <line x1="10.33" y1="3.88" x2="5.14" y2="7.12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            <line x1="5.14" y1="8.88" x2="10.33" y2="12.12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          分享
+        </button>
+      ) : null}
+    </div>
   </div>
 
   {isEncrypted && bitEntry.data.encryptedContent ? (
@@ -183,8 +205,8 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
     </div>
   ) : null}
 
-  <div class="bit-meta">
-    {card.hasTags ? (
+  {card.hasTags ? (
+    <div class="bit-meta">
       <div class="bit-tags">
         {card.placeText ? (
           <span class="bit-tag bit-tag--place">
@@ -203,30 +225,8 @@ const shouldUseExpandableBody = Boolean(Content) && !shouldRenderFull && !isEncr
           </span>
         ) : null}
       </div>
-    ) : null}
-    <div class="bit-meta__right">
-      <span>{card.dateLabel}</span>
-      {!isEncrypted ? (
-        <button
-          type="button"
-          class="share-btn share-btn--bit"
-          data-share-btn
-          data-share-url={bitSharePath}
-          data-share-title={`絮语 · ${card.dateLabel}`}
-          aria-label="分享这条絮语"
-        >
-          <svg class="share-btn__icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="12" cy="3" r="1.75" stroke="currentColor" stroke-width="1.4"/>
-            <circle cx="12" cy="13" r="1.75" stroke="currentColor" stroke-width="1.4"/>
-            <circle cx="3.5" cy="8" r="1.75" stroke="currentColor" stroke-width="1.4"/>
-            <line x1="10.33" y1="3.88" x2="5.14" y2="7.12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-            <line x1="5.14" y1="8.88" x2="10.33" y2="12.12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-          分享
-        </button>
-      ) : null}
     </div>
-  </div>
+  ) : null}
   <script>
     (() => {
       const cards = document.querySelectorAll<HTMLElement>('[data-bit-expandable]');

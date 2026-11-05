@@ -1448,30 +1448,19 @@ span[data-tag].bit-search-result__tag:focus-visible {
     max-width: 320px;
   }
 
-  .bit-meta {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-
-  .bit-meta > :last-child {
-    order: 1;
-    white-space: nowrap;
-  }
-
   .bit-meta .bit-tags {
-    order: 2;
+    flex: 1 1 100%;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    gap: 4px 12px;
   }
 
-  .bit-meta .bit-tags::before {
-    content: " - ";
-    color: var(--faint);
+  .bit-meta .bit-tag--normal {
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  .bit-meta .bit-tag-list {
+    gap: 4px 10px;
   }
 
 }
