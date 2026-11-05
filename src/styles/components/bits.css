@@ -802,6 +802,7 @@
 
 #bits-list {
   margin-top: 20px;
+  animation: fadeUp 0.45s ease both 0.15s;
 }
 
 #bits-list > .bit-card:first-child {
