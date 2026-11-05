@@ -41,6 +41,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/weibo-diary-crawler/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r scripts/weibo-diary-crawler/requirements.txt
+
       - name: Security audit gate (high+ prod dependencies)
         run: npm run audit:prod
 
@@ -85,6 +95,16 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/weibo-diary-crawler/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r scripts/weibo-diary-crawler/requirements.txt
 
       - name: Build
         env:
