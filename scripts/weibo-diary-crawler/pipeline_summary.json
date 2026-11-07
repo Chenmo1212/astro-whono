@@ -1,14 +1,14 @@
 {
   "total": 1,
   "encrypted": 0,
-  "total_images": 9,
+  "total_images": 1,
   "img_errors": 0,
   "crawl_failed": false,
   "posts": [
     {
-      "weibo_id": "5362208508740540",
-      "created_at": "2026-11-06T10:53:16",
-      "image_count": 9,
+      "weibo_id": "5362501177049635",
+      "created_at": "2026-11-07T06:16:14",
+      "image_count": 1,
       "img_errors": 0,
       "encrypted": false
     }
